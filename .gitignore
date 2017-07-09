@@ -1,0 +1,11 @@
+*.py[co]
+.*.swp
+hello.txt
+py-builtins.rb
+tests/*/*.rb
+tests/*/*.out
+tests/*/*.diff
+tests/*/*.err
+tests/*/*.py.js
+tests/*.err
+tests/*.out

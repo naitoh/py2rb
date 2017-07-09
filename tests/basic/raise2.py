@@ -1,0 +1,4 @@
+try:
+    raise
+except:
+    pass
