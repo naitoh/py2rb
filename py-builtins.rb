@@ -87,12 +87,19 @@ class Array
       slice(*args)
     end
   end
+
   def to_s
     if self.frozen?
       inspect.sub("[", "(").sub("]", ")")
     else
       inspect
     end
+  end
+
+  def remove(obj)
+    i = self.index(obj)
+    self.delete_at(i)
+    return
   end
 end
 

@@ -102,11 +102,11 @@ def triangulate_af(pts_list, bdy_edges):
             bdy_edges.append((c,b))
     return elems
 
-def ccw(A, B, C):
-    return (C[1]-A[1])*(B[0]-A[0]) > (B[1]-A[1])*(C[0]-A[0])
+def ccw(a, b, c):
+    return (c[1]-a[1])*(b[0]-a[0]) > (b[1]-a[1])*(c[0]-a[0])
 
-def intersect(A, B, C, D):
-    return ccw(A, C, D) != ccw(B, C, D) and ccw(A, B, C) != ccw(A, B, D)
+def intersect(a, b, c, d):
+    return ccw(a, c, d) != ccw(b, c, d) and ccw(a, b, c) != ccw(a, b, d)
 
 def two_edges_intersect(nodes, e1, e2):
     """
@@ -114,11 +114,11 @@ def two_edges_intersect(nodes, e1, e2):
 
     It assumes that e1 and e2 are tuples of (a_id, b_id) of ids into the nodes.
     """
-    A = nodes[e1[0]]
-    B = nodes[e1[1]]
-    C = nodes[e2[0]]
-    D = nodes[e2[1]]
-    return intersect(A, B, C, D)
+    a = nodes[e1[0]]
+    b = nodes[e1[1]]
+    c = nodes[e2[0]]
+    d = nodes[e2[1]]
+    return intersect(a, b, c, d)
 
 def any_edges_intersect(nodes, edges):
     """
@@ -172,16 +172,16 @@ def example2():
     return nodes, edges, elems
 
 nodes, edges, elems = example1()
-print(nodes)
-print(edges)
-print(elems)
+print("nodes", nodes)
+print("edges", edges)
+print("elems", elems)
 if not any_edges_intersect(nodes, edges):
     print("ok")
 
 print()
 nodes, edges, elems = example2()
-print(nodes)
-print(edges)
-print(elems)
+print("nodes", nodes)
+print("edges", edges)
+print("elems", elems)
 if not any_edges_intersect(nodes, edges):
     print("ok")

@@ -1203,27 +1203,27 @@ class RB(object):
                     return "%s.%s%s" % (rb_args_arr[1], func, rb_args_arr[0])
                 else:
                     """ <Python> map(foo, [1, 2])
-                        <Ruby>   [1, 2].map{|i|foo(i)} """
-                    return "%s.%s{|i| %s(i)}" % (rb_args_arr[1], func, rb_args_arr[0])
+                        <Ruby>   [1, 2].map{|_|foo(_)} """
+                    return "%s.%s{|_| %s(_)}" % (rb_args_arr[1], func, rb_args_arr[0])
             elif func in self.range_map:
                 """ [range] """
                 rs = [ self.visit(arg) for arg in node.args ]
                 if len(node.args) == 1:
                     """ <Python> range(3)
-                        <Ruby>   [].fill(0...3) {|i| i} """
-                    return "[].fill(0...%s){|i| i}" % (rs[0])
+                        <Ruby>   [].fill(0...3) {|_| _} """
+                    return "[].fill(0...(%s)){|_| _}" % (rs[0])
                 elif len(node.args) == 2:
                     """ <Python> range(1,3)
-                        <Ruby>   [].fill(0...3-1) {|i| i+1} """
-                    return "[].fill(0...%s-%s){|i| i+%s}" % (rs[1], rs[0], rs[0])
+                        <Ruby>   [].fill(0...3-1) {|_| _+1} """
+                    return "[].fill(0...(%s)-(%s)){|_| _+(%s)}" % (rs[1], rs[0], rs[0])
                 else:
                     """ <Python> range(1,10,3)
-                        <Ruby>   [].fill(0...10/3-1/3) {|i| i*3+1} """
-                    return "[].fill(0...%s/%s-%s/%s){|i| i*%s+%s}" % (rs[1], rs[2], rs[0], rs[2], rs[2], rs[0])
+                        <Ruby>   [].fill(0...10/3-1/3) {|_| _*3+1} """
+                    return "[].fill(0...(%s)/(%s)-(%s)/(%s)){|_| _*(%s)+(%s)}" % (rs[1], rs[2], rs[0], rs[2], rs[2], rs[0])
             elif func in self.list_map:
                 """ [list]
                 <Python> list(range(3))
-                <Ruby>   [].fill(0...3) {|i| i}
+                <Ruby>   [].fill(0...3) {|_| _}
                 """
                 #return "[].%s" % (rb_args)
                 return "%s" % (rb_args)

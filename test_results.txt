@@ -1,7 +1,7 @@
 Looking for "ruby" and "py-builtins" [2]: ..                     [OK]
 tests/test_builtins.rb [1]: .                                    [OK]
 tests/algorithms/sqrt.py [4]: ....                               [OK]
-tests/algorithms/triangulation.py [4]: ..                      [FAIL]
+tests/algorithms/triangulation.py [4]: ...                     [FAIL]
 tests/basic/assign_slice.py [4]: ....                            [OK]
 tests/basic/augassign.py [4]: ....                               [OK]
 tests/basic/augassign2.py [4]: ....                              [OK]
@@ -25,8 +25,9 @@ tests/basic/embedding.py [4]: ....                               [OK]
 tests/basic/fib.py [4]: ....                                     [OK]
 tests/basic/float2int.py [4]: ....                               [OK]
 tests/basic/for_in.py [4]: ...                                 [FAIL]
+tests/basic/for_range1.py [4]: ....                              [OK]
+tests/basic/for_range2.py [4]: ....                              [OK]
 tests/basic/for_step.py [4]: ....                                [OK]
-tests/basic/for_xrange.py [4]: ....                              [OK]
 tests/basic/globalvar.py [4]: ....                               [OK]
 tests/basic/hasattr.py [4]: ..                                 [FAIL]
 tests/basic/helloworld.py [4]: ....                              [OK]
@@ -176,6 +177,6 @@ tests/strings/string_format_x.py [4]: ...             known to [FAIL]
 tests/strings/ulcase.py [4]: ..                       known to [FAIL]
 tests/unittest/assertEqual.py [4]: ...                known to [FAIL]
 tests/unittest/assertIn.py [4]: ...                   known to [FAIL]
-Ran 178 tests in 64.406s
+Ran 179 tests in 62.488s
 
 FAILED (failures=36, expected failures=36)
