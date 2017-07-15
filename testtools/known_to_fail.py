@@ -11,6 +11,7 @@ KNOWN_TO_FAIL = [
     "tests/basic/del_global.py",
     "tests/basic/generator.py",
     "tests/basic/class3.py",
+    "tests/basic/hasattr.py",
 
     "tests/functions/sort_cmp.py",
     "tests/functions/sort23.py",

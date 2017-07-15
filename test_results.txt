@@ -29,7 +29,6 @@ tests/basic/for_range1.py [4]: ....                              [OK]
 tests/basic/for_range2.py [4]: ....                              [OK]
 tests/basic/for_step.py [4]: ....                                [OK]
 tests/basic/globalvar.py [4]: ....                               [OK]
-tests/basic/hasattr.py [4]: ..                                 [FAIL]
 tests/basic/helloworld.py [4]: ....                              [OK]
 tests/basic/ifelse.py [4]: ....                                  [OK]
 tests/basic/ifs.py [4]: ....                                     [OK]
@@ -146,6 +145,7 @@ tests/basic/del_attr.py [4]: ..                       known to [FAIL]
 tests/basic/del_global.py [4]: ...                    known to [FAIL]
 tests/basic/del_local.py [4]: ...                     known to [FAIL]
 tests/basic/generator.py [4]: ..                      known to [FAIL]
+tests/basic/hasattr.py [4]: ..                        known to [FAIL]
 tests/basic/kwargs.py [4]: ..                         known to [FAIL]
 tests/basic/listcomp2.py [4]: .                       known to [FAIL]
 tests/basic/nestedclass.py [4]: ..                    known to [FAIL]
@@ -177,6 +177,6 @@ tests/strings/string_format_x.py [4]: ...             known to [FAIL]
 tests/strings/ulcase.py [4]: ..                       known to [FAIL]
 tests/unittest/assertEqual.py [4]: ...                known to [FAIL]
 tests/unittest/assertIn.py [4]: ...                   known to [FAIL]
-Ran 179 tests in 62.488s
+Ran 179 tests in 61.627s
 
-FAILED (failures=36, expected failures=36)
+FAILED (failures=35, expected failures=37)
