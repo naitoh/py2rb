@@ -1,7 +1,6 @@
 *.py[co]
 .*.swp
 hello.txt
-py-builtins.rb
 tests/*/*.rb
 tests/*/*.out
 tests/*/*.diff
