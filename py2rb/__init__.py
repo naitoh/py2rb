@@ -990,15 +990,7 @@ class RB(object):
         if isinstance(node.op, ast.Mod) and isinstance(node.left, ast.Str):
             left = self.visit(node.left)
             right = self.visit(node.right)
-            return "sprintf(js(%s), %s)" % (left, right)
-            #if isinstance(node.right, (ast.Tuple, ast.List)):
-            #    #right = self.visit(node.right)
-            #    right = "[%s]" % self.visit(node.right)
-            #    return "vsprintf(js(%s), js(%s))" % (left, right)
-            #else:
-            #    right = self.visit(node.right)
-            #    return "sprintf(js(%s), %s)" % (left, right)
-            # ast.Tuple, ast.List, ast.*
+            return "%s %% %s" % (left, right)
         left = self.visit(node.left)
         right = self.visit(node.right)
 
