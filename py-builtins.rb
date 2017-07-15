@@ -74,6 +74,8 @@ module PythonIndexEx
       end
       return ret.nil? ? -1 : ret
     end
+
+    alias :each :chars
   end
 end
 

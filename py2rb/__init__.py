@@ -69,6 +69,7 @@ class RB(object):
         'len'   : 'size',
         'max'   : 'max',
         'min'   : 'min',
+        'iter'  : 'each',
         'sum'   : 'sum', # if Ruby 2.3 or bufore is 'inject(:+)' method.
         #'sum'   : 'inject(:+)', # if Ruby 2.4 or later is better sum() method.
     }
@@ -604,7 +605,7 @@ class RB(object):
         #    #self.write("%s = Math.floor((%s)/(%s));" % (target, target, value))
         #    self.write("%s = (%s/%s)" % (target, target, value))
         elif isinstance(node.op, ast.Div):
-            self.write("%s = (%s/%s.to_f)" % (target, target, value))
+            self.write("%s = (%s/(%s).to_f)" % (target, target, value))
         else:
             self.write("%s %s= %s;" % (target, self.get_binary_op(node), value))
 
@@ -1004,7 +1005,7 @@ class RB(object):
         if isinstance(node.op, ast.Pow):
             return "%s ** %s" % (left, right)
         if isinstance(node.op, ast.Div):
-            return "(%s/%s.to_f)" % (left, right)
+            return "(%s/(%s).to_f)" % (left, right)
 
         return "(%s)%s(%s)" % (left, self.get_binary_op(node), right)
 
