@@ -14,13 +14,6 @@ module PythonPrintEx
   refine Object do
     def print(*args)
       $, = ' ';$\ = "\n"
-      #args.collect!{|arg|
-      #  if (arg.is_a? Array) and (arg.frozen?)
-      #    arg = arg.to_s.sub("[", "(").sub("]", ")")
-      #  else
-      #    arg
-      #  end
-      #}
       super(*args)
     end
   end
@@ -80,22 +73,6 @@ module PythonIndexEx
 end
 
 class Array
-  def [](*args)
-    if self.frozen?
-      slice(*args).freeze
-    else
-      slice(*args)
-    end
-  end
-
-  def to_s
-    if self.frozen?
-      inspect.sub("[", "(").sub("]", ")")
-    else
-      inspect
-    end
-  end
-
   def remove(obj)
     i = self.index(obj)
     self.delete_at(i)

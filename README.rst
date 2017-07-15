@@ -105,7 +105,7 @@ The above will result in ::
         end
         def msg(a=nil, b=nil, c=nil)
             txt = '';
-            varargs = [a, b, c].freeze;
+            varargs = [a, b, c];
             for arg in varargs
                 if arg === nil
                     next
@@ -172,7 +172,7 @@ The above will result in ::
             return 1;
         end
     end
-    for xs in [[0, 0].freeze, [1, 0].freeze, [0, 1].freeze, [1, 1].freeze]
+    for xs in [[0, 0], [1, 0], [0, 1], [1, 1]]
         y = AND(xs[0],xs[1]);
         print((((xs).to_s)+(' -> '))+((y).to_s))
     end

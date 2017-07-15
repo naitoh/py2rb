@@ -96,6 +96,7 @@ def compile_and_run_file_test(file_path, file_name=None):
         "py_out_path": file_path + ".out",
         "rb_path": file_path + ".rb",
         "rb_out_path": file_path + ".rb.out",
+        "rb_out_expected_path": file_path + ".expected_out",
         "py_error": file_path + ".err",
         "rb_error": file_path + "rb.err",
         "compiler_error": file_path + ".comp.err",
@@ -127,8 +128,12 @@ def compile_and_run_file_test(file_path, file_name=None):
             for cmd in commands:
                 self.assertEqual(0, os.system(cmd))
                 self.reportProgres()
+            if os.path.exists(self.templ["rb_out_expected_path"]):
+                expected_file_path = self.templ["rb_out_expected_path"]
+            else:
+                expected_file_path = self.templ["py_out_path"]
             self.assertEqual(
-                open(self.templ["py_out_path"]).readlines(),
+                open(expected_file_path).readlines(),
                 open(self.templ["rb_out_path"]).readlines()
                 #file(self.templ["py_out_path"]).readlines(),
                 #file(self.templ["rb_out_path"]).readlines()

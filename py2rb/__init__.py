@@ -1379,15 +1379,11 @@ class RB(object):
         Tuple(expr* elts, expr_context ctx)
         """
         els = [self.visit(e) for e in node.elts]
-        #return "[%s].freeze" % (", ".join(els))
-        #return ", ".join(els)
         # True : () , False : []
         if self._is_tuple:
              return "(%s)" % (", ".join(els))
         else:
-             return "[%s].freeze" % (", ".join(els))
-             #return "[%s]" % (", ".join(els))
-        #return "tuple([%s])" % (", ".join(els))
+             return "[%s]" % (", ".join(els))
 
     def visit_Dict(self, node):
         """
