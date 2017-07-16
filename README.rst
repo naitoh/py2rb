@@ -101,19 +101,19 @@ The above will result in ::
             @name = name
         end
         def inc()
-            @fval += 1;
+            @fval += 1
         end
         def msg(a=nil, b=nil, c=nil)
-            txt = '';
-            varargs = [a, b, c];
+            txt = ''
+            varargs = [a, b, c]
             for arg in varargs
                 if arg === nil
                     next
                 end
-                txt += (arg).to_s;
-                txt += ',';
+                txt += (arg).to_s
+                txt += ','
             end
-            return (((txt)+(@name))+(' says:'))+((@fval).to_s);
+            return (((txt)+(@name))+(' says:'))+((@fval).to_s)
         end
         def self.register(f)
             @@registered.push(f)
@@ -124,10 +124,10 @@ The above will result in ::
             end
         end
     end
-    a = Foo.new(10,'a');
+    a = Foo.new(10,'a')
     a.setname('aaa')
-    b = Foo.new(20,'b');
-    c = Foo.new(30,'c');
+    b = Foo.new(20,'b')
+    c = Foo.new(30,'c')
     a.inc()
     a.inc()
     c.inc()
@@ -162,18 +162,18 @@ The above will result in ::
     $ ./py2rb.py tests/numpy/numpy_and.py
     require 'numo/narray'
     def AND (x1, x2)
-        x = Numo::NArray[x1, x2];
-        w = Numo::NArray[0.5, 0.5];
-        b = -(0.7);
-        tmp = (((w)*(x)).sum)+(b);
+        x = Numo::NArray[x1, x2]
+        w = Numo::NArray[0.5, 0.5]
+        b = -(0.7)
+        tmp = (((w)*(x)).sum)+(b)
         if tmp <= 0
-            return 0;
+            return 0
         else
-            return 1;
+            return 1
         end
     end
     for xs in [[0, 0], [1, 0], [0, 1], [1, 1]]
-        y = AND(xs[0],xs[1]);
+        y = AND(xs[0],xs[1])
         print((((xs).to_s)+(' -> '))+((y).to_s))
     end
 

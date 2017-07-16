@@ -480,9 +480,9 @@ class RB(object):
 
     def visit_Return(self, node):
         if node.value is not None:
-            self.write("return %s;" % self.visit(node.value))
+            self.write("return %s" % self.visit(node.value))
         else:
-            self.write("return;")
+            self.write("return")
 
     def visit_Delete(self, node):
         """
@@ -542,7 +542,7 @@ class RB(object):
             # multiassign.py
             """ x, y, z = [1, 2, 3] """
             x = [self.visit(t) for t in target.elts]
-            self.write("%s = %s;" % (','.join(x), value))
+            self.write("%s = %s" % (','.join(x), value))
         elif isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Index):
             # found index assignment # a[0] = xx
             #self.write("%s%s = %s" % (self.visit(target.value), # a[0] = xx
@@ -574,9 +574,9 @@ class RB(object):
                 if isinstance(node.value, ast.Lambda):
                     self._lambda_functions.append(var)
                     #print var
-                    self.write("%s%s = lambda %s;" % (declare, var, value))
+                    self.write("%s%s = lambda %s" % (declare, var, value))
                 else:
-                    self.write("%s%s = %s;" % (declare, var, value))
+                    self.write("%s%s = %s" % (declare, var, value))
             elif isinstance(target, ast.Attribute):
                 var = self.visit(target)
                 """ [instance variable] : 
@@ -599,7 +599,6 @@ class RB(object):
         value = self.visit(node.value)
 
         if isinstance(node.op, ast.Pow):
-            #self.write("%s = Math.pow(%s, %s);" % (target, target, value))
             self.write("%s = %s ** %s" % (target, target, value))
         #elif isinstance(node.op, ast.FloorDiv):
         #    #self.write("%s = Math.floor((%s)/(%s));" % (target, target, value))
@@ -607,7 +606,7 @@ class RB(object):
         elif isinstance(node.op, ast.Div):
             self.write("%s = (%s)/(%s).to_f" % (target, target, value))
         else:
-            self.write("%s %s= %s;" % (target, self.get_binary_op(node), value))
+            self.write("%s %s= %s" % (target, self.get_binary_op(node), value))
 
     @scope
     def visit_For(self, node):
@@ -904,7 +903,6 @@ class RB(object):
         self._scope.extend(node.names)
 
     def visit_Expr(self, node):
-        #self.write(self.visit(node.value) + ";")
         self.write(self.visit(node.value))
 
     def visit_Pass(self, node):
@@ -912,10 +910,9 @@ class RB(object):
         #self.write("/* pass */")
 
     def visit_Break(self, node):
-        self.write("break;")
+        self.write("break")
 
     def visit_Continue(self, node):
-        #self.write("continue;")
         self.write("next")
 
     # Python 3
@@ -1281,7 +1278,6 @@ class RB(object):
             if node.type is None:
                 self.write("raise")
             else:
-                #self.write("throw %s;" % self.visit(node.type))
                 self.write("raise %s" % self.visit(node.type))
         else:
             if node.exc is None:
