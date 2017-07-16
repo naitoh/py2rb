@@ -75,6 +75,8 @@ class RB(object):
     }
 
     attribute_map = {
+        'upper'    : 'upcase',
+        'lower'    : 'downcase',
         'append'   : 'push',
         'sort'     : 'sort!',
         'reverse'  : 'reverse!',

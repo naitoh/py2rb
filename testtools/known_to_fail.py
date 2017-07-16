@@ -40,7 +40,6 @@ KNOWN_TO_FAIL = [
     "tests/strings/string_format_o.py",
     "tests/strings/string_format_u.py",
     "tests/strings/string_format_x.py",
-    "tests/strings/ulcase.py",
 
     "tests/unittest/assertEqual.py",
     "tests/unittest/assertIn.py",

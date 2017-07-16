@@ -137,7 +137,7 @@ tests/strings/string_format_s_simple.py [4]: ....                [OK]
 tests/strings/strings_in_strings.py [4]: ..                    [FAIL]
 tests/strings/strip.py [4]: ....                                 [OK]
 tests/strings/strip1.py [4]: ....                                [OK]
-tests/strings/ulcase1.py [4]: ..                               [FAIL]
+tests/strings/ulcase.py [4]: ....                                [OK]
 tests/strings/zipstring.py [4]: ..                             [FAIL]
 tests/unittest/class.py [4]: ....                                [OK]
 tests/basic/class3.py [4]: ..                         known to [FAIL]
@@ -174,9 +174,8 @@ tests/strings/string_format_i.py [4]: ..              known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_u.py [4]: ..              known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-tests/strings/ulcase.py [4]: ..                       known to [FAIL]
 tests/unittest/assertEqual.py [4]: ...                known to [FAIL]
 tests/unittest/assertIn.py [4]: ...                   known to [FAIL]
-Ran 179 tests in 63.134s
+Ran 178 tests in 59.374s
 
-FAILED (failures=26, expected failures=37)
+FAILED (failures=25, expected failures=36)
