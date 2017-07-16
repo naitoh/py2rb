@@ -68,6 +68,30 @@ module PythonIndexEx
       return ret.nil? ? -1 : ret
     end
 
+    def strip(chars='')
+      if chars == ''
+         super()
+      else
+         self.gsub(/(^[#{chars}]*)|([#{chars}]*$)/, '')
+      end
+    end
+
+    def lstrip(chars='')
+      if chars == ''
+         super()
+      else
+         self.gsub(/(^[#{chars}]*)/, '')
+      end
+    end
+
+    def rstrip(chars='')
+      if chars == ''
+         super()
+      else
+         self.gsub(/([#{chars}]*$)/, '')
+      end
+    end
+
     alias :each :chars
   end
 end
