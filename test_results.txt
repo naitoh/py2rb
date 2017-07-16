@@ -114,7 +114,7 @@ tests/lists/xrange.py [4]: ....                                  [OK]
 tests/lists/zip.py [4]: ....                                     [OK]
 tests/numpy/numpy_and.py [4]: ....                               [OK]
 tests/numpy/relu.py [4]: ..                                    [FAIL]
-tests/numpy/sigmoid.py [4]: ..                                 [FAIL]
+tests/numpy/sigmoid.py [4]: ....                                 [OK]
 tests/os/path_basename.py [4]: ....                              [OK]
 tests/os/path_dirname.py [4]: ....                               [OK]
 tests/os/path_join.py [4]: ....                                  [OK]
@@ -177,6 +177,6 @@ tests/strings/string_format_x.py [4]: ...             known to [FAIL]
 tests/strings/ulcase.py [4]: ..                       known to [FAIL]
 tests/unittest/assertEqual.py [4]: ...                known to [FAIL]
 tests/unittest/assertIn.py [4]: ...                   known to [FAIL]
-Ran 179 tests in 64.249s
+Ran 179 tests in 61.537s
 
-FAILED (failures=33, expected failures=37)
+FAILED (failures=32, expected failures=37)

@@ -16,7 +16,7 @@ numpy:
                   linspace: 'Numo::DFloat.linspace'}
   order_methods_with_bracket: {exp: 'Numo::NMath.exp'}
   reverse_methods: {sum: 'sum'}
-  range_methods: {arange: 'Numo::DFloat.new(20).seq(-1,0.1)'}
+  range_methods: {arange: 'Numo::DFloat.new'}
 
 os:
   id: 

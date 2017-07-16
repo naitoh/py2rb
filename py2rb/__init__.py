@@ -604,7 +604,10 @@ class RB(object):
         #    #self.write("%s = Math.floor((%s)/(%s));" % (target, target, value))
         #    self.write("%s = (%s/%s)" % (target, target, value))
         elif isinstance(node.op, ast.Div):
-            self.write("%s = (%s)/(%s).to_f" % (target, target, value))
+            if re.search(r"Numo::", target) or re.search(r"Numo::", value):
+                self.write("%s = (%s)/(%s)" % (target, target, value))
+            else:
+                self.write("%s = (%s)/(%s).to_f" % (target, target, value))
         else:
             self.write("%s %s= %s" % (target, self.get_binary_op(node), value))
 
@@ -994,7 +997,10 @@ class RB(object):
         if isinstance(node.op, ast.Pow):
             return "%s ** %s" % (left, right)
         if isinstance(node.op, ast.Div):
-            return "(%s)/(%s).to_f" % (left, right)
+            if re.search(r"Numo::", left) or re.search(r"Numo::", right):
+                return "(%s)/(%s)" % (left, right)
+            else:
+                return "(%s)/(%s).to_f" % (left, right)
 
         return "(%s)%s(%s)" % (left, self.get_binary_op(node), right)
 
@@ -1133,8 +1139,6 @@ class RB(object):
                 keywords.append("%s: %s" % (kw.arg, self.visit(kw.value)))
             #keywords = "{" + ", ".join(keywords) + "}"
             keywords =  ", ".join(keywords)
-            #rb_args = ",".join([ self.visit(arg) for arg in node.args ])
-            #return "%s.args([%s], %s)" % (func, rb_args,
             return "%s(%s, %s)" % (func, rb_args,
                     keywords)
         else:
@@ -1145,8 +1149,6 @@ class RB(object):
                 if node.kwargs is not None:
                     raise RubyError("keyword arguments are not supported")
 
-            #rb_args = ",".join([ self.visit(arg) for arg in node.args ])
-            #return "%s(%s)" % (func, rb_args)
             #if len(rb_args_arr) == 1:
             #    if func in self.order_methods_with_bracket_1.keys():
             #        if (type(rb_args_arr[0]) == int) or (type(rb_args_arr[0]) == str):
@@ -1178,10 +1180,6 @@ class RB(object):
                 <Python> np.array([x1, x2])
                 <Ruby>   Numo::NArray[x1, x2] 
                 """
-                """ [Function convert to Method]
-                <Python> np.arange(-1.0, 1.0, 0.1)
-                <Ruby>   Numo::DFloat.new(20).seq(-1,0.1)
-                """
                 return "%s%s" % (self.order_methods_without_bracket[func], rb_args_arr[0])
             elif func in self.order_methods_with_bracket.keys():
                 """ [Function convert to Method]
@@ -1202,6 +1200,26 @@ class RB(object):
                     """ <Python> map(foo, [1, 2])
                         <Ruby>   [1, 2].map{|_|foo(_)} """
                     return "%s.%s{|_| %s(_)}" % (rb_args_arr[1], func, rb_args_arr[0])
+            elif func in self.range_methods.keys():
+                """ [range Function convert to Method]
+                <Python> np.arange(-1.0, 1.0, 0.1)
+                <Ruby>   Numo::DFloat.new(20).seq(-1,0.1)
+                """
+                if len(node.args) == 1:
+                    """ [0, 1, 2, 3, 4, 5]
+                        <Python> np.range(6)
+                        <Ruby>   Numo::DFloat.new(6).seq(0) """
+                    return "%s(%s).seq(0)" % (self.range_methods[func], rb_args_arr[0])
+                elif len(node.args) == 2:
+                    """ [1, 2, 3, 4, 5]
+                        <Python> np.range(1,6)
+                        <Ruby>   Numo::DFloat.new(6-1).seq(1) """
+                    return "%(m)s(%(e)s-(%(s)s)).seq(%(s)s)" % {'m':self.range_methods[func], 's':rb_args_arr[0], 'e':rb_args_arr[1]}
+                else:
+                    """ [1, 3, 5]
+                        <Python> np.range(1,6,2) # s:start, e:stop, t:step
+                        <Ruby>   Numo::DFloat.new(((6-1)/2.to_f).ceil).seq(1,2) """
+                    return "%(m)s(((%(e)s-(%(s)s))/(%(t)s).to_f).ceil).seq(%(s)s,%(t)s)" % {'m':self.range_methods[func], 's':rb_args_arr[0], 'e':rb_args_arr[1], 't':rb_args_arr[2]}
             elif func in self.range_map:
                 """ [range] """
                 rs = [ self.visit(arg) for arg in node.args ]
