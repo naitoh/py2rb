@@ -1092,14 +1092,9 @@ class RB(object):
         """
         Str(string s)
         """
-        # Uses the Python builtin repr() of a string and the strip string type
-        # from it. This is to ensure Javascriptness, even when they use things
-        # like b"\\x00" or u"\\u0000".
-        #return "str(%s)" % repr(node.s).lstrip("urb")
-        return "%s" % repr(node.s)
-        #return repr(node.s)
-        txt = re.sub(r'^\'', '"', repr(node.s))
-        txt = re.sub(r'\'$', '"', txt)
+        # Uses the Python builtin repr() of a string and the strip string type from it.
+        txt = re.sub(r'"', '\\"', repr(node.s)[1:-1])
+        txt = '"' + txt + '"'
         return txt
 
     def visit_Call(self, node):
