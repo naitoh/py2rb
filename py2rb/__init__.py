@@ -84,6 +84,12 @@ class RB(object):
         'rfind'    : 'rindex',
         'endswith' : 'end_with?',
     }
+    attribute_not_arg = {
+        'split'   : 'split',
+    }
+    attribute_with_arg = {
+        'split'   : 'split_p',
+    }
 
     call_attribute_map = set([
         'join',
@@ -172,6 +178,7 @@ class RB(object):
         self._class_name = None
         # This is use () case of the tuple that we are currently in:
         self._is_tuple = False # True : "()" , False : "[]", None: ""
+        self._func_args_len = 0
 
         # This lists all variables in the local scope:
         self._scope = []
@@ -1103,7 +1110,14 @@ class RB(object):
         """
         Call(expr func, expr* args, keyword* keywords)
         """
+        rb_args = [ self.visit(arg) for arg in node.args ]
+        self._func_args_len = len(rb_args)
+        if len(rb_args) == 1:
+            rb_args_s = rb_args[0]
+        else:
+            rb_args_s = ",".join(rb_args)
         func = self.visit(node.func)
+        self._func_args_len = 0
         """ [Class Instance Create] : 
         <Python> foo()
         <Ruby>   Foo.new()
@@ -1121,11 +1135,6 @@ class RB(object):
         #    else:
         #       rb_args.append(self.visit(arg))
         # ast.Tuple, ast.List, ast.*
-        rb_args = [ self.visit(arg) for arg in node.args ]
-        if len(rb_args) == 1:
-            rb_args_s = rb_args[0]
-        else:
-            rb_args_s = ",".join(rb_args)
         if node.keywords:
             """ [Keyword Argument] : 
             <Python> foo(1, fuga=2):
@@ -1307,13 +1316,23 @@ class RB(object):
         Attribute(expr value, identifier attr, expr_context ctx)
         """
         attr = node.attr
-        try:
+        if attr in self.attribute_map.keys():
             """ [Attribute method converter]
             <Python> fuga.append(bar)
             <Ruby>   fuga.push(bar)   """
             attr = self.attribute_map[attr]
-        except KeyError:
-            pass
+        if self._func_args_len == 0:
+            """ [Attribute method converter without args]
+            <Python> fuga.split()
+            <Ruby>   fuga.split()   """
+            if attr in self.attribute_not_arg.keys():
+                attr = self.attribute_not_arg[attr]
+        else:
+            """ [Attribute method converter with args]
+            <Python> fuga.split(foo,bar)
+            <Ruby>   fuga.split_p(foo,bar)   """
+            if attr in self.attribute_with_arg.keys():
+                attr = self.attribute_with_arg[attr]
 
         if isinstance(node.value, ast.Name):
             if node.value.id == 'self':

@@ -68,6 +68,19 @@ module PythonIndexEx
       return ret.nil? ? -1 : ret
     end
 
+    def split_p(sep = '', limit=0)
+      case sep
+      when ' '
+        sep = / /
+      when ''
+        sep = $;
+      end
+      if limit > 0
+        limit +=1
+      end
+      self.split(sep, limit)
+    end
+
     def strip(chars='')
       if chars == ''
          super()
