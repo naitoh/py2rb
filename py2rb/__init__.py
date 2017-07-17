@@ -86,6 +86,7 @@ class RB(object):
     }
     attribute_not_arg = {
         'split'   : 'split',
+        'splitlines': 'split("\n")',
     }
     attribute_with_arg = {
         'split'   : 'split_p',
@@ -1284,7 +1285,10 @@ class RB(object):
                             args_arr += (rb_args[2:])
                         return "%s(%s)" % (self.order_methods_with_bracket_2_1_x[base_func], ','.join(args_arr))
                 else:
-                    return "%s(%s)" % (func, rb_args_s) ####
+                    if len(rb_args) == 0:
+                        return "%s" % (func)
+                    else:
+                        return "%s(%s)" % (func, rb_args_s)
 
     def visit_Raise(self, node):
         """
