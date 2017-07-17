@@ -180,6 +180,7 @@ class RB(object):
         # This is use () case of the tuple that we are currently in:
         self._is_tuple = False # True : "()" , False : "[]", None: ""
         self._func_args_len = 0
+        self._dict_format = False # True : Symbol ":", False : String "=>"
 
         # This lists all variables in the local scope:
         self._scope = []
@@ -999,7 +1000,11 @@ class RB(object):
     def visit_BinOp(self, node):
         if isinstance(node.op, ast.Mod) and isinstance(node.left, ast.Str):
             left = self.visit(node.left)
+            # 'b=%(b)0d and c=%(c)d and d=%(d)d' => 'b=%<b>0d and c=%<c>d and d=%<d>d'
+            left = re.sub(r"(.+?%)\((.+?)\)(.+?)", r"\1<\2>\3", left)
+            self._dict_format = True
             right = self.visit(node.right)
+            self._dict_format = False
             return "%s %% %s" % (left, right)
         left = self.visit(node.left)
         right = self.visit(node.right)
@@ -1421,12 +1426,12 @@ class RB(object):
         els = []
         for k, v in zip(node.keys, node.values):
             if isinstance(k, ast.Name):
-                #els.append('tuple(["%s", %s])' % (self.visit(k), self.visit(v)))
                 els.append('"%s" => %s' % (self.visit(k), self.visit(v)))
-            else:
-                #els.append("tuple([%s, %s])" % (self.visit(k), self.visit(v)))
-                els.append("%s => %s" % (self.visit(k), self.visit(v)))
-        #return "dict(tuple([%s]))" % (",\n".join(els))
+            else: # ast.Str, ast.Num
+                if self._dict_format == True: # ast.Str
+                    els.append("%s: %s" % (self.visit(k), self.visit(v)))
+                else: # ast.Str, ast.Num
+                    els.append("%s => %s" % (self.visit(k), self.visit(v)))
         return "{%s}" % (", ".join(els))
 
     def visit_List(self, node):

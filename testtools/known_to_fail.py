@@ -34,11 +34,8 @@ KNOWN_TO_FAIL = [
     "tests/modules/module_name.py",
     "tests/modules/rng.py",
 
-    "tests/strings/string_format_d.py",
     "tests/strings/string_format_efg.py",
-    "tests/strings/string_format_i.py",
     "tests/strings/string_format_o.py",
-    "tests/strings/string_format_u.py",
     "tests/strings/string_format_x.py",
 
     "tests/unittest/assertEqual.py",
