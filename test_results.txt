@@ -119,7 +119,7 @@ tests/os/path_basename.py [4]: ....                              [OK]
 tests/os/path_dirname.py [4]: ....                               [OK]
 tests/os/path_join.py [4]: ....                                  [OK]
 tests/os/walk.py [4]: ....                                       [OK]
-tests/strings/count.py [4]: ..                                 [FAIL]
+tests/strings/count.py [4]: ....                                 [OK]
 tests/strings/find.py [4]: ....                                  [OK]
 tests/strings/join.py [4]: ....                                  [OK]
 tests/strings/lstrip0.py [4]: ....                               [OK]
@@ -176,6 +176,6 @@ tests/strings/string_format_u.py [4]: ..              known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
 tests/unittest/assertEqual.py [4]: ...                known to [FAIL]
 tests/unittest/assertIn.py [4]: ...                   known to [FAIL]
-Ran 178 tests in 59.374s
+Ran 178 tests in 58.156s
 
-FAILED (failures=25, expected failures=36)
+FAILED (failures=24, expected failures=36)

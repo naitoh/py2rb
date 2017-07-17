@@ -92,6 +92,18 @@ module PythonIndexEx
       end
     end
 
+    # Replace to Python String#count
+    alias :count_r :count
+    def count(substr, start_pos=nil, end_pos=nil)
+      if start_pos.nil?
+         self.scan(substr).size
+      elsif end_pos.nil?
+         self[start_pos..-1].scan(substr).size
+      else
+         self[start_pos...end_pos].scan(substr).size
+      end
+    end
+
     alias :each :chars
   end
 end
