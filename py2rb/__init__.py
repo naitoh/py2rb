@@ -262,13 +262,14 @@ class RB(object):
             else:
                 raise RubyError("decorators are not supported")
 
+        defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
         """ Class Method """
         if self._class_name:
             if node.args.kwarg is not None:
                 raise RubyError("keyword arguments are not supported")
             if node.decorator_list and not is_static and not is_javascript:
                 raise RubyError("decorators are not supported")
-            defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
+            #defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
             if six.PY2:
                 self._scope = [arg.id for arg in node.args.args]
             else:
@@ -308,14 +309,15 @@ class RB(object):
                 func_name = node.name
 
             self.indent()
+            rb_args = ", ".join(rb_args)
             if node.args.vararg is None:
-                self.write("def %s(%s)" % (func_name, ", ".join(rb_args)))
+                self.write("def %s(%s)" % (func_name, rb_args))
             else:
                 """ star arguments """
                 if six.PY2:
-                    self.write("def %s (%s, *%s)" % (func_name, ", ".join(rb_args), node.args.vararg))
+                    self.write("def %s (%s, *%s)" % (func_name, rb_args, node.args.vararg))
                 else:
-                    self.write("def %s (%s, *%s)" % (func_name, ", ".join(rb_args), self.visit(node.args.vararg)))
+                    self.write("def %s (%s, *%s)" % (func_name, rb_args, self.visit(node.args.vararg)))
 
             self.indent()
             for stmt in node.body:
@@ -334,8 +336,8 @@ class RB(object):
             <Ruby>   def foo(fuga, hoge)
                      def bar(fuga, hoge, *piyo)
             """
-            defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
-            args = []
+            #defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
+            rb_args = []
             for arg, default in zip(node.args.args, defaults):
                 if six.PY2:
                     if not isinstance(arg, ast.Name):
@@ -343,20 +345,20 @@ class RB(object):
                     arg_id = arg.id
                 else:
                     arg_id = arg.arg
-
-                if default is not None:
-                    args.append("%s: %s" % (arg_id, self.visit(default)))
-                    #if self.visit(default) == None:
+                if default is None:
+                    rb_args.append(arg_id)
                 else:
-                    args.append(arg_id)
-            args = ", ".join(args)
+                    rb_args.append("%s: %s" % (arg_id, self.visit(default)))
+            rb_args = ", ".join(rb_args)
+            func_name = node.name
             if node.args.vararg is None:
-                self.write("def %s (%s)" % (node.name, args))
+                self.write("def %s(%s)" % (func_name, rb_args))
             else:
+                """ star arguments """
                 if six.PY2:
-                    self.write("def %s (%s, *%s)" % (node.name, args, node.args.vararg))
+                    self.write("def %s (%s, *%s)" % (func_name, rb_args, node.args.vararg))
                 else:
-                    self.write("def %s (%s, *%s)" % (node.name, args, self.visit(node.args.vararg)))
+                    self.write("def %s (%s, *%s)" % (func_name, rb_args, self.visit(node.args.vararg)))
             if six.PY2:
                 self._scope = [arg.id for arg in node.args.args]
             else:
