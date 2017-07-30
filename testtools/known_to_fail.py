@@ -3,14 +3,18 @@ KNOWN_TO_FAIL = [
     "tests/basic/nestedclass.py",
     "tests/basic/super.py",
     "tests/basic/kwargs.py",
-    "tests/basic/oo_inherit.py",
     "tests/basic/listcomp2.py",
     "tests/basic/del_local.py",
     "tests/basic/valueerror.py",
     "tests/basic/del_attr.py",
     "tests/basic/del_global.py",
     "tests/basic/generator.py",
-    "tests/basic/class3.py",
+    "tests/basic/class3.py",  # Can't call class()
+    "tests/basic/class4.py",  # Can't call class()
+    "tests/basic/class5.py",  # Can't call class()
+    "tests/basic/class6.py",  # Can't call class()
+    "tests/basic/default.py", # Can't mix argument and keyward arguments.
+    "tests/basic/kwargs2.py", # Can't mix argument and keyward arguments.
     "tests/basic/hasattr.py",
 
     "tests/functions/sort_cmp.py",
@@ -35,11 +39,8 @@ KNOWN_TO_FAIL = [
     "tests/modules/rng.py",
 
     "tests/strings/string_format_efg.py",
-    "tests/strings/string_format_o.py",
-    "tests/strings/string_format_x.py",
-
-    "tests/unittest/assertEqual.py",
-    "tests/unittest/assertIn.py",
+    "tests/strings/string_format_o.py", # not support
+    "tests/strings/string_format_x.py", # not support
     ]
 
 
