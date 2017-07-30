@@ -2,7 +2,6 @@
 KNOWN_TO_FAIL = [
     "tests/basic/nestedclass.py",
     "tests/basic/super.py",
-    "tests/basic/kwargs.py",
     "tests/basic/listcomp2.py",
     "tests/basic/del_local.py",
     "tests/basic/valueerror.py",

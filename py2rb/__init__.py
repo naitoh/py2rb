@@ -265,8 +265,6 @@ class RB(object):
                 raise RubyError("decorators are not supported")
 
         defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
-        if node.args.kwarg is not None:
-            raise RubyError("keyword arguments are not supported")
         """ Class Method """
         if self._class_name:
             #if node.decorator_list and not is_static and not is_javascript:
@@ -308,7 +306,6 @@ class RB(object):
                 if not (rb_args[0] == "self"):
                     raise NotImplementedError("The first argument must be 'self'.")
                 del rb_args[0]
-        rb_args = ", ".join(rb_args)
 
         if '__init__' == node.name:
             func_name = 'initialize'
@@ -321,14 +318,24 @@ class RB(object):
         if self._class_name:
             self.indent()
 
-        if node.args.vararg is None:
-            self.write("def %s(%s)" % (func_name, rb_args))
-        else:
-            """ star arguments """
+        """ star arguments """
+        if node.args.vararg:
             if six.PY2:
-                self.write("def %s (%s, *%s)" % (func_name, rb_args, node.args.vararg))
+                vararg = "*%s" % node.args.vararg
             else:
-                self.write("def %s (%s, *%s)" % (func_name, rb_args, self.visit(node.args.vararg)))
+                vararg = "*%s" % self.visit(node.args.vararg)
+            rb_args.append(vararg)
+
+        """ double star arguments """
+        if node.args.kwarg:
+            if six.PY2:
+                kwarg = "**%s" % node.args.kwarg
+            else:
+                kwarg = "**%s" % self.visit(node.args.kwarg)
+            rb_args.append(kwarg)
+        rb_args = ", ".join(rb_args)
+
+        self.write("def %s(%s)" % (func_name, rb_args))
 
         if self._class_name is None:
             #
