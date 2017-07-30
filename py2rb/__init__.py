@@ -260,30 +260,20 @@ class RB(object):
                     node.decorator_list[0].id == "staticmethod":
                 is_static = True
             else:
-                #pass
                 raise RubyError("decorators are not supported")
 
+        """ Class Method """
         if self._class_name:
-            #if node.args.vararg is not None:
-            #    raise RubyError("star arguments are not supported")
-
             if node.args.kwarg is not None:
                 raise RubyError("keyword arguments are not supported")
-
             if node.decorator_list and not is_static and not is_javascript:
-                #pass
                 raise RubyError("decorators are not supported")
-
             defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
-
             if six.PY2:
                 self._scope = [arg.id for arg in node.args.args]
             else:
                 self._scope = [arg.arg for arg in node.args.args]
-
             rb_args = []
-            #rb_defaults = []
-            rb_attr = []
             for arg, default in zip(node.args.args, defaults):
                 if six.PY2:
                     if not isinstance(arg, ast.Name):
@@ -291,31 +281,23 @@ class RB(object):
                     arg_id = arg.id
                 else:
                     arg_id = arg.arg
-
-                if default is not None:
-                    rb_args.append("%s=%s" % (arg_id, self.visit(default)))
-                    # rb_defaults.append("%(id)s = typeof(%(id)s) != 'undefined' ? %(id)s : %(def)s;\n" % { 'id': arg_id, 'def': self.visit(default) })
-                else:
+                if default is None:
                     rb_args.append(arg_id)
-
+                else:
+                    rb_args.append("%s=%s" % (arg_id, self.visit(default)))
             if self._class_name:
                 if not is_static:
                     if not (rb_args[0] == "self"):
                         raise NotImplementedError("The first argument must be 'self'.")
                     del rb_args[0]
 
-            #for stmt in rb_attr:
-            #    self.write(stmt)
             """ [instance method] : 
-            <Python>
-            class foo:
-                def __init__(self, fuga):
-                def bar(self, hoge):
-
-            <Ruby>
-            class Foo
-                def initialize(fuga)
-                def bar(hoge)
+            <Python> class foo:
+                         def __init__(self, fuga):
+                         def bar(self, hoge):
+            <Ruby>   class Foo
+                         def initialize(fuga)
+                         def bar(hoge)
             """
             if '__init__' == node.name:
                 func_name = 'initialize'
@@ -328,16 +310,14 @@ class RB(object):
             self.indent()
             if node.args.vararg is None:
                 self.write("def %s(%s)" % (func_name, ", ".join(rb_args)))
-                #self.write("def %s(%s)" % (func_name, args))
             else:
+                """ star arguments """
                 if six.PY2:
                     self.write("def %s (%s, *%s)" % (func_name, ", ".join(rb_args), node.args.vararg))
                 else:
                     self.write("def %s (%s, *%s)" % (func_name, ", ".join(rb_args), self.visit(node.args.vararg)))
 
             self.indent()
-            #for stmt in rb_defaults:
-            #    self.write(stmt)
             for stmt in node.body:
                 self.visit(stmt)
             self.dedent()
@@ -347,19 +327,15 @@ class RB(object):
 
             self._scope = []
         else:
+            """ Function Method """ 
             """ [method argument with Muliti Variables] : 
-            <Python>
-            def foo(fuga, hoge):
-            def bar(fuga, hoge, *piyo):
-
-            <Ruby>
-            def foo(fuga, hoge)
-            def bar(fuga, hoge, *piyo)
+            <Python> def foo(fuga, hoge):
+                     def bar(fuga, hoge, *piyo):
+            <Ruby>   def foo(fuga, hoge)
+                     def bar(fuga, hoge, *piyo)
             """
             defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
-
             args = []
-            #defaults2 = []
             for arg, default in zip(node.args.args, defaults):
                 if six.PY2:
                     if not isinstance(arg, ast.Name):
@@ -369,16 +345,11 @@ class RB(object):
                     arg_id = arg.arg
 
                 if default is not None:
-                    #defaults2.append("%s: %s" % (arg_id, self.visit(default)))
                     args.append("%s: %s" % (arg_id, self.visit(default)))
                     #if self.visit(default) == None:
                 else:
                     args.append(arg_id)
-            #defaults = "{" + ", ".join(defaults2) + "}"
             args = ", ".join(args)
-            #self.write("var %s = $def(%s, function(%s) {" % (node.name,
-            #self.write("def %s %s (%s)" % (node.name,
-            #    defaults, args))
             if node.args.vararg is None:
                 self.write("def %s (%s)" % (node.name, args))
             else:
@@ -1152,148 +1123,147 @@ class RB(object):
             #keywords = "{" + ", ".join(keywords) + "}"
             keywords =  ", ".join(keywords)
             return "%s(%s, %s)" % (func, rb_args_s, keywords)
-        else:
-            if six.PY2:
-                if node.starargs is not None:
-                    raise RubyError("star arguments are not supported")
+        
+        if six.PY2:
+            if node.starargs is not None:
+                raise RubyError("star arguments are not supported")
 
-                if node.kwargs is not None:
-                    raise RubyError("keyword arguments are not supported")
+            if node.kwargs is not None:
+                raise RubyError("keyword arguments are not supported")
 
-            #if len(rb_args) == 1:
-            #    if func in self.order_methods_with_bracket_1.keys():
-            #        if (type(rb_args[0]) == int) or (type(rb_args[0]) == str):
-            #            """ [Function convert to Method]
-            #            <Python> print(-x)
-            #            <Ruby>   puts(-x)
-            #            """
-            #            return "%s(%s)" % (self.order_methods_with_bracket_1[func], rb_args[0])
-            if func in self.ignore.keys():
-                """ [Function convert to Method]
-                <Python> unittest.main()
-                <Ruby>   ""
+        #if len(rb_args) == 1:
+        #    if func in self.order_methods_with_bracket_1.keys():
+        #        if (type(rb_args[0]) == int) or (type(rb_args[0]) == str):
+        #            """ [Function convert to Method]
+        #            <Python> print(-x)
+        #            <Ruby>   puts(-x)
+        #            """
+        #            return "%s(%s)" % (self.order_methods_with_bracket_1[func], rb_args[0])
+        if func in self.ignore.keys():
+            """ [Function convert to Method]
+            <Python> unittest.main()
+            <Ruby>   ""
+            """
+            return ""
+        elif func in self.reverse_methods.keys():
+            """ [Function convert to Method]
+            <Python> float(foo)
+            <Ruby>   (foo).to_f
+            """
+            return "(%s).%s" % (rb_args_s, self.reverse_methods[func])
+        elif func in self.methods_map_middle.keys():
+            """ [Function convert to Method]
+            <Python> isinstance(foo, String)
+            <Ruby>   foo.is_a?String
+            """
+            return "%s.%s%s" % (rb_args[0], self.methods_map_middle[func], rb_args[1])
+        elif func in self.order_methods_without_bracket.keys():
+            """ [Function convert to Method]
+            <Python> np.array([x1, x2])
+            <Ruby>   Numo::NArray[x1, x2]
+            """
+            return "%s%s" % (self.order_methods_without_bracket[func], rb_args[0])
+        elif func in self.order_methods_with_bracket.keys():
+            """ [Function convert to Method]
+            <Python> np.exp(-x)
+            <Ruby>   Numo::NMath.exp(-x)
+            """
+            return "%s(%s)" % (self.order_methods_with_bracket[func], ','.join(rb_args))
+        elif func in self.iter_map:
+            """ [map] """
+            if isinstance(node.args[0], ast.Lambda):
+                """ [Lambda Call with map] :
+                <Python> map(lambda x: x**2, [1,2])
+                <Ruby>   [1, 2].map{|x| x**2}
                 """
-                return ""
-            elif func in self.reverse_methods.keys():
-                """ [Function convert to Method]
-                <Python> float(foo)
-                <Ruby>   (foo).to_f
-                """
-                return "(%s).%s" % (rb_args_s, self.reverse_methods[func])
-            elif func in self.methods_map_middle.keys():
-                """ [Function convert to Method]
-                <Python> isinstance(foo, String)
-                <Ruby>   foo.is_a?String
-                """
-                return "%s.%s%s" % (rb_args[0], self.methods_map_middle[func], rb_args[1])
-            elif func in self.order_methods_without_bracket.keys():
-                """ [Function convert to Method]
-                <Python> np.array([x1, x2])
-                <Ruby>   Numo::NArray[x1, x2] 
-                """
-                return "%s%s" % (self.order_methods_without_bracket[func], rb_args[0])
-            elif func in self.order_methods_with_bracket.keys():
-                """ [Function convert to Method]
-                <Python> np.exp(-x)
-                <Ruby>   Numo::NMath.exp(-x)
-                """
-                return "%s(%s)" % (self.order_methods_with_bracket[func], ','.join(rb_args))
-            elif func in self.iter_map:
-                """ [map] """
-                if isinstance(node.args[0], ast.Lambda):
-                    """ [Lambda Call with map] : 
-                    <Python> map(lambda x: x**2, [1,2])
-                    <Ruby>   [1, 2].map{|x| x**2}
-                    """
-                    #return "%s.%s{%s}" % (rb_args[1], func, rb_args[0])
-                    return "%s.%s%s" % (rb_args[1], func, rb_args[0])
-                else:
-                    """ <Python> map(foo, [1, 2])
-                        <Ruby>   [1, 2].map{|_|foo(_)} """
-                    return "%s.%s{|_| %s(_)}" % (rb_args[1], func, rb_args[0])
-            elif func in self.range_methods.keys():
-                """ [range Function convert to Method]
-                <Python> np.arange(-1.0, 1.0, 0.1)
-                <Ruby>   Numo::DFloat.new(20).seq(-1,0.1)
-                """
-                if len(node.args) == 1:
-                    """ [0, 1, 2, 3, 4, 5] <Python> np.range(6)
-                                           <Ruby>   Numo::DFloat.new(6).seq(0) """
-                    return "%s(%s).seq(0)" % (self.range_methods[func], rb_args[0])
-                elif len(node.args) == 2:
-                    """ [1, 2, 3, 4, 5] <Python> np.range(1,6) # s:start, e:stop
-                                        <Ruby>   Numo::DFloat.new(6-1).seq(1) """
-                    return "%(m)s(%(e)s-(%(s)s)).seq(%(s)s)" % {'m':self.range_methods[func], 's':rb_args[0], 'e':rb_args[1]}
-                else:
-                    """ [1, 3, 5] <Python> np.range(1,6,2) # s:start, e:stop, t:step
-                                  <Ruby>   Numo::DFloat.new(((6-1)/2.to_f).ceil).seq(1,2) """
-                    return "%(m)s(((%(e)s-(%(s)s))/(%(t)s).to_f).ceil).seq(%(s)s,%(t)s)" % {'m':self.range_methods[func], 's':rb_args[0], 'e':rb_args[1], 't':rb_args[2]}
-            elif func in self.range_map:
-                """ [range] """
-                if len(node.args) == 1:
-                    """ [0, 1, 2] <Python> range(3)
-                                  <Ruby>   [].fill(0...3) {|_| _} """
-                    return "[].fill(0...(%s)){|_| _}" % (rb_args[0])
-                elif len(node.args) == 2:
-                    """ [1, 2] <Python> range(1,3)  # s:start, e:stop
-                               <Ruby>   [].fill(0...3-1) {|_| _+1} """
-                    return "[].fill(0...(%(e)s)-(%(s)s)){|_| _ + %(s)s}" % {'s':rb_args[0], 'e':rb_args[1]}
-                else:
-                    """ [1, 4, 7] <Python> range(1,10,3) # s:start, e:stop, t:step
-                                  <Ruby>   [].fill(0...10/3-1/3) {|_| _*3+1} """
-                    return "[].fill(0...(%(e)s)/(%(t)s)-(%(s)s)/(%(t)s)){|_| _*(%(t)s) + %(s)s}" % {'s':rb_args[0], 'e':rb_args[1], 't':rb_args[2]}
-            elif func in self.list_map:
-                """ [list]
-                <Python> list(range(3))
-                <Ruby>   [].fill(0...3) {|_| _}
-                """
-                #return "[].%s" % (rb_args_s)
-                return "%s" % (rb_args_s)
-            elif isinstance(node.func, ast.Lambda):
-                """ [Lambda Call] : 
-                <Python> (lambda x:x*x)(4)
-                <Ruby>    lambda{|x| x*x}.call(4)
-                """
-                return "lambda%s.call(%s)" % (func, rb_args_s)
-            elif isinstance(node.func, ast.Attribute) and (node.func.attr in self.call_attribute_map):
-                """ [Function convert to Method]
-                <Python> ' '.join(['a', 'b'])
-                <Ruby>   ['a', 'b'].join(' ')
-                """
-                return "%s.%s" % (rb_args_s, func)
-            elif (func in self._lambda_functions):
-                """ [Lambda Call] : 
-                <Python>
-                foo = lambda x:x*x
-                foo(4)
-                <Ruby>
-                foo = lambda{|x| x*x}
-                foo.call(4)
-                """
-                return "%s.call(%s)" % (func, rb_args_s)
+                #return "%s.%s{%s}" % (rb_args[1], func, rb_args[0])
+                return "%s.%s%s" % (rb_args[1], func, rb_args[0])
             else:
-                for base_class in self._base_classes:
-                    base_func = "%s.%s" % (base_class, func)
-                    if base_func in self.order_methods_with_bracket.keys():
-                        """ [Inherited Instance Method] : 
-                        <Python> self.assertEqual()
-                        <Ruby>   assert_equal()
-                        """
-                        return "%s(%s)" % (self.order_methods_with_bracket[base_func], ','.join(rb_args))
-                    if base_func in self.order_methods_with_bracket_2_1_x.keys():
-                        """ [Inherited Instance Method] : 
-                        <Python> self.assertIn('foo', ['foo', 'bar'], 'message test')
-                        <Ruby>   assert_include(['foo', 'bar'],'foo','message test')
-                        """
-                        args_arr = [rb_args[1], rb_args[0]]
-                        if len(rb_args) > 2:
-                            args_arr += (rb_args[2:])
-                        return "%s(%s)" % (self.order_methods_with_bracket_2_1_x[base_func], ','.join(args_arr))
+                """ <Python> map(foo, [1, 2])
+                    <Ruby>   [1, 2].map{|_|foo(_)} """
+                return "%s.%s{|_| %s(_)}" % (rb_args[1], func, rb_args[0])
+        elif func in self.range_methods.keys():
+            """ [range Function convert to Method]
+            <Python> np.arange(-1.0, 1.0, 0.1)
+            <Ruby>   Numo::DFloat.new(20).seq(-1,0.1)
+            """
+            if len(node.args) == 1:
+                """ [0, 1, 2, 3, 4, 5] <Python> np.range(6)
+                                       <Ruby>   Numo::DFloat.new(6).seq(0) """
+                return "%s(%s).seq(0)" % (self.range_methods[func], rb_args[0])
+            elif len(node.args) == 2:
+                """ [1, 2, 3, 4, 5] <Python> np.range(1,6) # s:start, e:stop
+                                    <Ruby>   Numo::DFloat.new(6-1).seq(1) """
+                return "%(m)s(%(e)s-(%(s)s)).seq(%(s)s)" % {'m':self.range_methods[func], 's':rb_args[0], 'e':rb_args[1]}
+            else:
+                """ [1, 3, 5] <Python> np.range(1,6,2) # s:start, e:stop, t:step
+                              <Ruby>   Numo::DFloat.new(((6-1)/2.to_f).ceil).seq(1,2) """
+                return "%(m)s(((%(e)s-(%(s)s))/(%(t)s).to_f).ceil).seq(%(s)s,%(t)s)" % {'m':self.range_methods[func], 's':rb_args[0], 'e':rb_args[1], 't':rb_args[2]}
+        elif func in self.range_map:
+            """ [range] """
+            if len(node.args) == 1:
+                """ [0, 1, 2] <Python> range(3)
+                              <Ruby>   [].fill(0...3) {|_| _} """
+                return "[].fill(0...(%s)){|_| _}" % (rb_args[0])
+            elif len(node.args) == 2:
+                """ [1, 2] <Python> range(1,3)  # s:start, e:stop
+                           <Ruby>   [].fill(0...3-1) {|_| _+1} """
+                return "[].fill(0...(%(e)s)-(%(s)s)){|_| _ + %(s)s}" % {'s':rb_args[0], 'e':rb_args[1]}
+            else:
+                """ [1, 4, 7] <Python> range(1,10,3) # s:start, e:stop, t:step
+                              <Ruby>   [].fill(0...10/3-1/3) {|_| _*3+1} """
+                return "[].fill(0...(%(e)s)/(%(t)s)-(%(s)s)/(%(t)s)){|_| _*(%(t)s) + %(s)s}" % {'s':rb_args[0], 'e':rb_args[1], 't':rb_args[2]}
+        elif func in self.list_map:
+            """ [list]
+            <Python> list(range(3))
+            <Ruby>   [].fill(0...3) {|_| _}
+            """
+            #return "[].%s" % (rb_args_s)
+            return "%s" % (rb_args_s)
+        elif isinstance(node.func, ast.Lambda):
+            """ [Lambda Call] :
+            <Python> (lambda x:x*x)(4)
+            <Ruby>    lambda{|x| x*x}.call(4)
+            """
+            return "lambda%s.call(%s)" % (func, rb_args_s)
+        elif isinstance(node.func, ast.Attribute) and (node.func.attr in self.call_attribute_map):
+            """ [Function convert to Method]
+            <Python> ' '.join(['a', 'b'])
+            <Ruby>   ['a', 'b'].join(' ')
+            """
+            return "%s.%s" % (rb_args_s, func)
+        elif (func in self._lambda_functions):
+            """ [Lambda Call] :
+            <Python> foo = lambda x:x*x
+                     foo(4)
+            <Ruby>   foo = lambda{|x| x*x}
+                     foo.call(4)
+            """
+            return "%s.call(%s)" % (func, rb_args_s)
+        else:
+            """ [Inherited Instance Method] """
+            for base_class in self._base_classes:
+                base_func = "%s.%s" % (base_class, func)
+                if base_func in self.order_methods_with_bracket.keys():
+                    """ [Inherited Instance Method] :
+                    <Python> self.assertEqual()
+                    <Ruby>   assert_equal()
+                    """
+                    return "%s(%s)" % (self.order_methods_with_bracket[base_func], ','.join(rb_args))
+                if base_func in self.order_methods_with_bracket_2_1_x.keys():
+                    """ [Inherited Instance Method] :
+                    <Python> self.assertIn('foo', ['foo', 'bar'], 'message test')
+                    <Ruby>   assert_include(['foo', 'bar'],'foo','message test')
+                    """
+                    args_arr = [rb_args[1], rb_args[0]]
+                    if len(rb_args) > 2:
+                        args_arr += (rb_args[2:])
+                    return "%s(%s)" % (self.order_methods_with_bracket_2_1_x[base_func], ','.join(args_arr))
+            else:
+                if len(rb_args) == 0:
+                    return "%s" % (func)
                 else:
-                    if len(rb_args) == 0:
-                        return "%s" % (func)
-                    else:
-                        return "%s(%s)" % (func, rb_args_s)
+                    return "%s(%s)" % (func, rb_args_s)
 
     def visit_Raise(self, node):
         """
