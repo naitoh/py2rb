@@ -261,117 +261,94 @@ class RB(object):
                 is_static = True
             else:
                 raise RubyError("decorators are not supported")
+            if self._class_name and not is_static and not is_javascript:
+                raise RubyError("decorators are not supported")
 
         defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
+        if node.args.kwarg is not None:
+            raise RubyError("keyword arguments are not supported")
         """ Class Method """
         if self._class_name:
-            if node.args.kwarg is not None:
-                raise RubyError("keyword arguments are not supported")
-            if node.decorator_list and not is_static and not is_javascript:
-                raise RubyError("decorators are not supported")
-            #defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
+            #if node.decorator_list and not is_static and not is_javascript:
+            #    raise RubyError("decorators are not supported")
             if six.PY2:
                 self._scope = [arg.id for arg in node.args.args]
             else:
                 self._scope = [arg.arg for arg in node.args.args]
-            rb_args = []
-            for arg, default in zip(node.args.args, defaults):
-                if six.PY2:
-                    if not isinstance(arg, ast.Name):
-                        raise RubyError("tuples in argument list are not supported")
-                    arg_id = arg.id
-                else:
-                    arg_id = arg.arg
-                if default is None:
-                    rb_args.append(arg_id)
-                else:
-                    rb_args.append("%s=%s" % (arg_id, self.visit(default)))
-            if self._class_name:
-                if not is_static:
-                    if not (rb_args[0] == "self"):
-                        raise NotImplementedError("The first argument must be 'self'.")
-                    del rb_args[0]
 
-            """ [instance method] : 
-            <Python> class foo:
-                         def __init__(self, fuga):
-                         def bar(self, hoge):
-            <Ruby>   class Foo
-                         def initialize(fuga)
-                         def bar(hoge)
-            """
-            if '__init__' == node.name:
-                func_name = 'initialize'
-            elif is_static:
-                #If method is static, we also add it directly to the class method
-                func_name = "self." + node.name
+        rb_args = []
+        for arg, default in zip(node.args.args, defaults):
+            if six.PY2:
+                if not isinstance(arg, ast.Name):
+                    raise RubyError("tuples in argument list are not supported")
+                arg_id = arg.id
             else:
-                func_name = node.name
-
-            self.indent()
-            rb_args = ", ".join(rb_args)
-            if node.args.vararg is None:
-                self.write("def %s(%s)" % (func_name, rb_args))
+                arg_id = arg.arg
+            if default is None:
+                rb_args.append(arg_id)
             else:
-                """ star arguments """
-                if six.PY2:
-                    self.write("def %s (%s, *%s)" % (func_name, rb_args, node.args.vararg))
-                else:
-                    self.write("def %s (%s, *%s)" % (func_name, rb_args, self.visit(node.args.vararg)))
+                rb_args.append("%s: %s" % (arg_id, self.visit(default)))
+                #rb_args.append("%s=%s" % (arg_id, self.visit(default)))
 
-            self.indent()
-            for stmt in node.body:
-                self.visit(stmt)
-            self.dedent()
+        """ [Function method argument with Muliti Variables] : 
+        <Python> def foo(fuga, hoge):
+                 def bar(fuga, hoge, *piyo):
+        <Ruby>   def foo(fuga, hoge)
+                 def bar(fuga, hoge, *piyo)
+            [Class instance method] : 
+        <Python> class foo:
+                     def __init__(self, fuga):
+                     def bar(self, hoge):
+        <Ruby>   class Foo
+                     def initialize(fuga)
+                     def bar(hoge)
+        """
+        if self._class_name:
+            if not is_static:
+                if not (rb_args[0] == "self"):
+                    raise NotImplementedError("The first argument must be 'self'.")
+                del rb_args[0]
+        rb_args = ", ".join(rb_args)
 
-            self.write("end")
-            self.dedent()
-
-            self._scope = []
+        if '__init__' == node.name:
+            func_name = 'initialize'
+        elif is_static:
+            #If method is static, we also add it directly to the class method
+            func_name = "self." + node.name
         else:
-            """ Function Method """ 
-            """ [method argument with Muliti Variables] : 
-            <Python> def foo(fuga, hoge):
-                     def bar(fuga, hoge, *piyo):
-            <Ruby>   def foo(fuga, hoge)
-                     def bar(fuga, hoge, *piyo)
-            """
-            #defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
-            rb_args = []
-            for arg, default in zip(node.args.args, defaults):
-                if six.PY2:
-                    if not isinstance(arg, ast.Name):
-                        raise RubyError("tuples in argument list are not supported")
-                    arg_id = arg.id
-                else:
-                    arg_id = arg.arg
-                if default is None:
-                    rb_args.append(arg_id)
-                else:
-                    rb_args.append("%s: %s" % (arg_id, self.visit(default)))
-            rb_args = ", ".join(rb_args)
             func_name = node.name
-            if node.args.vararg is None:
-                self.write("def %s(%s)" % (func_name, rb_args))
+
+        if self._class_name:
+            self.indent()
+
+        if node.args.vararg is None:
+            self.write("def %s(%s)" % (func_name, rb_args))
+        else:
+            """ star arguments """
+            if six.PY2:
+                self.write("def %s (%s, *%s)" % (func_name, rb_args, node.args.vararg))
             else:
-                """ star arguments """
-                if six.PY2:
-                    self.write("def %s (%s, *%s)" % (func_name, rb_args, node.args.vararg))
-                else:
-                    self.write("def %s (%s, *%s)" % (func_name, rb_args, self.visit(node.args.vararg)))
+                self.write("def %s (%s, *%s)" % (func_name, rb_args, self.visit(node.args.vararg)))
+
+        if self._class_name is None:
+            #
+            #print self._scope
+            #
             if six.PY2:
                 self._scope = [arg.id for arg in node.args.args]
             else:
                 self._scope = [arg.arg for arg in node.args.args]
             self._scope.append(node.args.vararg)
-            #
-            #print self._scope
-            #
-            self.indent()
-            for stmt in node.body:
-                self.visit(stmt)
+
+        self.indent()
+        for stmt in node.body:
+            self.visit(stmt)
+        self.dedent()
+        self.write('end')
+
+        if self._class_name:
             self.dedent()
-            self.write('end')
+            self._scope = []
 
     @scope
     def visit_ClassDef(self, node):
