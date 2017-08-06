@@ -185,12 +185,21 @@ class RB(object):
         # This lists all variables in the local scope:
         self._scope = []
         #All calls to names within _class_names will be preceded by 'new'
+        # Python original class name
         self._class_names = set()
+        # Ruby class name (first charcer Capitalize)
+        self._rclass_names = set()
         self._classes = {}
+        self._functions = {}
+        self._functions_rb_args_default = {}
         # This lists all instance functions in the class scope:
         self._self_functions = []
+        self._self_functions_args = {}
         # This lists all static functions (Ruby's class method) in the class scope:
         self._class_functions = []
+        self._class_functions_args = {}
+        self._classes_class_functions_args = {}
+        self._classes_self_functions_args = {}
         self._classes_functions = {}
         # This lists all static variables (Ruby's class variables) in the class scope:
         self._class_variables = []
@@ -274,6 +283,7 @@ class RB(object):
             else:
                 self._scope = [arg.arg for arg in node.args.args]
 
+        rb_args_default = []
         rb_args = []
         for arg, default in zip(node.args.args, defaults):
             if six.PY2:
@@ -284,9 +294,11 @@ class RB(object):
                 arg_id = arg.arg
             if default is None:
                 rb_args.append(arg_id)
+                rb_args_default.append(None)
             else:
                 rb_args.append("%s: %s" % (arg_id, self.visit(default)))
                 #rb_args.append("%s=%s" % (arg_id, self.visit(default)))
+                rb_args_default.append(arg_id)
 
         """ [Function method argument with Muliti Variables] : 
         <Python> def foo(fuga, hoge):
@@ -306,6 +318,7 @@ class RB(object):
                 if not (rb_args[0] == "self"):
                     raise NotImplementedError("The first argument must be 'self'.")
                 del rb_args[0]
+                del rb_args_default[0]
 
         if '__init__' == node.name:
             func_name = 'initialize'
@@ -313,6 +326,7 @@ class RB(object):
             #If method is static, we also add it directly to the class method
             func_name = "self." + node.name
         else:
+            # Function Method
             func_name = node.name
 
         if self._class_name:
@@ -325,6 +339,18 @@ class RB(object):
             else:
                 vararg = "*%s" % self.visit(node.args.vararg)
             rb_args.append(vararg)
+            rb_args_default.append([None])
+
+        """ keyword only arguments """
+        for arg, default in zip(node.args.kwonlyargs, node.args.kw_defaults):
+            if six.PY2:
+                if not isinstance(arg, ast.Name):
+                    raise RubyError("tuples in argument list are not supported")
+                arg_id = arg.id
+            else:
+                arg_id = arg.arg
+            rb_args.append("%s: %s" % (arg_id, self.visit(default)))
+            rb_args_default.append(arg_id)
 
         """ double star arguments """
         if node.args.kwarg:
@@ -333,7 +359,12 @@ class RB(object):
             else:
                 kwarg = "**%s" % self.visit(node.args.kwarg)
             rb_args.append(kwarg)
+            rb_args_default.append([])
         rb_args = ", ".join(rb_args)
+        if self._class_name is None:
+            self._functions[node.name] = rb_args_default
+        else:
+            self._functions_rb_args_default[node.name] = rb_args_default
 
         self.write("def %s(%s)" % (func_name, rb_args))
 
@@ -363,8 +394,11 @@ class RB(object):
         ClassDef(identifier name,expr* bases, keyword* keywords, stmt* body,expr* decorator_list)
         """
         self._self_functions = []
+        self._functions_rb_args_default = {}
         self._class_functions = []
         self._class_variables = []
+        self._self_functions_args = {}
+        self._class_functions_args = {}
         self._base_classes = []
 
         # [Inherited Class Name convert]
@@ -402,6 +436,7 @@ class RB(object):
         else:
             self.write("class %s < %s" % (class_name, ', '.join(bases)))
         self._class_name = class_name
+        self._rclass_names.add(class_name)
 
         from ast import dump
         #~ methods = []
@@ -437,12 +472,27 @@ class RB(object):
                 self.dedent()
             else:
                 self.visit(stmt)
+        if len(self._functions_rb_args_default) != 0:
+            for stmt in node.body:
+                if isinstance(stmt, ast.FunctionDef):
+                    if len(stmt.decorator_list) == 1 and \
+                        isinstance(stmt.decorator_list[0], ast.Name) and \
+                        stmt.decorator_list[0].id == "staticmethod":
+                        self._class_functions_args[stmt.name] = self._functions_rb_args_default[stmt.name]
+                    else:
+                        self._self_functions_args[stmt.name] = self._functions_rb_args_default[stmt.name]
+
+        self._classes_class_functions_args[node.name] = self._class_functions_args
+        self._classes_self_functions_args[node.name] = self._self_functions_args
         self._classes_variables[node.name] = self._class_variables
         self._class_name = None
 
         self.write("end")
         self._self_functions = []
+        self._self_functions_args = {}
+        self._functions_rb_args_default = {}
         self._class_functions = []
+        self._class_functions_args = {}
         self._class_variables = []
         self._base_classes = []
 
@@ -530,14 +580,16 @@ class RB(object):
                     declare = ""
                 else:
                     declare = ""
-                #print self._class_names
                 if value in self._class_names:
                     """ [create instance] : 
                     <Python> a = foo()
                     <Ruby>   a = Foo.new()
                     """
                     value = (value[0]).upper() + value[1:] + '.new'
-
+                if isinstance(node.value, ast.Call):
+                    if isinstance(node.value.func, ast.Name):
+                        if node.value.func.id in self._class_names:
+                            self._classes_self_functions_args[var] = self._classes_self_functions_args[node.value.func.id]
                 # set lambda functions
                 if isinstance(node.value, ast.Lambda):
                     self._lambda_functions.append(var)
@@ -1075,21 +1127,43 @@ class RB(object):
         """
         rb_args = [ self.visit(arg) for arg in node.args ]
         self._func_args_len = len(rb_args)
+        func = self.visit(node.func)
+
+        """ [method argument set Keyword Variables] :
+        <Python> def foo(a, b=3):
+                 foo(a, 5)
+        <Ruby>   def foo (a, b: 3)
+                 foo(a, b:5)
+        """
+        func_arg = None
+        if func.find('.') == -1:
+            if (func in self._functions) and \
+               (not ([None] in self._functions[func])):
+                func_arg = self._functions[func]
+        else:
+            ins, method = func.split('.', 1)
+            if (ins in self._classes_class_functions_args) and \
+               (method in self._classes_class_functions_args[ins]) and \
+               (not ([None] in self._classes_class_functions_args[ins][method])):
+                func_arg = self._classes_class_functions_args[ins][method]
+            if (ins in self._classes_self_functions_args) and \
+               (method in self._classes_self_functions_args[ins]) and \
+               (not ([None] in self._classes_self_functions_args[ins][method])):
+                func_arg = self._classes_self_functions_args[ins][method]
+        if func_arg != None:
+            if ((len(rb_args) != 0 ) and (rb_args[0] == 'self')):
+               args = rb_args[1:]
+            else:
+               args = rb_args
+            for i in range(len(args)):
+                if (func_arg[i] != None) and (func_arg[i] != []):
+                    rb_args[i] = "%s: %s" % (func_arg[i], rb_args[i])
+
         if len(rb_args) == 1:
             rb_args_s = rb_args[0]
         else:
-            rb_args_s = ",".join(rb_args)
-        func = self.visit(node.func)
+            rb_args_s = ", ".join(rb_args)
         self._func_args_len = 0
-        """ [Class Instance Create] : 
-        <Python> foo()
-        <Ruby>   Foo.new()
-        """
-        if func in self._class_names:
-            func = (func[0]).upper() + func[1:] + '.new'
-            #func = func + '.new'
-        #~ if func in self._class_names:
-            #~ func = 'new '+func
 
         #rb_args = []
         #for arg in node.args:
@@ -1101,21 +1175,20 @@ class RB(object):
         if node.keywords:
             """ [Keyword Argument] : 
             <Python> foo(1, fuga=2):
-            <Ruby>   foo(1, fuga=2)
+            <Ruby>   foo(1, fuga:2)
             """
             keywords = []
             for kw in node.keywords:
                 keywords.append("%s: %s" % (kw.arg, self.visit(kw.value)))
-            #keywords = "{" + ", ".join(keywords) + "}"
             keywords =  ", ".join(keywords)
             return "%s(%s, %s)" % (func, rb_args_s, keywords)
-        
-        if six.PY2:
-            if node.starargs is not None:
-                raise RubyError("star arguments are not supported")
 
-            if node.kwargs is not None:
-                raise RubyError("keyword arguments are not supported")
+        """ [Class Instance Create] :
+        <Python> foo()
+        <Ruby>   Foo.new()
+        """
+        if func in self._class_names:
+            func = (func[0]).upper() + func[1:] + '.new'
 
         #if len(rb_args) == 1:
         #    if func in self.order_methods_with_bracket_1.keys():

@@ -1,11 +1,16 @@
-def myfunc(a, b=3, c=4):
+def myfunc(a, b, *c, fuga='hoge', **d):
     print(a)
     print(b)
-    print(c)
-    print()
+    for i in c:
+        print(i)
+    print(fuga)
+    keys = list(d.keys())
+    keys.sort()
+    for i in keys:
+        print(i)
+        print(d[i])
 
-myfunc(1)
-myfunc(1, 2)
-myfunc(1, 2, 3)
-myfunc(1, c=3, b=4)
-myfunc(1, b=4)
+myfunc(1, 2, bar='a', foo='c')
+print()
+myfunc(1, 2, 3, 4, bar='a', foo='c')
+myfunc(1, 2, 3, 4, bar='a', fuga='hogehoge', foo='c')

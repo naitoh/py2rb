@@ -12,8 +12,7 @@ KNOWN_TO_FAIL = [
     "tests/basic/class4.py",  # Can't call class()
     "tests/basic/class5.py",  # Can't call class()
     "tests/basic/class6.py",  # Can't call class()
-    "tests/basic/default.py", # Can't mix argument and keyward arguments.
-    "tests/basic/kwargs2.py", # Can't mix argument and keyward arguments.
+    "tests/basic/default.py", # Can't call local valiable in arguments.
     "tests/basic/hasattr.py",
 
     "tests/functions/sort_cmp.py",
