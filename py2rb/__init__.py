@@ -1136,12 +1136,15 @@ class RB(object):
                  foo(a, b:5)
         """
         func_arg = None
+        is_static = False
         if func.find('.') == -1:
             if (func in self._functions) and \
                (not ([None] in self._functions[func])):
                 func_arg = self._functions[func]
         else:
             ins, method = func.split('.', 1)
+            if (method in self._class_functions):
+                is_static = True
             if (ins in self._classes_class_functions_args) and \
                (method in self._classes_class_functions_args[ins]) and \
                (not ([None] in self._classes_class_functions_args[ins][method])):
@@ -1150,6 +1153,10 @@ class RB(object):
                (method in self._classes_self_functions_args[ins]) and \
                (not ([None] in self._classes_self_functions_args[ins][method])):
                 func_arg = self._classes_self_functions_args[ins][method]
+        if is_static == False:
+            if ((len(rb_args) != 0 ) and (rb_args[0] == 'self')):
+                del rb_args[0]
+                self._func_args_len = len(rb_args)
         if func_arg != None:
             if ((len(rb_args) != 0 ) and (rb_args[0] == 'self')):
                args = rb_args[1:]
@@ -1372,7 +1379,10 @@ class RB(object):
             if attr in self.attribute_with_arg.keys():
                 attr = self.attribute_with_arg[attr]
 
-        if isinstance(node.value, ast.Name):
+        if isinstance(node.value, ast.Call):
+            if node.value.func.id == 'super':
+                return "super"
+        elif isinstance(node.value, ast.Name):
             if node.value.id == 'self':
                 if (attr in self._class_functions):
                     """ [Class Method] : 
@@ -1403,6 +1413,27 @@ class RB(object):
                         <Ruby>   @bar
                             """
                         return "@%s" % (attr)
+            elif node.value.id in self._base_classes:
+                """ [Inherited Class method call]
+                <Python> class bar(object):
+                             def __init__(self,name):
+                                 self.name = name
+                         class foo(bar):
+                             def __init__(self,val,name):
+                                 bar.__init__(self,name)
+
+                <Ruby>   class Bar
+                             def initialize(name)
+                                 @name = name
+                             end
+                         end
+                         class Foo < Bar
+                             def initialize(val, name)
+                                 super(name)
+                             end
+                         end
+                """
+                return "super"
             elif (node.value.id[0].upper() + node.value.id[1:]) == self._class_name:
                 if (attr in self._class_variables):
                     """ [class variable] : 

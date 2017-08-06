@@ -45,13 +45,13 @@ tests/basic/none.py [4]: ....                                    [OK]
 tests/basic/oo.py [4]: ....                                      [OK]
 tests/basic/oo_attributes.py [4]: ..                           [FAIL]
 tests/basic/oo_diamond.py [4]: ..                              [FAIL]
-tests/basic/oo_inherit.py [4]: ..                              [FAIL]
+tests/basic/oo_inherit.py [4]: ....                              [OK]
 tests/basic/oo_inherit2.py [4]: ....                             [OK]
 tests/basic/oo_inherit3.py [4]: ....                             [OK]
 tests/basic/oo_inherit_simple.py [4]: ....                       [OK]
-tests/basic/oo_inherit_simple_super1.py [4]: ..                [FAIL]
-tests/basic/oo_inherit_simple_super2.py [4]: ..                [FAIL]
-tests/basic/oo_inherit_simple_super3.py [4]: ..                [FAIL]
+tests/basic/oo_inherit_simple_super1.py [4]: ....                [OK]
+tests/basic/oo_inherit_simple_super2.py [4]: ....                [OK]
+tests/basic/oo_inherit_simple_super3.py [4]: ....                [OK]
 tests/basic/oo_static_inherit.py [4]: ..                       [FAIL]
 tests/basic/oo_super.py [4]: ..                                [FAIL]
 tests/basic/pass.py [4]: ....                                    [OK]
@@ -178,6 +178,6 @@ tests/modules/rng.py [4]:                             known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 180 tests in 55.126s
+Ran 180 tests in 49.861s
 
-FAILED (failures=20, expected failures=33)
+FAILED (failures=16, expected failures=33)
