@@ -53,7 +53,6 @@ tests/basic/oo_inherit_simple_super1.py [4]: ....                [OK]
 tests/basic/oo_inherit_simple_super2.py [4]: ....                [OK]
 tests/basic/oo_inherit_simple_super3.py [4]: ....                [OK]
 tests/basic/oo_static_inherit.py [4]: ..                       [FAIL]
-tests/basic/oo_super.py [4]: ..                                [FAIL]
 tests/basic/pass.py [4]: ....                                    [OK]
 tests/basic/print.py [4]: ....                                   [OK]
 tests/basic/raise.py [4]: ....                                   [OK]
@@ -157,6 +156,7 @@ tests/basic/generator.py [4]: ..                      known to [FAIL]
 tests/basic/hasattr.py [4]: ..                        known to [FAIL]
 tests/basic/listcomp2.py [4]: .                       known to [FAIL]
 tests/basic/nestedclass.py [4]: ..                    known to [FAIL]
+tests/basic/oo_super.py [4]: ..                       known to [FAIL]
 tests/basic/super.py [4]: ..                          known to [FAIL]
 tests/basic/valueerror.py [4]: ...                    known to [FAIL]
 tests/errors/decorator.py [4]: .                      known to [FAIL]
@@ -178,6 +178,6 @@ tests/modules/rng.py [4]:                             known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 180 tests in 49.861s
+Ran 180 tests in 58.865s
 
-FAILED (failures=16, expected failures=33)
+FAILED (failures=15, expected failures=34)
