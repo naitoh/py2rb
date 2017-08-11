@@ -138,7 +138,7 @@ tests/strings/string_format_f_simple.py [4]: ....                [OK]
 tests/strings/string_format_i.py [4]: ....                       [OK]
 tests/strings/string_format_s_simple.py [4]: ....                [OK]
 tests/strings/string_format_u.py [4]: ....                       [OK]
-tests/strings/strings_in_strings.py [4]: ..                    [FAIL]
+tests/strings/strings_in_strings.py [4]: ....                    [OK]
 tests/strings/strip.py [4]: ....                                 [OK]
 tests/strings/strip1.py [4]: ....                                [OK]
 tests/strings/ulcase.py [4]: ....                                [OK]
@@ -176,10 +176,11 @@ tests/modules/import_global.py [4]: ..                known to [FAIL]
 tests/modules/import_multi.py [4]:                    known to [FAIL]
 tests/modules/module_name.py [4]:                     known to [FAIL]
 tests/modules/rng.py [4]:                             known to [FAIL]
+tests/strings/other_strings.py [4]: ..                known to [FAIL]
 tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 182 tests in 55.991s
+Ran 183 tests in 56.004s
 
-FAILED (failures=12, expected failures=34)
+FAILED (failures=11, expected failures=35)
