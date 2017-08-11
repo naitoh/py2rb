@@ -4,6 +4,7 @@ module PythonZipEx
     # python : zip(l1, l2, [l3, ..])
     #  array : l1
     def zip_p(*args)
+      args.collect!{|i| i.is_a?(String) ? i.split(''): i}
       a = args.shift
       return a.zip(*args).select{|i| !i.include?(nil)}
     end
