@@ -67,46 +67,46 @@ class RB(object):
         'float' : 'to_f',
         'str'   : 'to_s',
         'len'   : 'size',
-        'max'   : 'max',
-        'min'   : 'min',
+        'max'   : 'max',            # Array
+        'min'   : 'min',            # Array
         'iter'  : 'each',
         'sum'   : 'sum', # if Ruby 2.3 or bufore is 'inject(:+)' method.
         #'sum'   : 'inject(:+)', # if Ruby 2.4 or later is better sum() method.
     }
 
     attribute_map = {
-        'upper'    : 'upcase',
-        'lower'    : 'downcase',
-        'append'   : 'push',
-        'sort'     : 'sort!',
-        'reverse'  : 'reverse!',
-        'find'     : 'index',
-        'rfind'    : 'rindex',
-        'endswith' : 'end_with?',
-        'extend'   : 'concat',
-        'replace'  : 'gsub',
+        'upper'    : 'upcase',      # String
+        'lower'    : 'downcase',    # String
+        'append'   : 'push',        # Array
+        'sort'     : 'sort!',       # Array
+        'reverse'  : 'reverse!',    # Array
+        'find'     : 'index',       # String
+        'rfind'    : 'rindex',      # String
+        'endswith' : 'end_with?',   # String
+        'extend'   : 'concat',      # Array
+        'replace'  : 'gsub',        # String
     }
     attribute_not_arg = {
-        'split'   : 'split',
-        'splitlines': 'split("\n")',
+        'split'   : 'split',         # String
+        'splitlines': 'split("\n")', # String
     }
     attribute_with_arg = {
-        'split'   : 'split_p',
+        'split'   : 'split_p',       # String
     }
 
-    call_attribute_map = set([
+    call_attribute_map = set([       # Array
         'join',
     ])
 
-    list_map = set([
+    list_map = set([                 # Array
         'list',
     ])
 
-    iter_map = set([
+    iter_map = set([                 # Array
         'map',
     ])
 
-    range_map = set([
+    range_map = set([                # Array
         'range',
         'xrange',
     ])
@@ -334,6 +334,8 @@ class RB(object):
 
         if '__init__' == node.name:
             func_name = 'initialize'
+        elif '__str__' == node.name:
+            func_name = 'to_s'
         elif is_static:
             #If method is static, we also add it directly to the class method
             func_name = "self." + node.name
@@ -503,6 +505,11 @@ class RB(object):
         self._classes_variables[node.name] = self._class_variables
         self._class_name = None
 
+        for func in self._self_functions:
+            self.indent()
+            if func in self.attribute_map.keys():
+                self.write("alias :%s :%s" % (self.attribute_map[func], func))
+            self.dedent()
         self.write("end")
         self._self_functions = []
         self._self_functions_args = {}
@@ -1206,7 +1213,9 @@ class RB(object):
             for kw in node.keywords:
                 rb_args.append("%s: %s" % (kw.arg, self.visit(kw.value)))
 
-        if len(rb_args) == 1:
+        if len(rb_args) == 0:
+            rb_args_s = ''
+        elif len(rb_args) == 1:
             rb_args_s = rb_args[0]
         else:
             rb_args_s = ", ".join(rb_args)
@@ -1306,7 +1315,12 @@ class RB(object):
             <Ruby>   [].fill(0...3) {|_| _}
             """
             #return "[].%s" % (rb_args_s)
-            return "%s" % (rb_args_s)
+            if len(node.args) == 0:
+                return "[]"
+            elif (len(node.args) == 1) and isinstance(node.args[0], ast.Str):
+                return "%s.split('')" % (rb_args_s)
+            else:
+                return "%s" % (rb_args_s)
         elif isinstance(node.func, ast.Lambda):
             """ [Lambda Call] :
             <Python> (lambda x:x*x)(4)
@@ -1382,23 +1396,24 @@ class RB(object):
         Attribute(expr value, identifier attr, expr_context ctx)
         """
         attr = node.attr
-        if attr in self.attribute_map.keys():
-            """ [Attribute method converter]
-            <Python> fuga.append(bar)
-            <Ruby>   fuga.push(bar)   """
-            attr = self.attribute_map[attr]
-        if self._func_args_len == 0:
-            """ [Attribute method converter without args]
-            <Python> fuga.split()
-            <Ruby>   fuga.split()   """
-            if attr in self.attribute_not_arg.keys():
-                attr = self.attribute_not_arg[attr]
-        else:
-            """ [Attribute method converter with args]
-            <Python> fuga.split(foo,bar)
-            <Ruby>   fuga.split_p(foo,bar)   """
-            if attr in self.attribute_with_arg.keys():
-                attr = self.attribute_with_arg[attr]
+        if not (isinstance(node.value, ast.Name) and (node.value.id == 'self')):
+            if attr in self.attribute_map.keys():
+                """ [Attribute method converter]
+                <Python> fuga.append(bar)
+                <Ruby>   fuga.push(bar)   """
+                attr = self.attribute_map[attr]
+            if self._func_args_len == 0:
+                """ [Attribute method converter without args]
+                <Python> fuga.split()
+                <Ruby>   fuga.split()   """
+                if attr in self.attribute_not_arg.keys():
+                    attr = self.attribute_not_arg[attr]
+            else:
+                """ [Attribute method converter with args]
+                <Python> fuga.split(foo,bar)
+                <Ruby>   fuga.split_p(foo,bar)   """
+                if attr in self.attribute_with_arg.keys():
+                    attr = self.attribute_with_arg[attr]
 
         if isinstance(node.value, ast.Call):
             """ [Inherited Class method call]

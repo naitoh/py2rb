@@ -36,6 +36,7 @@ tests/basic/lambda2.py [4]: ....                                 [OK]
 tests/basic/lambda_map.py [4]: ....                              [OK]
 tests/basic/list.py [4]: ....                                    [OK]
 tests/basic/list2.py [4]: ....                                   [OK]
+tests/basic/list3.py [4]: ....                                   [OK]
 tests/basic/literals.py [4]: ....                                [OK]
 tests/basic/logicalops.py [4]: ....                              [OK]
 tests/basic/loops.py [4]: ....                                   [OK]
@@ -103,8 +104,8 @@ tests/lists/map.py [4]: ....                                     [OK]
 tests/lists/max.py [4]: ....                                     [OK]
 tests/lists/min.py [4]: ....                                     [OK]
 tests/lists/reverse.py [4]: ....                                 [OK]
-tests/lists/subclass2.py [4]: ..                               [FAIL]
-tests/lists/subclass3.py [4]: ..                               [FAIL]
+tests/lists/subclass2.py [4]: ....                               [OK]
+tests/lists/subclass3.py [4]: ....                               [OK]
 tests/lists/sum.py [4]: ....                                     [OK]
 tests/lists/sum2.py [4]: ....                                    [OK]
 tests/lists/xrange.py [4]: ....                                  [OK]
@@ -181,6 +182,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 183 tests in 56.432s
+Ran 184 tests in 50.761s
 
-FAILED (failures=7, expected failures=39)
+FAILED (failures=5, expected failures=39)
