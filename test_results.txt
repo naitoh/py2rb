@@ -61,6 +61,8 @@ tests/basic/scope.py [4]: ....                                   [OK]
 tests/basic/str1.py [4]: ....                                    [OK]
 tests/basic/str_endswith.py [4]: ....                            [OK]
 tests/basic/sumcomp.py [4]: ....                                 [OK]
+tests/basic/super1.py [4]: ....                                  [OK]
+tests/basic/super2.py [4]: ....                                  [OK]
 tests/basic/trueorfalse.py [4]: ....                             [OK]
 tests/basic/try.py [4]: ....                                     [OK]
 tests/basic/tuple.py [4]: ....                                   [OK]
@@ -157,7 +159,6 @@ tests/basic/hasattr.py [4]: ..                        known to [FAIL]
 tests/basic/listcomp2.py [4]: .                       known to [FAIL]
 tests/basic/nestedclass.py [4]: ..                    known to [FAIL]
 tests/basic/oo_super.py [4]: ..                       known to [FAIL]
-tests/basic/super.py [4]: ..                          known to [FAIL]
 tests/basic/valueerror.py [4]: ...                    known to [FAIL]
 tests/errors/decorator.py [4]: .                      known to [FAIL]
 tests/functions/sort23.py [4]:                        known to [FAIL]
@@ -178,6 +179,6 @@ tests/modules/rng.py [4]:                             known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 180 tests in 58.865s
+Ran 181 tests in 55.582s
 
-FAILED (failures=15, expected failures=34)
+FAILED (failures=15, expected failures=33)

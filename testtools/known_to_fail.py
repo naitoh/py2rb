@@ -1,7 +1,6 @@
 """lists all the tests that are known to fail"""
 KNOWN_TO_FAIL = [
     "tests/basic/nestedclass.py",
-    "tests/basic/super.py",
     "tests/basic/listcomp2.py",
     "tests/basic/del_local.py",
     "tests/basic/valueerror.py",

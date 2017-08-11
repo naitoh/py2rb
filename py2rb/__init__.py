@@ -182,6 +182,7 @@ class RB(object):
         self._func_args_len = 0
         self._dict_format = False # True : Symbol ":", False : String "=>"
 
+        self._is_string_symbol = False # True : ':foo' , False : '"foo"'
         # This lists all variables in the local scope:
         self._scope = []
         #All calls to names within _class_names will be preceded by 'new'
@@ -190,6 +191,10 @@ class RB(object):
         # Ruby class name (first charcer Capitalize)
         self._rclass_names = set()
         self._classes = {}
+        # This lists all function names:
+        self._function = []
+        # This lists all arguments in a function:
+        self._function_args = []
         self._functions = {}
         self._functions_rb_args_default = {}
         # This lists all instance functions in the class scope:
@@ -256,6 +261,8 @@ class RB(object):
         """ [Function Define] :
         FunctionDef(identifier name, arguments args,stmt* body, expr* decorator_list, expr? returns) 
         """
+        self._function.append(node.name)
+        self._function_args = []
         is_static = False
         is_javascript = False
         if node.decorator_list:
@@ -283,7 +290,9 @@ class RB(object):
             else:
                 self._scope = [arg.arg for arg in node.args.args]
 
+        # get key for not keyword argument Call.
         rb_args_default = []
+        # set normal and keyword argument Call.
         rb_args = []
         for arg, default in zip(node.args.args, defaults):
             if six.PY2:
@@ -360,6 +369,7 @@ class RB(object):
                 kwarg = "**%s" % self.visit(node.args.kwarg)
             rb_args.append(kwarg)
             rb_args_default.append([])
+        self._function_args = rb_args
         rb_args = ", ".join(rb_args)
         if self._class_name is None:
             self._functions[node.name] = rb_args_default
@@ -387,6 +397,8 @@ class RB(object):
         if self._class_name:
             self.dedent()
             self._scope = []
+        self._function.pop()
+        self._function_args = []
 
     @scope
     def visit_ClassDef(self, node):
@@ -564,8 +576,12 @@ class RB(object):
         elif isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Index):
             # found index assignment # a[0] = xx
             #self.write("%s%s = %s" % (self.visit(target.value), # a[0] = xx
-            self.write("%s[%s] = %s" % (self.visit(target.value),
-                self.visit(target.slice), value))
+            name = self.visit(target.value)
+            for arg in self._function_args:
+                if arg == ("**%s" % name):
+                    self._is_string_symbol = True
+            self.write("%s[%s] = %s" % (name, self.visit(target.slice), value))
+            self._is_string_symbol = False
         elif isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Slice):
             # found slice assignmnet
             self.write("%s[%s...%s] = %s" % (self.visit(target.value),
@@ -1118,7 +1134,10 @@ class RB(object):
         """
         # Uses the Python builtin repr() of a string and the strip string type from it.
         txt = re.sub(r'"', '\\"', repr(node.s)[1:-1])
-        txt = '"' + txt + '"'
+        if self._is_string_symbol:
+            txt = ':' + txt
+        else:
+            txt = '"' + txt + '"'
         return txt
 
     def visit_Call(self, node):
@@ -1166,10 +1185,6 @@ class RB(object):
                 if (func_arg[i] != None) and (func_arg[i] != []):
                     rb_args[i] = "%s: %s" % (func_arg[i], rb_args[i])
 
-        if len(rb_args) == 1:
-            rb_args_s = rb_args[0]
-        else:
-            rb_args_s = ", ".join(rb_args)
         self._func_args_len = 0
 
         #rb_args = []
@@ -1184,11 +1199,13 @@ class RB(object):
             <Python> foo(1, fuga=2):
             <Ruby>   foo(1, fuga:2)
             """
-            keywords = []
             for kw in node.keywords:
-                keywords.append("%s: %s" % (kw.arg, self.visit(kw.value)))
-            keywords =  ", ".join(keywords)
-            return "%s(%s, %s)" % (func, rb_args_s, keywords)
+                rb_args.append("%s: %s" % (kw.arg, self.visit(kw.value)))
+
+        if len(rb_args) == 1:
+            rb_args_s = rb_args[0]
+        else:
+            rb_args_s = ", ".join(rb_args)
 
         """ [Class Instance Create] :
         <Python> foo()
@@ -1380,8 +1397,32 @@ class RB(object):
                 attr = self.attribute_with_arg[attr]
 
         if isinstance(node.value, ast.Call):
+            """ [Inherited Class method call]
+            <Python> class bar(object):
+                         def __init__(self,name):
+                             self.name = name
+                     class foo(bar):
+                         def __init__(self,val,name):
+                             super(bar, self).__init__(name)
+
+            <Ruby>   class Bar
+                         def initialize(name)
+                             @name = name
+                         end
+                     end
+                     class Foo < Bar
+                         def initialize(val, name)
+                             super(name)
+                         end
+                     end
+            """
             if node.value.func.id == 'super':
-                return "super"
+                if attr == self._function[-1]:
+                    return "super"
+                elif (attr in self._self_functions):
+                    return "public_method(:%s).super_method.call" % attr
+                else:
+                    return attr
         elif isinstance(node.value, ast.Name):
             if node.value.id == 'self':
                 if (attr in self._class_functions):
@@ -1433,7 +1474,13 @@ class RB(object):
                              end
                          end
                 """
-                return "super"
+                if attr == self._function[-1]:
+                    return "super"
+                elif (attr in self._self_functions):
+                    return "public_method(:%s).super_method.call" % attr
+                else:
+                    return attr
+
             elif (node.value.id[0].upper() + node.value.id[1:]) == self._class_name:
                 if (attr in self._class_variables):
                     """ [class variable] : 
@@ -1525,9 +1572,8 @@ class RB(object):
         Slice(expr? lower, expr? upper, expr? step)
         """
         if node.lower and node.upper and node.step:
-            # a[1:6:2]|a[1...6].each_slice(2).map(&:first)
-            #return "[%s...%s].each_slice(%s).map(&:first)" % (self.visit(node.lower),
-            #return "slice(%s, %s, %s)" % (self.visit(node.lower),
+            """ <Python> [8, 9, 10, 11, 12, 13, 14][1:6:2]
+                <Ruby>   [8, 9, 10, 11, 12, 13, 14][1...6].each_slice(2).map(&:first) """
             return "%s...%s,each_slice(%s).map(&:first)" % (self.visit(node.lower),
                     self.visit(node.upper), self.visit(node.step))
         if node.lower and node.upper:
@@ -1550,13 +1596,28 @@ class RB(object):
         raise NotImplementedError("Slice")
 
     def visit_Subscript(self, node):
-        index = self.visit(node.slice)
-        if ',' in index:
-            indexs = index.split(',')
-            return "%s[%s].%s" % (self.visit(node.value), indexs[0], indexs[1])
+        self._is_string_symbol = False
+        name = self.visit(node.value)
+        if isinstance(node.slice, (ast.Index)):
+            for arg in self._function_args:
+                if arg == ("**%s" % name):
+                    self._is_string_symbol = True
+            index = self.visit(node.slice)
+            self._is_string_symbol = False
+            return "%s[%s]" % (name, index)
+            #return "%s%s" % (name, index)
         else:
-            return "%s[%s]" % (self.visit(node.value), index)
-        #return "%s%s" % (self.visit(node.value), self.visit(node.slice))
+            # ast.Slice
+            index = self.visit(node.slice)
+            if ',' in index:
+                """ [See visit_Slice]
+                <Python> [8, 9, 10, 11, 12, 13, 14][1:6:2]
+                <Ruby>   [8, 9, 10, 11, 12, 13, 14][1...6].each_slice(2).map(&:first)
+                """
+                indexs = index.split(',')
+                return "%s[%s].%s" % (name, indexs[0], indexs[1])
+            else:
+                return "%s[%s]" % (name, index)
 
     def visit_Index(self, node):
         return self.visit(node.value)
