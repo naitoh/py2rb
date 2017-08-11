@@ -125,7 +125,7 @@ tests/strings/find.py [4]: ....                                  [OK]
 tests/strings/join.py [4]: ....                                  [OK]
 tests/strings/lstrip0.py [4]: ....                               [OK]
 tests/strings/lstrip1.py [4]: ....                               [OK]
-tests/strings/replace.py [4]: ..                               [FAIL]
+tests/strings/replace.py [4]: ....                               [OK]
 tests/strings/rfind.py [4]: ....                                 [OK]
 tests/strings/rstrip0.py [4]: ....                               [OK]
 tests/strings/rstrip1.py [4]: ....                               [OK]
@@ -176,9 +176,10 @@ tests/modules/import_global.py [4]: ..                known to [FAIL]
 tests/modules/import_multi.py [4]:                    known to [FAIL]
 tests/modules/module_name.py [4]:                     known to [FAIL]
 tests/modules/rng.py [4]:                             known to [FAIL]
+tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 181 tests in 55.345s
+Ran 182 tests in 56.300s
 
-FAILED (failures=14, expected failures=33)
+FAILED (failures=13, expected failures=34)

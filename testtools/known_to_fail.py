@@ -36,6 +36,7 @@ KNOWN_TO_FAIL = [
     "tests/modules/module_name.py",
     "tests/modules/rng.py",
 
+    "tests/strings/replace2.py",         # not support 3rd argument.
     "tests/strings/string_format_efg.py",
     "tests/strings/string_format_o.py", # not support
     "tests/strings/string_format_x.py", # not support

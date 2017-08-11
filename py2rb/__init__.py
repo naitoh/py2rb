@@ -84,6 +84,7 @@ class RB(object):
         'rfind'    : 'rindex',
         'endswith' : 'end_with?',
         'extend'   : 'concat',
+        'replace'  : 'gsub',
     }
     attribute_not_arg = {
         'split'   : 'split',
