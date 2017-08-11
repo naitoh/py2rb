@@ -211,6 +211,8 @@ class RB(object):
         self._classes_self_functions = {}
         # This lists all static variables (Ruby's class variables) in the class scope:
         self._class_variables = []
+        # This lists all instance variables (Ruby's class variables) in the class scope:
+        self._class_self_variables = []
         self._classes_variables = {}
         self._base_classes = []
         # This lists all lambda functions:
@@ -414,6 +416,7 @@ class RB(object):
         self._functions_rb_args_default = {}
         self._class_functions = []
         self._class_variables = []
+        self._class_self_variables = []
         self._self_functions_args = {}
         self._class_functions_args = {}
         self._base_classes = []
@@ -505,6 +508,11 @@ class RB(object):
         self._classes_variables[node.name] = self._class_variables
         self._class_name = None
 
+        if len(self._class_self_variables) != 0:
+            self.indent()
+            self.write("attr_accessor :%s" % ', :'.join(set(self._class_self_variables)))
+            self.dedent()
+
         for func in self._self_functions:
             self.indent()
             if func in self.attribute_map.keys():
@@ -517,6 +525,7 @@ class RB(object):
         self._class_functions = []
         self._class_functions_args = {}
         self._class_variables = []
+        self._class_self_variables = []
         self._base_classes = []
 
     def visit_Return(self, node):
@@ -533,6 +542,7 @@ class RB(object):
         num = ''
         key = ''
         slice = ''
+        attr = ''
         for stmt in node.targets:
             if isinstance(stmt, (ast.Name)):
                 id = self.visit(stmt)
@@ -546,6 +556,10 @@ class RB(object):
                         num = self.visit(stmt.slice)
                 if isinstance(stmt.slice, (ast.Slice)):
                     slice = self.visit(stmt.slice)
+            elif isinstance(stmt, (ast.Attribute)):
+                if isinstance(stmt.value, (ast.Name)):
+                    id = self.visit(stmt.value)
+                attr = stmt.attr
         if num != '':
             """ <Python> del foo[0]
                 <Ruby>   foo.delete_at[0] """
@@ -558,11 +572,14 @@ class RB(object):
             """ <Python> del foo[1:3]
                 <Ruby>   foo.slise!(1...3) """
             self.write("%s.slice!(%s)" % (id, slice))
+        elif attr != '':
+            """ <Python> del foo.bar
+                <Ruby>   foo.instance_eval { remove_instance_variable(:@bar) } """
+            self.write("%s.instance_eval { remove_instance_variable(:@%s) }" % (id, attr))
         else:
             """ <Python> del foo
                 <Ruby>   foo = nil """
             self.write("%s = nil" % (id))
-        #return node
 
     @scope
     def visit_Assign(self, node):
@@ -632,6 +649,7 @@ class RB(object):
                 """
                 if var == 'self':
                     self.write("@%s = %s" % (str(target.attr), value))
+                    self._class_self_variables.append(str(target.attr))
                 else:
                     self.write("%s = %s" % (var, value))
             else:
@@ -1479,6 +1497,7 @@ class RB(object):
                         <Python> self.bar
                         <Ruby>   @bar
                             """
+                        self._class_self_variables.append(attr)
                         return "@%s" % (attr)
             elif node.value.id in self._base_classes:
                 """ [Inherited Class method call]

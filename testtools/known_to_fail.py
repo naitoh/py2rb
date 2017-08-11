@@ -4,7 +4,6 @@ KNOWN_TO_FAIL = [
     "tests/basic/listcomp2.py",
     "tests/basic/del_local.py",
     "tests/basic/valueerror.py",
-    "tests/basic/del_attr.py",
     "tests/basic/del_global.py",
     "tests/basic/generator.py",
     "tests/basic/class3.py",  # Can't call class()
