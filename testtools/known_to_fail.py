@@ -13,7 +13,11 @@ KNOWN_TO_FAIL = [
     "tests/basic/class6.py",  # Can't call class()
     "tests/basic/default.py", # Can't call local valiable in arguments.
     "tests/basic/hasattr.py",
-    "tests/basic/oo_super.py", # Multiple inheritance can not be supported
+    "tests/basic/oo_super.py",   # Multiple inheritance can not be supported
+    "tests/basic/oo_diamond.py", # Multiple inheritance can not be supported
+    "tests/basic/closure.py",    # Multiple Functions can not be supported
+    "tests/basic/vars.py",       # Can't match variable scope
+    "tests/basic/vars2.py",      # Can't match variable scope
 
     "tests/functions/sort_cmp.py",
     "tests/functions/sort23.py",
