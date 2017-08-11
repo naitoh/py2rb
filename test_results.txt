@@ -99,7 +99,7 @@ tests/functions/str.py [4]: ....                                 [OK]
 tests/functions/ubitcomp.py [4]: ....                            [OK]
 tests/functions/uminus.py [4]: ....                              [OK]
 tests/functions/uplus.py [4]: ....                               [OK]
-tests/lists/extend.py [4]: ..                                  [FAIL]
+tests/lists/extend.py [4]: ....                                  [OK]
 tests/lists/filter.py [4]: ....                                  [OK]
 tests/lists/in.py [4]: ....                                      [OK]
 tests/lists/insert.py [4]: ....                                  [OK]
@@ -179,6 +179,6 @@ tests/modules/rng.py [4]:                             known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 181 tests in 55.582s
+Ran 181 tests in 55.345s
 
-FAILED (failures=15, expected failures=33)
+FAILED (failures=14, expected failures=33)
