@@ -20,6 +20,7 @@ class klass(baseklass):
     def describe(self):
         super(klass,self).describe(10)
         super(klass,self).describe2(string='somestring')
+        self.describe2(string='somestring')
         print("klass.describe:"+self.val)
 
 k = klass("world","hello")

@@ -208,6 +208,7 @@ class RB(object):
         self._classes_class_functions_args = {}
         self._classes_self_functions_args = {}
         self._classes_functions = {}
+        self._classes_self_functions = {}
         # This lists all static variables (Ruby's class variables) in the class scope:
         self._class_variables = []
         self._classes_variables = {}
@@ -464,6 +465,7 @@ class RB(object):
                 else:
                     self._self_functions.append(stmt.name)
         self._classes_functions[node.name] = self._class_functions
+        self._classes_self_functions[node.name] = self._self_functions
 
         for stmt in node.body:
             if isinstance(stmt, ast.Assign):
@@ -1449,6 +1451,13 @@ class RB(object):
                         if func in self.order_methods_with_bracket.keys():
                             return "%s" % (attr)
                         if func in self.order_methods_with_bracket_2_1_x.keys():
+                            return "%s" % (attr)
+                        if (base_class in self._classes_self_functions) and \
+                           (attr in self._classes_self_functions[base_class]):
+                            """ [Inherited Instance Method] :
+                            <Python> self.bar()
+                            <Ruby>   bar()
+                            """
                             return "%s" % (attr)
                     else:
                         """ [Instance Variable] : 
