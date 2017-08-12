@@ -85,6 +85,7 @@ class RB(object):
         'endswith' : 'end_with?',   # String
         'extend'   : 'concat',      # Array
         'replace'  : 'gsub',        # String
+        'items'    : '',            # Hash
     }
     attribute_not_arg = {
         'split'   : 'split',         # String
@@ -100,6 +101,10 @@ class RB(object):
 
     list_map = set([                 # Array
         'list',
+    ])
+
+    dict_map = set([                 # Hash
+        'dict',
     ])
 
     iter_map = set([                 # Array
@@ -180,7 +185,7 @@ class RB(object):
         # This is the name of the class that we are currently in:
         self._class_name = None
         # This is use () case of the tuple that we are currently in:
-        self._is_tuple = False # True : "()" , False : "[]", None: ""
+        self._is_tuple = False # True : "()" , False : "[]", None: "%s => %s" (Hash)
         self._func_args_len = 0
         self._dict_format = False # True : Symbol ":", False : String "=>"
 
@@ -1339,6 +1344,23 @@ class RB(object):
                 return "%s.split('')" % (rb_args_s)
             else:
                 return "%s" % (rb_args_s)
+        elif func in self.dict_map:
+            """ [dict]
+            <Python> dict([('foo', 1), ('bar', 2)])
+            <Ruby>   {'foo' => 1, 'bar' => 2}
+            """
+            if len(node.args) == 0:
+                return "{}"
+            elif len(node.args) == 1:
+                rb_args = []
+                if isinstance(node.args[0], ast.List):
+                    for elt in node.args[0].elts:
+                        self._is_tuple = None
+                        rb_args.append(self.visit(elt))
+                        self._is_tuple = False
+            else:
+                 raise RubyError("dict in argument list Error")
+            return "{%s}" % (", ".join(rb_args))
         elif isinstance(node.func, ast.Lambda):
             """ [Lambda Call] :
             <Python> (lambda x:x*x)(4)
@@ -1558,7 +1580,10 @@ class RB(object):
                 <Ruby>   *.join(' ')
                 """
                 return "%s(%s)" % (attr, self.visit(node.value))
-        return "%s.%s" % (self.visit(node.value), attr)
+        if attr != '':
+            return "%s.%s" % (self.visit(node.value), attr)
+        else:
+            return "%s" % self.visit(node.value)
 
     def visit_Tuple(self, node):
         """
@@ -1566,10 +1591,14 @@ class RB(object):
         """
         els = [self.visit(e) for e in node.elts]
         # True : () , False : []
-        if self._is_tuple:
+        if self._is_tuple == True:
              return "(%s)" % (", ".join(els))
-        else:
+        elif self._is_tuple == False:
              return "[%s]" % (", ".join(els))
+        elif self._is_tuple == None:
+             return "%s => %s" % (els[0], els[1])
+        else:
+             raise RubyError("tuples in argument list Error")
 
     def visit_Dict(self, node):
         """

@@ -14,34 +14,16 @@ for x in a:
 # sort order in python is undefined, so need to sort the results
 # explictly before comparing output
 
-print('-- dict keys --')
+print('-- dict  --')
 a = {'a':1,'b':2,'c':3 }
 
 keys = []
-for x in a.keys():
+for x in a:
     keys.append(x)
 
 keys.sort()
 for k in keys:
     print(k)
-
-print('-- dict values --')
-values = list()
-for v in a.values():
-    values.append(v)
-
-values.sort()
-for v in values:
-    print(v)
-
-items = dict()
-for k, v in a.items():
-    items[k] = v
-
-print('-- dict item --')
-print(items['a'])
-print(items['b'])
-print(items['c'])
 
 # iterating over a string
 print('-- string --')
