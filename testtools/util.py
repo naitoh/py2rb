@@ -90,16 +90,17 @@ def compile_and_run_file_test(file_path, file_name=None):
 
     class CompileAndRunFile(unittest.TestCase):
         """Tests that a file can be compiled and run as ruby"""
+        name_path, ext = os.path.splitext(file_path)
         templ = {
         "py_path": file_path, 
         "py_unix_path": get_posix_path(file_path),
         "py_out_path": file_path + ".out",
-        "rb_path": file_path + ".rb",
-        "rb_out_path": file_path + ".rb.out",
-        "rb_out_expected_path": file_path + ".expected_out",
-        "rb_out_expected_in_path": file_path + ".expected_in_out",
+        "rb_path": name_path + ".rb",
+        "rb_out_path": name_path + ".rb.out",
+        "rb_out_expected_path": name_path + ".rb.expected_out",
+        "rb_out_expected_in_path": name_path + ".rb.expected_in_out",
         "py_error": file_path + ".err",
-        "rb_error": file_path + "rb.err",
+        "rb_error": name_path + ".rb.err",
         "compiler_error": file_path + ".comp.err",
         "name": file_name,
         }
