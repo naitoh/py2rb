@@ -26,6 +26,9 @@ class Formater(object):
         self.__indentation += 1
         self.__indent_temp = self.__indent_string*self.__indentation
 
+    def clear(self):
+        self.__buffer = []
+
     def write(self, text, indent=True, newline=True):
         """
         Writes the string text to the buffer with indentation and a newline if not specified otherwise.

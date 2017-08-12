@@ -6,8 +6,8 @@ from optparse import OptionParser
 from py2rb import convert_py2rb
 
 def main():
-    parser = OptionParser(usage="%prog [options] filename",
-                          description="Python to JavaScript compiler.")
+    parser = OptionParser(usage="%prog [options] filename [module filename [module filename [..]]]",
+                          description="Python to Ruby compiler.")
 
     parser.add_option("--output",
                       action="store",
@@ -21,8 +21,9 @@ def main():
                       help="include py-builtins.rb library in the output")
 
     options, args = parser.parse_args()
-    if len(args) == 1:
+    if len(args) != 0:
         filename = args[0]
+        subfilename = args[1:]
 
         if options.output:
             output = open(options.output, "w")
@@ -37,8 +38,11 @@ def main():
                 builtins = open("py-builtins.rb").read()
             output.write(builtins)
 
+        mods = []
+        for f in subfilename:
+            mods.append(open(f).read()) #unsafe for large files!
         s = open(filename).read() #unsafe for large files!
-        output.write(convert_py2rb(s))
+        output.write(convert_py2rb(s, mods))
     else:
         parser.print_help()
 

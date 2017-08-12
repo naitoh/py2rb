@@ -178,6 +178,7 @@ class RB(object):
         self.__formater = formater.Formater()
         self.write = self.__formater.write
         self.read = self.__formater.read
+        self.clear = self.__formater.clear
         self.indent = self.__formater.indent
         self.dedent = self.__formater.dedent
         self.dummy = 0
@@ -222,6 +223,7 @@ class RB(object):
         self._base_classes = []
         # This lists all lambda functions:
         self._lambda_functions = []
+        self._import_files = []
 
     def new_dummy(self):
         dummy = "__dummy%d__" % self.dummy
@@ -913,8 +915,9 @@ class RB(object):
         """
         mod_name = node.names[0].name
         if mod_name not in self.module_map:
+            self._import_files.append(mod_name)
             mod_name = node.names[0].name.replace('.', '/')
-            self.write("require_relative '%s.rb'" % mod_name)
+            self.write("require_relative '%s'" % mod_name)
             return
 
         if node.names[0].asname == None:
@@ -947,7 +950,7 @@ class RB(object):
         """
         if node.module not in self.module_map:
             mod_name = node.module.replace('.', '/')
-            self.write("require_relative '%s.rb'" % mod_name)
+            self.write("require_relative '%s'" % mod_name)
             #self.write("include '%s'" % mod_name[0]upper() + mod_name[1:]) # T.B.D
             return
 
@@ -1181,6 +1184,9 @@ class RB(object):
         rb_args = [ self.visit(arg) for arg in node.args ]
         self._func_args_len = len(rb_args)
         func = self.visit(node.func)
+        for f in self._import_files:
+            if func.startswith(f):
+                func = func.replace(f + '.', '')
 
         """ [method argument set Keyword Variables] :
         <Python> def foo(a, b=3):
@@ -1697,7 +1703,7 @@ class RB(object):
         return self.visit(node.value)
         #return "[%s]" % (self.visit(node.value))
 
-def convert_py2rb(s):
+def convert_py2rb(s, modules = []):
     """
     Takes Python code as a string 's' and converts this to Ruby.
 
@@ -1707,7 +1713,11 @@ def convert_py2rb(s):
     'x[3..-1]'
 
     """
-    t = ast.parse(s)
     v = RB()
+    for m in modules:
+        t = ast.parse(m)
+        v.visit(t)
+    v.clear()
+    t = ast.parse(s)
     v.visit(t)
     return v.read()

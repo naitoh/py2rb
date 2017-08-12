@@ -9,6 +9,7 @@ else:
     import unittest
 import os
 import posixpath
+import re
 
 def get_posix_path(path):
     """translates path to a posix path"""
@@ -109,24 +110,48 @@ def compile_and_run_file_test(file_path, file_name=None):
 
         def runTest(self):
             """The actual test goes here."""
+            text = open(self.templ['py_path']).read()
+            results = re.findall(r"from ([.\w]+) import ", text)
+            results.extend(re.findall(r"import ([.\w]+)", text))
+            mod_paths = []
+            if results:
+                for result in results:
+                    mod_path = self.templ['py_path'].replace(self.templ['name'], '') + result.replace('.', '/') + '.py'
+                    if os.path.exists(mod_path):
+                        mod_paths.append(mod_path)
+
+            commands = []
             python_command = (
                 'python "%(py_path)s" > "%(py_out_path)s" 2> '
                 '"%(py_error)s"'
                 ) % self.templ
-            compile_command = (
-                'python py2rb.py --include-builtins '
-                '"%(py_path)s" > "%(rb_path)s" 2> '
-                '"%(compiler_error)s"'
-                ) % self.templ 
+            commands.append(python_command)
+            if mod_paths != []:
+                for mod_path in mod_paths:
+                    name_path, ext = os.path.splitext(mod_path)
+                    rb_path = name_path + ".rb"
+                    compiler_error =  mod_path + ".comp.err"
+                    compile_command = (
+                    'python py2rb.py --include-builtins "%s" > "%s" 2> "%s"'
+                    ) % (mod_path, rb_path, compiler_error)
+                    commands.append(compile_command)
+                mod_paths = ' '.join(mod_paths)
+                compile_command = (
+                    'python py2rb.py --include-builtins "%s" %s > "%s" 2> "%s"'
+                    ) % (self.templ['py_path'], mod_paths, self.templ['rb_path'], self.templ['compiler_error'])
+                commands.append(compile_command)
+            else:
+                compile_command = (
+                    'python py2rb.py --include-builtins '
+                    '"%(py_path)s" > "%(rb_path)s" 2> '
+                    '"%(compiler_error)s"'
+                    ) % self.templ
+            commands.append(compile_command)
             ruby_command = (
                 'ruby "%(rb_path)s" > "%(rb_out_path)s" 2> '
                 '"%(rb_error)s"' 
                 ) % self.templ
-            commands = (
-                python_command,
-                compile_command,
-                ruby_command
-                )
+            commands.append(ruby_command)
             for cmd in commands:
                 self.assertEqual(0, os.system(cmd))
                 self.reportProgres()
