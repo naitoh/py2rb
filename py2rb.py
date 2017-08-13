@@ -23,7 +23,7 @@ def main():
     options, args = parser.parse_args()
     if len(args) != 0:
         filename = args[0]
-        subfilename = args[1:]
+        subfilenames = args[1:]
 
         if options.output:
             output = open(options.output, "w")
@@ -39,10 +39,14 @@ def main():
             output.write(builtins)
 
         mods = []
-        for f in subfilename:
+        mod_paths = {}
+        for f in subfilenames:
+            rel_path = os.path.relpath(f, os.path.dirname(filename))
+            name_path, ext = os.path.splitext(rel_path)
+            mod_paths[f] = name_path
             mods.append(open(f).read()) #unsafe for large files!
         s = open(filename).read() #unsafe for large files!
-        output.write(convert_py2rb(s, mods))
+        output.write(convert_py2rb(s, mods, mod_paths))
     else:
         parser.print_help()
 

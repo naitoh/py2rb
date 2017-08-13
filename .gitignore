@@ -9,3 +9,5 @@ tests/*.err
 tests/*.out
 tests/*/*/*.rb
 tests/*/*/*.err
+tests/*/*/*/*.rb
+tests/*/*/*/*.err

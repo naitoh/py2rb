@@ -1,6 +1,6 @@
 
-from . import submodules.diamondbase
+from modules.submodules import diamondbase
 
 def run():
     print("calling diamond1.run()")
-    submodules.diamondbase.run()
+    diamondbase.run()

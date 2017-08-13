@@ -174,7 +174,8 @@ class RB(object):
             'IsNot' : "is not", # Not implemented yet
         }
 
-    def __init__(self):
+    def __init__(self, mod_paths = {}):
+        self.mod_paths = mod_paths
         self.__formater = formater.Formater()
         self.write = self.__formater.write
         self.read = self.__formater.read
@@ -911,12 +912,18 @@ class RB(object):
         import imported.module as abc
           => require_relative 'abc'
           => require 'foo'
+        <python> import imported.submodules.submodulea
+        <ruby>   require_relative 'imported/submodules/submodulea'
         Module(body=[Import(names=[alias(name='imported.module', asname='abc')])])
         """
         mod_name = node.names[0].name
         if mod_name not in self.module_map:
             self._import_files.append(mod_name)
             mod_name = node.names[0].name.replace('.', '/')
+            for path, rel_path in self.mod_paths.items():
+                if path.endswith(mod_name + '.py'):
+                    self.write("require_relative '%s'" % rel_path)
+                    return
             self.write("require_relative '%s'" % mod_name)
             return
 
@@ -946,12 +953,34 @@ class RB(object):
         from foo import bar
           => require 'foo'
              include 'Foo'
+        * Case 1.
+        <python> import imported.submodules.submodulea import bar
+        <ruby>   require_relative 'imported/submodules/submodulea'
+        * Case 2.
+        <python> import imported.submodules.submodulea import foo
+        <ruby>   require_relative 'imported/submodules/submodulea/foo'
+        * Case 3.
+        <python> import imported.submodules.submodulea import foo as bar
+        <ruby>   require_relative 'imported/submodules/submodulea'
+                 alias bar foo
         Module(body=[ImportFrom(module='foo', names=[ alias(name='bar', asname=None)], level=0), 
         """
         if node.module not in self.module_map:
             mod_name = node.module.replace('.', '/')
-            self.write("require_relative '%s'" % mod_name)
+            mod_name_i = node.module.replace('.', '/') + '/' + node.names[0].name
+            for path, rel_path in self.mod_paths.items():
+                if node.names[0].name != '*':
+                    if path.endswith(mod_name_i + '.py'):
+                        self.write("require_relative '%s'" % rel_path)
+                        break
+                if path.endswith(mod_name + '.py'):
+                    self.write("require_relative '%s'" % rel_path)
+                    break
+            else:
+                self.write("require_relative '%s'" % mod_name)
             #self.write("include '%s'" % mod_name[0]upper() + mod_name[1:]) # T.B.D
+            if node.names[0].asname != None:
+                 self.write("alias %s %s" % (node.names[0].asname, node.names[0].name))
             return
 
         mod_name = self.module_map[node.module]
@@ -1703,7 +1732,7 @@ class RB(object):
         return self.visit(node.value)
         #return "[%s]" % (self.visit(node.value))
 
-def convert_py2rb(s, modules = []):
+def convert_py2rb(s, modules = [], mod_paths = {}):
     """
     Takes Python code as a string 's' and converts this to Ruby.
 
@@ -1713,7 +1742,7 @@ def convert_py2rb(s, modules = []):
     'x[3..-1]'
 
     """
-    v = RB()
+    v = RB(mod_paths)
     for m in modules:
         t = ast.parse(m)
         v.visit(t)
