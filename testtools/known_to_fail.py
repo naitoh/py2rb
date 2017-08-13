@@ -6,7 +6,6 @@ KNOWN_TO_FAIL = [
     "tests/basic/valueerror.py",
     "tests/basic/del_global.py",
     "tests/basic/generator.py",
-    "tests/basic/class3.py",     # Can't call class()
     "tests/basic/class4.py",     # Can't call class()
     "tests/basic/class5.py",     # Can't call class()
     "tests/basic/class6.py",     # Can't call class()

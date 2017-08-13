@@ -535,9 +535,12 @@ class RB(object):
         self._classes_variables[node.name] = self._class_variables
         self._class_name = None
 
-        if len(self._class_self_variables) != 0:
+        for v in (self._class_variables):
             self.indent()
-            self.write("attr_accessor :%s" % ', :'.join(set(self._class_self_variables)))
+            self.write("def self.%s; @@%s; end" % (v,v))
+            self.write("def self.%s=(val); @@%s=val; end" % (v,v))
+            self.write("def %s; @%s = @@%s if @%s.nil?; @%s; end" % (v,v,v,v,v))
+            self.write("def %s=(val); @%s=val; end" % (v,v))
             self.dedent()
 
         for func in self._self_functions:
