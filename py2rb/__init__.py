@@ -1118,37 +1118,24 @@ class RB(object):
         assert len(node.ops) == 1
         assert len(node.comparators) == 1
         op = node.ops[0]
-        comp = node.comparators[0]
+        left = self.visit(node.left)
+        comp = self.visit(node.comparators[0])
+        if (left == '__name__') and (comp == '"__main__"') or \
+           (left == '"__main__"') and (comp == '__name__'):
+            """ <Python>  __name__ == '__main__':
+                <Ruby>    __FILE__ == $0          """
+            left = '__FILE__'
+            comp = '$0'
         if isinstance(op, ast.In):
-            #return "%s.__contains__(%s)" % (
-            return "%s.include?(%s)" % (
-                    self.visit(comp),
-                    self.visit(node.left),
-                    )
+            return "%s.include?(%s)" % (comp, left)
         elif isinstance(op, ast.NotIn):
-            #return "!(%s.__contains__(%s))" % (
-            return "!%s.include?(%s)" % (
-                    self.visit(comp),
-                    self.visit(node.left),
-                    )
+            return "!%s.include?(%s)" % (comp, left)
         elif isinstance(op, ast.Eq):
-            #return "py_builtins.eq(%s, %s)" % (
-            return "%s == %s" % (
-                    self.visit(node.left),
-                    self.visit(comp),
-                    )
+            return "%s == %s" % (left, comp)
         elif isinstance(op, ast.NotEq):
-            #In fact, we'll have to override this too:
-            #return "!(py_builtins.eq(%s, %s))" % (
-            return "%s != %s" % (
-                    self.visit(node.left),
-                    self.visit(comp),
-                    )
+            return "%s != %s" % (left, comp)
         else:
-            return "%s %s %s" % (self.visit(node.left),
-                    self.get_comparison_op(op),
-                    self.visit(comp)
-                    )
+            return "%s %s %s" % (left, self.get_comparison_op(op), comp)
 
     # python 3
     def visit_Starred(self, node):
