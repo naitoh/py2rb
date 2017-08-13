@@ -131,7 +131,7 @@ def compile_and_run_file_test(file_path, file_name=None):
             rb_path = name_path + ".rb"
             compiler_error =  py_path + ".comp.err"
             compile_command = (
-                'python py2rb.py --include-builtins "%s" %s > "%s" 2> "%s"'
+                'python py2rb.py --include-require "%s" %s > "%s" 2> "%s"'
                 ) % (py_path, ' '.join(mod_paths), rb_path, compiler_error)
             commands.append(compile_command)
 
@@ -150,7 +150,7 @@ def compile_and_run_file_test(file_path, file_name=None):
             commands.append(python_command)
             commands.extend(self.get_mod_path(self.templ['py_path'], self.templ['name']))
             ruby_command = (
-                'ruby "%(rb_path)s" > "%(rb_out_path)s" 2> '
+                'ruby -I . "%(rb_path)s" > "%(rb_out_path)s" 2> '
                 '"%(rb_error)s"' 
                 ) % self.templ
             commands.append(ruby_command)

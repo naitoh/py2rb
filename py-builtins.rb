@@ -183,7 +183,3 @@ module PyLib
   end
 end
 
-using PythonZipEx
-using PythonPrintEx
-using PythonIsBoolEx
-using PythonIndexEx

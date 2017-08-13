@@ -14,6 +14,12 @@ def main():
                       dest="output",
                       help="write output to OUTPUT")
 
+    parser.add_option("--include-require",
+                      action="store_true",
+                      dest="include_require",
+                      default=False,
+                      help="require py-builtins.rb library in the output")
+
     parser.add_option("--include-builtins",
                       action="store_true",
                       dest="include_builtins",
@@ -30,13 +36,29 @@ def main():
         else:
             output = sys.stdout
 
+        if options.include_require:
+            if os.path.dirname(__file__):
+                require = open(os.path.join(os.path.dirname(__file__),
+                    "py-builtins-require.rb")).read()
+                using = open(os.path.join(os.path.dirname(__file__),
+                    "py-builtins-using.rb")).read()
+            else:
+                require = open("py-builtins-require.rb").read()
+                using = open("py-builtins-using.rb").read()
+            output.write(require)
+            output.write(using)
+
         if options.include_builtins:
             if os.path.dirname(__file__):
                 builtins = open(os.path.join(os.path.dirname(__file__),
                     "py-builtins.rb")).read()
+                using = open(os.path.join(os.path.dirname(__file__),
+                    "py-builtins-using.rb")).read()
             else:
                 builtins = open("py-builtins.rb").read()
+                using = open("py-builtins-using.rb").read()
             output.write(builtins)
+            output.write(using)
 
         mods = []
         mod_paths = {}
