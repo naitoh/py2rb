@@ -277,27 +277,43 @@ class RB(object):
         self._function.append(node.name)
         self._function_args = []
         is_static = False
-        is_javascript = False
+        is_property = False
+        is_setter = False
         if node.decorator_list:
-            if len(node.decorator_list) == 1 and \
-                    isinstance(node.decorator_list[0], ast.Name) and \
-                    node.decorator_list[0].id == "JavaScript":
-                is_javascript = True # this is our own decorator
-            elif self._class_name and \
+            if self._class_name and \
                     len(node.decorator_list) == 1 and \
-                    isinstance(node.decorator_list[0], ast.Name) and \
-                    node.decorator_list[0].id == "staticmethod":
-                is_static = True
-            else:
-                raise RubyError("decorators are not supported")
-            if self._class_name and not is_static and not is_javascript:
+                    isinstance(node.decorator_list[0], ast.Name):
+                if node.decorator_list[0].id == "staticmethod":
+                    is_static = True
+                elif  node.decorator_list[0].id == "property":
+                    is_property = True
+                    """
+                    <Python> @property
+                             def x(self):
+                                 return self._x
+                    <Ruby>   def x
+                                 @_x
+                             end
+                    """
+            if self._class_name and \
+                    len(node.decorator_list) == 1 and \
+                    isinstance(node.decorator_list[0], ast.Attribute):
+                if  self.visit(node.decorator_list[0]) == (node.name + ".setter"):
+                    is_setter = True
+                    """
+                    <Python> @x.setter
+                             def x(self, value):
+                                 self._x = value
+                    <Ruby>   def x=(val)
+                                 @_x=val
+                             end
+                    """
+            if self._class_name and not is_static and not is_property and not is_setter:
                 raise RubyError("decorators are not supported")
 
         defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
         """ Class Method """
         if self._class_name:
-            #if node.decorator_list and not is_static and not is_javascript:
-            #    raise RubyError("decorators are not supported")
             if six.PY2:
                 self._scope = [arg.id for arg in node.args.args]
             else:
@@ -391,7 +407,10 @@ class RB(object):
         else:
             self._functions_rb_args_default[node.name] = rb_args_default
 
-        self.write("def %s(%s)" % (func_name, rb_args))
+        if is_setter:
+            self.write("def %s=(%s)" % (func_name, rb_args))
+        else:
+            self.write("def %s(%s)" % (func_name, rb_args))
 
         if self._class_name is None:
             #

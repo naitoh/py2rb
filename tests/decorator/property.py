@@ -8,5 +8,4 @@ class propertyDecorator(object):
 
 pd = propertyDecorator(100)
 print(pd.x)
-#print(pd.x())
 

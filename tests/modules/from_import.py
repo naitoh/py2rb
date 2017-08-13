@@ -5,4 +5,4 @@ from imported.modulec import *
 
 modulea_fn()
 modb_fn()
-foo()
+foo2()

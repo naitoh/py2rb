@@ -22,7 +22,7 @@ KNOWN_TO_FAIL = [
     "tests/functions/sort_cmp.py",
     "tests/functions/sort23.py",
 
-    "tests/errors/decorator.py",
+    "tests/decorator/decorator.py",
 
     "tests/lists/reduce.py",
     "tests/lists/subclass.py",
@@ -32,7 +32,6 @@ KNOWN_TO_FAIL = [
     "tests/modules/import_alias.py",
     "tests/modules/import_class.py",
     "tests/modules/import_diamond.py",
-    "tests/modules/import_multi.py",
     "tests/modules/module_name.py",
     "tests/modules/rng.py",
 
