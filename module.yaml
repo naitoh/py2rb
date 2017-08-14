@@ -14,7 +14,8 @@ numpy:
   id: numo/narray
   order_methods_without_bracket: {array: 'Numo::NArray',
                   linspace: 'Numo::DFloat.linspace'}
-  order_methods_with_bracket: {exp: 'Numo::NMath.exp'}
+  order_methods_with_bracket: {exp: 'Numo::NMath.exp',
+                  maximum: 'Numo::NArray.maximum'}
   reverse_methods: {sum: 'sum'}
   range_methods: {arange: 'Numo::DFloat.new'}
 

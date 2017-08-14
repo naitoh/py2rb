@@ -6,4 +6,5 @@ def relu(x):
 
 x = np.arange(-5.0, 5.0, 0.1)
 y = relu(x)
-print(y)
+print(len(y))
+print(np.maximum(0, 1))
