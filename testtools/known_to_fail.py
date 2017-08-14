@@ -14,6 +14,7 @@ KNOWN_TO_FAIL = [
     "tests/basic/hasattr.py",
     "tests/basic/oo_super.py",   # Multiple inheritance can not be supported
     "tests/basic/oo_diamond.py", # Multiple inheritance can not be supported
+    "tests/basic/oo_static_inherit2.py", # A class method of the lowercase name class is unsupported.
     "tests/basic/closure.py",    # Multiple Functions can not be supported
     "tests/basic/vars.py",       # Can't match variable scope
     "tests/basic/vars2.py",      # Can't match variable scope

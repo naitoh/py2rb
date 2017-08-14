@@ -496,6 +496,15 @@ class RB(object):
                     self._class_functions.append(stmt.name)
                 else:
                     self._self_functions.append(stmt.name)
+        if len(self._class_functions) != 0:
+            self.indent()
+            self.write("def method_missing(method, *args)")
+            self.indent()
+            self.write("self.class.__send__ method, *args")
+            self.dedent()
+            self.write("end")
+            self.dedent()
+
         self._classes_functions[node.name] = self._class_functions
         self._classes_self_functions[node.name] = self._self_functions
 

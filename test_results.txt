@@ -55,7 +55,7 @@ tests/basic/oo_inherit_simple.py [4]: ....                       [OK]
 tests/basic/oo_inherit_simple_super1.py [4]: ....                [OK]
 tests/basic/oo_inherit_simple_super2.py [4]: ....                [OK]
 tests/basic/oo_inherit_simple_super3.py [4]: ....                [OK]
-tests/basic/oo_static_inherit.py [4]: ..                       [FAIL]
+tests/basic/oo_static_inherit.py [4]: ....                       [OK]
 tests/basic/pass.py [4]: ....                                    [OK]
 tests/basic/print.py [4]: ....                                   [OK]
 tests/basic/raise.py [4]: ....                                   [OK]
@@ -166,6 +166,7 @@ tests/basic/hasattr.py [4]: ..                        known to [FAIL]
 tests/basic/listcomp2.py [4]: .                       known to [FAIL]
 tests/basic/nestedclass.py [4]: ..                    known to [FAIL]
 tests/basic/oo_diamond.py [4]: ..                     known to [FAIL]
+tests/basic/oo_static_inherit2.py [4]: ..             known to [FAIL]
 tests/basic/oo_super.py [4]: ..                       known to [FAIL]
 tests/basic/valueerror.py [4]: ...                    known to [FAIL]
 tests/basic/vars.py [4]: ...                          known to [FAIL]
@@ -186,6 +187,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 187 tests in 54.826s
+Ran 188 tests in 61.471s
 
-FAILED (failures=2, expected failures=33)
+FAILED (failures=1, expected failures=34)

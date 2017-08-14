@@ -1,15 +1,15 @@
 
 
-class a1(object):
+class A1(object):
     
     @staticmethod
     def msg(val):
-        print("a1 static method msg says:"+str(val))
+        print("A1 static method msg says:"+str(val))
 
-class a2(a1):
+class A2(A1):
     pass
 
-a = a2()
+a = A2()
 
 a.msg("hello")
-a2.msg("world")
+A2.msg("world")
