@@ -9,3 +9,8 @@ y.append('bar')
 print(len(y))
 print(y[0])
 print(y[1])
+
+z = [0, 1, 2]
+print(z)
+z = list(z)
+print(z)

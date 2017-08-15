@@ -1406,7 +1406,7 @@ class RB(object):
             elif (len(node.args) == 1) and isinstance(node.args[0], ast.Str):
                 return "%s.split('')" % (rb_args_s)
             else:
-                return "%s" % (rb_args_s)
+                return "%s.to_a" % (rb_args_s)
         elif func in self.dict_map:
             """ [dict]
             <Python> dict([('foo', 1), ('bar', 2)])
