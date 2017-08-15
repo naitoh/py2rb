@@ -1334,7 +1334,17 @@ class RB(object):
             <Python> np.array([x1, x2])
             <Ruby>   Numo::NArray[x1, x2]
             """
-            return "%s%s" % (self.order_methods_without_bracket[func], rb_args[0])
+            if not isinstance(self.order_methods_without_bracket[func],  dict):
+                return "%s%s" % (self.order_methods_without_bracket[func], rb_args[0])
+            if len(rb_args) == 0:
+                if 'arg_0' in self.order_methods_without_bracket[func].keys():
+                    return "%s" % self.order_methods_without_bracket[func]['arg_0']
+            elif len(rb_args) == 1:
+                if 'arg_1' in self.order_methods_without_bracket[func].keys():
+                    return "%s%s" % (self.order_methods_without_bracket[func]['arg_1'], rb_args[0])
+            elif len(rb_args) == 2:
+                if 'arg_2' in self.order_methods_without_bracket[func].keys():
+                    return "%s%s" % (self.order_methods_without_bracket[func]['arg_2'], rb_args[0])
         elif func in self.order_methods_with_bracket.keys():
             """ [Function convert to Method]
             <Python> np.exp(-x)

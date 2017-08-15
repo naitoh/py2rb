@@ -123,6 +123,8 @@ tests/modules/import_multi.py [4]: ......                        [OK]
 tests/numpy/and_gate.py [4]: ....                                [OK]
 tests/numpy/relu.py [4]: ....                                    [OK]
 tests/numpy/sigmoid.py [4]: ....                                 [OK]
+tests/numpy/sin_cos_graph.py [4]: ....                           [OK]
+tests/numpy/step_function.py [4]: ....                           [OK]
 tests/os/path_basename.py [4]: ....                              [OK]
 tests/os/path_dirname.py [4]: ....                               [OK]
 tests/os/path_join.py [4]: ....                                  [OK]
@@ -187,6 +189,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 188 tests in 60.987s
+Ran 190 tests in 66.711s
 
 OK (expected failures=34)

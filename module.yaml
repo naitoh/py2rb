@@ -1,36 +1,74 @@
-# import numpy as np => require 'numo/narray'
-# order_methods_without_bracket:
-#   np.array([x1, x2]) => Numo::NArray[x1, x2]
-# order_methods_with_bracket:
-#   np.exp(-x) => Numo::NMath.exp(-x)
-# order_methods_with_bracket_2_1_x:
-#   assertIn(1, [1,2]) => assert_include([1,2], 1)
-# reverse_methods:
-#   np.sum(w*x) => (w*x).sum
-# range_methods:
-#   np.arange(-5.0, 5.0, 0.1) => Numo::DFloat.new(20).seq(-1,0.1)
+#
+#  Usage
+# --------
+# Python module name:
+#   Ruby module name: # import numpy as np => require 'numo/narray'
+#
+#   order_methods_without_bracket: {
+#     Python method name: Ruby method name # Case independent of the number of arguments.
+#   }
+#   order_methods_without_bracket: {
+#     Python method name: {
+#       arg_0: Ruby method name # Case without arguments.
+#       arg_1: Ruby method name # Case with only one argument.
+#       arg_2: Ruby method name # Case with two arguments.
+#   }
+#
+#     e.g. np.array([x1, x2]) => Numo::NArray[x1, x2]
+#
+#   order_methods_with_bracket: {
+#     Python method name: Ruby method name # Case independent of the number of arguments.
+#   }
+#   order_methods_with_bracket:
+#
+#     e.g. np.exp(-x) => Numo::NMath.exp(-x)
+#
+#   order_methods_with_bracket_2_1_x:
+#
+#     e.g. assertIn(1, [1,2]) => assert_include([1,2], 1)
+#
+#   reverse_methods:
+#
+#     e.g. np.sum(w*x) => (w*x).sum
+#
+#   range_methods:
+#
+#     e.g. np.arange(-5.0, 5.0, 0.1) => Numo::DFloat.new(20).seq(-1,0.1)
 
 numpy:
-  id: numo/narray
-  order_methods_without_bracket: {array: 'Numo::NArray',
-                  linspace: 'Numo::DFloat.linspace'}
-  order_methods_with_bracket: {exp: 'Numo::NMath.exp',
-                  maximum: 'Numo::NArray.maximum'}
-  reverse_methods: {sum: 'sum'}
-  range_methods: {arange: 'Numo::DFloat.new'}
+  id: numo/narray # import numpy as np => require 'numo/narray'
+  order_methods_without_bracket: {
+    array: {
+      arg_1 : 'Numo::NArray', # np.array([x1, x2]) => Numo::NArray[x1, x2]
+      arg_2 : ''              # np.array(x > 0, dtype=np.int) => x > 0
+    },
+    linspace: 'Numo::DFloat.linspace'
+  }
+  order_methods_with_bracket: {
+    exp: 'Numo::NMath.exp',        # np.exp(-x) => Numo::NMath.exp(-x)
+    sin: 'Numo::NMath.sin',
+    cos: 'Numo::NMath.cos',
+    maximum: 'Numo::NArray.maximum'
+  }
+  reverse_methods: {sum: 'sum'}    # np.sum(w*x) => (w*x).sum
+  range_methods: {arange: 'Numo::DFloat.new'} # np.arange(-5.0, 5.0, 0.1) => Numo::DFloat.new(20).seq(-1,0.1)
 
 os:
   id: 
-  order_methods_with_bracket: {path.dirname: 'File.dirname',
-                  path.basename: 'File.basename',
-                  path.join: 'File.join',
-                  walk: 'PyLib.walk'}
+  order_methods_with_bracket: {
+    path.dirname: 'File.dirname',
+    path.basename: 'File.basename',
+    path.join: 'File.join',
+    walk: 'PyLib.walk'
+  }
 
 unittest:
   id: test/unit
   mod_class_name: {TestCase: 'Test::Unit::TestCase'}
-  order_methods_with_bracket_2_1_x: {TestCase.assertIn: 'assert_include',
-                   TestCase.assertEqual: 'assert_equal'}
+  order_methods_with_bracket_2_1_x: {
+    TestCase.assertIn: 'assert_include',
+    TestCase.assertEqual: 'assert_equal'
+  }
   order_methods_with_bracket: {TestCase.assertTrue: 'assert'}
   ignore: {main: ''}
 
