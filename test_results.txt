@@ -46,6 +46,7 @@ tests/basic/logicalops.py [4]: ....                              [OK]
 tests/basic/loops.py [4]: ....                                   [OK]
 tests/basic/multiassign.py [4]: ....                             [OK]
 tests/basic/none.py [4]: ....                                    [OK]
+tests/basic/numeric.py [4]: ....                                 [OK]
 tests/basic/oo.py [4]: ....                                      [OK]
 tests/basic/oo_attributes.py [4]: ....                           [OK]
 tests/basic/oo_inherit.py [4]: ....                              [OK]
@@ -189,6 +190,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 190 tests in 66.711s
+Ran 191 tests in 65.644s
 
 OK (expected failures=34)

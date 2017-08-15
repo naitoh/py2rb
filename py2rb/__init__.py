@@ -63,6 +63,7 @@ class RB(object):
 
     # float(foo) => foo.to_f
     reverse_methods = {
+        'abs'   : 'abs',            # Numeric
         'int'   : 'to_i',
         'float' : 'to_f',
         'str'   : 'to_s',
