@@ -70,6 +70,8 @@ class RB(object):
         'len'   : 'size',
         'max'   : 'max',            # Array
         'min'   : 'min',            # Array
+        'all'   : 'is_all?',        # Enumerable
+        'any'   : 'is_any?',        # Enumerable
         'iter'  : 'each',
         'sum'   : 'sum', # if Ruby 2.3 or bufore is 'inject(:+)' method.
         #'sum'   : 'inject(:+)', # if Ruby 2.4 or later is better sum() method.

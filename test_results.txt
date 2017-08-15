@@ -102,6 +102,8 @@ tests/functions/str.py [4]: ....                                 [OK]
 tests/functions/ubitcomp.py [4]: ....                            [OK]
 tests/functions/uminus.py [4]: ....                              [OK]
 tests/functions/uplus.py [4]: ....                               [OK]
+tests/lists/all.py [4]: ....                                     [OK]
+tests/lists/any.py [4]: ....                                     [OK]
 tests/lists/extend.py [4]: ....                                  [OK]
 tests/lists/filter.py [4]: ....                                  [OK]
 tests/lists/in.py [4]: ....                                      [OK]
@@ -190,6 +192,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 191 tests in 65.644s
+Ran 193 tests in 68.331s
 
 OK (expected failures=34)

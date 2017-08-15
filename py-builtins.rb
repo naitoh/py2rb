@@ -40,17 +40,21 @@ module PythonIndexEx
       return ret.nil? ? -1 : ret
     end
 
+    def rindex(substr)
+      ret = super(substr)
+      return ret.nil? ? -1 : ret
+    end
+  end
+end
+
+module PythonFindEx
+  refine String do
     def find(substr, start_pos=0, end_pos=nil)
       if end_pos.nil?
         ret = index(substr, start_pos)
       else
         ret = self[0...end_pos].public_method(:index).call(substr, start_pos)
       end
-      return ret.nil? ? -1 : ret
-    end
-
-    def rindex(substr)
-      ret = super(substr)
       return ret.nil? ? -1 : ret
     end
 
@@ -68,7 +72,11 @@ module PythonIndexEx
       end
       return ret.nil? ? -1 : ret
     end
+  end
+end
 
+module PythonSplitEx
+  refine String do
     def split_p(sep = '', limit=0)
       case sep
       when ' '
@@ -81,7 +89,11 @@ module PythonIndexEx
       end
       self.split(sep, limit)
     end
+  end
+end
 
+module PythonStripEx
+  refine String do
     def strip(chars='')
       if chars == ''
          super()
@@ -105,7 +117,11 @@ module PythonIndexEx
          self.gsub(/([#{chars}]*$)/, '')
       end
     end
+  end
+end
 
+module PythonStringCountEx
+  refine String do
     # Replace to Python String#count
     alias :count_r :count
     def count(substr, start_pos=nil, end_pos=nil)
@@ -122,11 +138,40 @@ module PythonIndexEx
   end
 end
 
-class Array
-  def remove(obj)
-    i = self.index(obj)
-    self.delete_at(i)
-    return
+module PythonRemoveEx
+  refine Array do
+    def remove(obj)
+      i = self.index(obj)
+      self.delete_at(i)
+      return
+    end
+  end
+end
+
+module EnumerableEx
+  refine Enumerable do
+    def is_all?()
+      result = true
+      self.each do |a|
+        case a
+        when nil, false, 0, '', [], {}
+          result =  false
+        end
+      end
+      return result
+    end
+
+    def is_any?()
+      result = false
+      self.each do |a|
+        case a
+        when nil, false, 0, '', [], {}
+        else
+          result =  true
+        end
+      end
+      return result
+    end
   end
 end
 
