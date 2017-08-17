@@ -1541,13 +1541,14 @@ class RB(object):
                          end
                      end
             """
-            if node.value.func.id == 'super':
-                if attr == self._function[-1]:
-                    return "super"
-                elif (attr in self._self_functions):
-                    return "public_method(:%s).super_method.call" % attr
-                else:
-                    return attr
+            if isinstance(node.value.func, ast.Name):
+                if node.value.func.id == 'super':
+                    if attr == self._function[-1]:
+                        return "super"
+                    elif (attr in self._self_functions):
+                        return "public_method(:%s).super_method.call" % attr
+                    else:
+                        return attr
         elif isinstance(node.value, ast.Name):
             if node.value.id == 'self':
                 if (attr in self._class_functions):
