@@ -875,15 +875,27 @@ class RB(object):
         <Python 2> ExceptHandler(expr? type, expr? name, stmt* body)
         <Python 3> ExceptHandler(expr? type, identifier? name, stmt* body)
         """
+        """ <Python> try:
+                     except AttributeError as e:
+            <Ruby>   begin
+                     rescue AttributeError => e
+                     end
+            <Python> try:
+                     except cuda.cupy.cuda.runtime.CUDARuntimeError as e:
+            <Ruby>   begin
+                     rescue AttributeError
+                     end
+        """
+
         if node.type is None:
             self.write("rescue")
         elif node.name is None:
-            self.write("rescue %s" % node.type.id)
+            self.write("rescue %s" % self.visit(node.type))
         else:
             if six.PY2:
-                self.write("rescue %s => %s" % (node.type.id, node.name.id))
+                self.write("rescue %s => %s" % (self.visit(node.type), node.name.id))
             else:
-                self.write("rescue %s => %s" % (node.type.id, node.name))
+                self.write("rescue %s => %s" % (self.visit(node.type), node.name))
         self.indent()
         for stmt in node.body:
             self.visit(stmt)
