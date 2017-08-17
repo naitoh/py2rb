@@ -228,6 +228,19 @@ module PyLib
   end
 end
 
+#
+# Foo.call() or Foo.() is nothing => Foo.new() call.
+#
+class Class
+  def method_missing(method, *args)
+    if method == :call
+      self.new(*args)
+    else
+      super
+    end
+  end
+end
+
 module Numo
   class NArray
     def self.maximum(a, b)

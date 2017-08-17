@@ -88,7 +88,7 @@ class RB(object):
         'endswith' : 'end_with?',   # String
         'extend'   : 'concat',      # Array
         'replace'  : 'gsub',        # String
-        'items'    : '',            # Hash
+        'items'    : 'to_a',        # Hash
     }
     attribute_not_arg = {
         'split'   : 'split',         # String
@@ -280,6 +280,7 @@ class RB(object):
         self._function.append(node.name)
         self._function_args = []
         is_static = False
+        is_closure = False
         is_property = False
         is_setter = False
         if node.decorator_list:
@@ -354,8 +355,10 @@ class RB(object):
                      def initialize(fuga)
                      def bar(hoge)
         """
+        if len(self._function) != 1:
+            is_closure = True
         if self._class_name:
-            if not is_static:
+            if not is_static and not is_closure:
                 if not (rb_args[0] == "self"):
                     raise NotImplementedError("The first argument must be 'self'.")
                 del rb_args[0]
@@ -412,6 +415,23 @@ class RB(object):
 
         if is_setter:
             self.write("def %s=(%s)" % (func_name, rb_args))
+        elif is_closure:
+            """ [function closure] :
+            <Python> def foo(fuga):
+                         def bar(fuga):
+
+                         bar()
+            <Ruby>   def foo(fuga)
+                         bar = lambda do |fuga|
+                         end
+                         bar.()
+                     end
+            """
+            if len(self._function_args) == 0:
+                self.write("%s = lambda do" % func_name)
+            else:
+                self.write("%s = lambda do |%s|" % (func_name, rb_args))
+            self._lambda_functions.append(func_name)
         else:
             self.write("def %s(%s)" % (func_name, rb_args))
 
@@ -662,16 +682,6 @@ class RB(object):
                 var = self.visit(target)
                 if not (var in self._scope):
                     self._scope.append(var)
-                    #declare = "var "
-                    declare = ""
-                else:
-                    declare = ""
-                if value in self._class_names:
-                    """ [create instance] : 
-                    <Python> a = foo()
-                    <Ruby>   a = Foo.new()
-                    """
-                    value = (value[0]).upper() + value[1:] + '.new'
                 if isinstance(node.value, ast.Call):
                     if isinstance(node.value.func, ast.Name):
                         if node.value.func.id in self._class_names:
@@ -679,10 +689,9 @@ class RB(object):
                 # set lambda functions
                 if isinstance(node.value, ast.Lambda):
                     self._lambda_functions.append(var)
-                    #print var
-                    self.write("%s%s = lambda %s" % (declare, var, value))
+                    self.write("%s = lambda %s" % (var, value))
                 else:
-                    self.write("%s%s = %s" % (declare, var, value))
+                    self.write("%s = %s" % (var, value))
             elif isinstance(target, ast.Attribute):
                 var = self.visit(target)
                 """ [instance variable] : 
@@ -1487,10 +1496,16 @@ class RB(object):
                         args_arr += (rb_args[2:])
                     return "%s(%s)" % (self.order_methods_with_bracket_2_1_x[base_func], ','.join(args_arr))
             else:
-                if len(rb_args) == 0:
-                    return "%s" % (func)
+                if func in self._scope:
+                    if len(rb_args) == 0:
+                        return "%s.()" % (func)
+                    else:
+                        return "%s.(%s)" % (func, rb_args_s)
                 else:
-                    return "%s(%s)" % (func, rb_args_s)
+                    if len(rb_args) == 0:
+                        return "%s" % (func)
+                    else:
+                        return "%s(%s)" % (func, rb_args_s)
 
     def visit_Raise(self, node):
         """
