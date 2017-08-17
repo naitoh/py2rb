@@ -832,9 +832,14 @@ class RB(object):
         """
         """ <Python> with open("hello.txt", 'w') as f:
                          f.write("Hello, world!")
-            <Ruby>   File.open("hello.txt", "w") do |f|
+            <Ruby>   File.open("hello.txt", "w") {|f|
                          f.write("Hello, World!")
-                     end
+                     }
+            <Python> with open("hello.txt", 'r'):
+                         print("Hello, world!")
+            <Ruby>   File.open("hello.txt", "r"){
+                         print("Hello, world!")
+                     }
         """
         item_str = ''
         for stmt in node.items:
@@ -844,7 +849,7 @@ class RB(object):
         for stmt in node.body:
             self.visit(stmt)
         self.dedent()
-        self.write("end")
+        self.write("}")
 
     @scope
     def visit_withitem(self, node):
@@ -854,8 +859,11 @@ class RB(object):
         func = self.visit(node.context_expr)
         if isinstance(node.context_expr, (ast.Call)):
             self.visit(node.context_expr)
-        val = self.visit(node.optional_vars)
-        return "%s do |%s|" % (func, val)
+        if node.optional_vars == None:
+            return "%s {" % func
+        else:
+            val = self.visit(node.optional_vars)
+            return "%s {|%s|" % (func, val)
 
     @scope
     def _visit_Raise(self, node):

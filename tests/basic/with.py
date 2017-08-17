@@ -3,3 +3,6 @@ with open("hello.txt", 'w') as f:
 
 with open("hello.txt", 'r') as f:
     print(f.read())
+
+with open("hello.txt", 'r'):
+    print('ok')
