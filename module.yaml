@@ -62,6 +62,16 @@ os:
     walk: 'PyLib.walk'
   }
 
+copy:
+  id:
+  reverse_methods: {copy: 'dup'}    # copy(foo) => (foo).dup
+
+collections:
+  id:
+  order_methods_without_bracket: {
+    OrderedDict: ''
+  }
+
 unittest:
   id: test/unit
   mod_class_name: {TestCase: 'Test::Unit::TestCase'}

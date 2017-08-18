@@ -18,6 +18,7 @@ KNOWN_TO_FAIL = [
     "tests/functions/sort_cmp.py",
     "tests/functions/sort23.py",
 
+    "tests/decorator/class.py",
     "tests/decorator/decorator.py",
 
     "tests/lists/reduce.py",

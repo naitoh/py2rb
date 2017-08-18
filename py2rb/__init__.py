@@ -366,6 +366,8 @@ class RB(object):
 
         if '__init__' == node.name:
             func_name = 'initialize'
+        elif '__call__' == node.name:
+            func_name = 'call'
         elif '__str__' == node.name:
             func_name = 'to_s'
         elif is_static:
@@ -454,6 +456,22 @@ class RB(object):
         if self._class_name:
             self.dedent()
             self._scope = []
+        else:
+            if node.decorator_list:
+                """ [method argument set Method Objec] :
+                <Python> @mydecorator
+                         def describe():
+                             pass
+                <Ruby>   def describe()
+                         end
+                         describe = mydecorator(method(:describe))
+                """
+                if len(node.decorator_list) == 1 and \
+                    isinstance(node.decorator_list[0], ast.Name):
+                    self.write('%s = %s(method(:%s))' % (node.name, node.decorator_list[0].id, node.name))
+                    #self.write('%s = %s(%s)' % (node.name, node.decorator_list[0].id, node.name))
+                    self._scope.append(node.name)
+
         self._function.pop()
         self._function_args = []
 
@@ -875,10 +893,6 @@ class RB(object):
             return "%s {|%s|" % (func, val)
 
     @scope
-    def _visit_Raise(self, node):
-        pass
-
-    @scope
     def visit_ExceptHandler(self, node):
         """
         <Python 2> ExceptHandler(expr? type, expr? name, stmt* body)
@@ -1205,7 +1219,7 @@ class RB(object):
         """
         Starred(expr value, expr_context ctx)
         """
-        return node.value
+        return "*%s" % self.visit(node.value)
 
     # python 3
     def visit_NameConstant(self, node):
@@ -1261,8 +1275,23 @@ class RB(object):
         Call(expr func, expr* args, keyword* keywords)
         """
         rb_args = [ self.visit(arg) for arg in node.args ]
+        """ [method argument set Method Objec] :
+        <Python> def describe():
+                     return "world"
+                 describe = mydecorator(describe)
+        <Ruby>   def describe()
+                     return "world"
+                 end
+                 describe = mydecorator(method(:describe))
+        """
         self._func_args_len = len(rb_args)
         func = self.visit(node.func)
+        if not func in self.iter_map:
+            for i in range(len(rb_args)):
+                if rb_args[i] in self._functions.keys():
+                    if rb_args[i][-1] != ')' and \
+                       not rb_args[i] in self._scope:
+                        rb_args[i] = 'method(:%s)' % rb_args[i]
         for f in self._import_files:
             if func.startswith(f):
                 func = func.replace(f + '.', '')
@@ -1496,16 +1525,14 @@ class RB(object):
                         args_arr += (rb_args[2:])
                     return "%s(%s)" % (self.order_methods_with_bracket_2_1_x[base_func], ','.join(args_arr))
             else:
-                if func in self._scope:
-                    if len(rb_args) == 0:
-                        return "%s.()" % (func)
-                    else:
-                        return "%s.(%s)" % (func, rb_args_s)
+                if (func in self._scope or func[0] == '@') and \
+                   func.find('.') == -1: # Proc call
+                    return "%s.(%s)" % (func, rb_args_s)
+
+                if func[-1] == ')':
+                    return "%s" % (func)
                 else:
-                    if len(rb_args) == 0:
-                        return "%s" % (func)
-                    else:
-                        return "%s(%s)" % (func, rb_args_s)
+                    return "%s(%s)" % (func, rb_args_s)
 
     def visit_Raise(self, node):
         """
