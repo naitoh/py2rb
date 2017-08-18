@@ -136,7 +136,6 @@ tests/numpy/and_gate.py [4]: ....                                [OK]
 tests/numpy/relu.py [4]: ....                                    [OK]
 tests/numpy/sigmoid.py [4]: ....                                 [OK]
 tests/numpy/sin_cos_graph.py [4]: ....                           [OK]
-tests/numpy/step_function.py [4]: ....                           [OK]
 tests/os/path_basename.py [4]: ....                              [OK]
 tests/os/path_dirname.py [4]: ....                               [OK]
 tests/os/path_join.py [4]: ....                                  [OK]
@@ -193,11 +192,12 @@ tests/modules/import_class.py [4]: ...                known to [FAIL]
 tests/modules/import_diamond.py [4]: ......           known to [FAIL]
 tests/modules/module_name.py [4]: ....                known to [FAIL]
 tests/modules/rng.py [4]:                             known to [FAIL]
+tests/numpy/step_function.py [4]: ..                  known to [FAIL]
 tests/strings/other_strings.py [4]: ..                known to [FAIL]
 tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 199 tests in 65.609s
+Ran 199 tests in 67.020s
 
-OK (expected failures=31)
+OK (expected failures=32)

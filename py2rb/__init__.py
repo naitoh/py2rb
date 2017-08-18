@@ -174,7 +174,6 @@ class RB(object):
             'Gt'    : ">",
             'GtE'   : ">=",
             'Is'    : "===",
-            'IsNot' : "is not", # Not implemented yet
         }
 
     def __init__(self, mod_paths = {}):
@@ -1211,6 +1210,8 @@ class RB(object):
             return "%s == %s" % (left, comp)
         elif isinstance(op, ast.NotEq):
             return "%s != %s" % (left, comp)
+        elif isinstance(op, ast.IsNot):
+            return "!%s.equal?(%s)" % (left, comp)
         else:
             return "%s %s %s" % (left, self.get_comparison_op(op), comp)
 
@@ -1383,7 +1384,14 @@ class RB(object):
             <Python> float(foo)
             <Ruby>   (foo).to_f
             """
-            return "(%s).%s" % (rb_args_s, self.reverse_methods[func])
+            if not isinstance(self.reverse_methods[func],  dict):
+                return "(%s).%s" % (rb_args_s, self.reverse_methods[func])
+            if len(rb_args) == 1:
+                if 'arg_1' in self.reverse_methods[func].keys():
+                    return "(%s).%s" % (rb_args_s, self.reverse_methods[func]['arg_1'])
+            else:
+                if 'arg_2' in self.reverse_methods[func].keys():
+                    return "(%s).%s(%s)" % (rb_args[0], self.reverse_methods[func]['arg_2'], ", ".join(rb_args[1:]))
         elif func in self.methods_map_middle.keys():
             """ [Function convert to Method]
             <Python> isinstance(foo, String)
