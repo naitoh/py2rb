@@ -184,6 +184,7 @@ class RB(object):
         self.clear = self.__formater.clear
         self.indent = self.__formater.indent
         self.dedent = self.__formater.dedent
+        self.indent_string = self.__formater.indent_string
         self.dummy = 0
         self.classes = ['dict', 'list', 'tuple']
         # This is the name of the class that we are currently in:
@@ -1091,7 +1092,24 @@ class RB(object):
         self._scope.extend(node.names)
 
     def visit_Expr(self, node):
-        self.write(self.visit(node.value))
+        """
+        Expr(expr value)
+        """
+        val =  self.visit(node.value)
+        if isinstance(node.value, ast.Str):
+            """
+            <Python> "" * comment
+                            * sub comment ""
+            <Ruby>   # * comment
+                     #     * sub comment
+            """
+            comment = val[1:-1]
+            indent = self.indent_string()
+            for s in comment.split('\n'):
+                s = re.sub(r'^%s' % indent, '', s)
+                self.write("# %s" % s)
+        else:
+            self.write(val)
 
     def visit_Pass(self, node):
         self.write("# pass")
@@ -1279,6 +1297,7 @@ class RB(object):
         """
         # Uses the Python builtin repr() of a string and the strip string type from it.
         txt = re.sub(r'"', '\\"', repr(node.s)[1:-1])
+        txt = re.sub(r'\\n', '\n', txt)
         if self._is_string_symbol:
             txt = ':' + txt
         else:

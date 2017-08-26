@@ -26,6 +26,12 @@ class Formater(object):
         self.__indentation += 1
         self.__indent_temp = self.__indent_string*self.__indentation
 
+    def indent_string(self):
+        """
+        return current indentation string.
+        """
+        return self.__indent_temp
+
     def clear(self):
         self.__buffer = []
 

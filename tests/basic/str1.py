@@ -20,3 +20,12 @@ if s3 == s5:
     print("ok3")
 if s3 != s6:
     print("ok4")
+
+"""some "x" string
+and some other string too...
+"""
+
+if True:
+    """some "x" string
+    and some other string too...
+    """
