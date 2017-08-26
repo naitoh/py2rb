@@ -190,7 +190,7 @@ class RB(object):
         # This is the name of the class that we are currently in:
         self._class_name = None
         # This is use () case of the tuple that we are currently in:
-        self._is_tuple = False # True : "()" , False : "[]", None: "%s => %s" (Hash)
+        self._tuple_type = '[]' # '()' : "(a, b)" , '[]' : "[a, b]", '=>': "%s => %s" (Hash), '': 'a, b'
         self._func_args_len = 0
         self._dict_format = False # True : Symbol ":", False : String "=>"
 
@@ -757,9 +757,9 @@ class RB(object):
         #print self.visit(node.iter) #or  Variable (String case)
         #if isinstance(node.iter, ast.Str):
 
-        self._is_tuple = True
+        self._tuple_type = '()'
         for_target = self.visit(node.target)
-        self._is_tuple = False
+        self._tuple_type = '[]'
         #if isinstance(node.iter, (ast.Tuple, ast.List)):
         #    for_iter = "[%s]" % self.visit(node.iter)
         #else:
@@ -1159,10 +1159,17 @@ class RB(object):
         #else:
         #    i = self.visit(node.generators[0].iter)
         i = self.visit(node.generators[0].iter) # ast.Tuple, ast.List, ast.*
-        t = self.visit(node.generators[0].target)
+        if isinstance(node.generators[0].target, ast.Name):
+            t = self.visit(node.generators[0].target)
+        else:
+            # ast.Tuple
+            self._tuple_type = ''
+            t = self.visit(node.generators[0].target)
+            self._tuple_type = '[]'
         if len(node.generators[0].ifs) == 0:
             """ <Python> [x**2 for x in [1,2]]
                 <Ruby>   [1, 2].map{|x| x**2}  """
+
             return "%s.map{|%s| %s}" % (i, t, self.visit(node.elt))
         else:
             """ <Python> [x**2 for x in [1,2] if x > 1]
@@ -1520,9 +1527,9 @@ class RB(object):
                 rb_args = []
                 if isinstance(node.args[0], ast.List):
                     for elt in node.args[0].elts:
-                        self._is_tuple = None
+                        self._tuple_type = '=>'
                         rb_args.append(self.visit(elt))
-                        self._is_tuple = False
+                        self._tuple_type = '[]'
             else:
                  raise RubyError("dict in argument list Error")
             return "{%s}" % (", ".join(rb_args))
@@ -1760,13 +1767,14 @@ class RB(object):
         Tuple(expr* elts, expr_context ctx)
         """
         els = [self.visit(e) for e in node.elts]
-        # True : () , False : []
-        if self._is_tuple == True:
+        if self._tuple_type == '()':
              return "(%s)" % (", ".join(els))
-        elif self._is_tuple == False:
+        elif self._tuple_type == '[]':
              return "[%s]" % (", ".join(els))
-        elif self._is_tuple == None:
+        elif self._tuple_type == '=>':
              return "%s => %s" % (els[0], els[1])
+        elif self._tuple_type == '':
+             return "%s" % (", ".join(els))
         else:
              raise RubyError("tuples in argument list Error")
 
@@ -1797,20 +1805,9 @@ class RB(object):
         #        els.append(self.visit(e))
         # ast.Tuple, ast.List, ast.*
         els = [self.visit(e) for e in node.elts]
-        #return "list([%s])" % (", ".join(els))
         return "[%s]" % (", ".join(els))
         #return ", ".join(els)
 
-    #def bracket(value):
-    #    # True : "()" , False : "[]" , None: ""
-    #    if self._is_tuple == None:
-    #        return value
-    #    elif self._is_tuple == True:
-    #        return "(%s)" % value
-    #    if self._is_tuple == False:
-    #        return "[%s]" % value
-
-    #@bracket
     def visit_Slice(self, node):
         """
         Slice(expr? lower, expr? upper, expr? step)
@@ -1821,22 +1818,14 @@ class RB(object):
             return "%s...%s,each_slice(%s).map(&:first)" % (self.visit(node.lower),
                     self.visit(node.upper), self.visit(node.step))
         if node.lower and node.upper:
-            #return "slice(%s, %s)" % (self.visit(node.lower),
-            #return "[%s...%s]" % (self.visit(node.lower),
             return "%s...%s" % (self.visit(node.lower),
                     self.visit(node.upper))
         if node.upper and not node.step:
-            #return "slice(%s)" % (self.visit(node.upper))
             return "0...%s" % (self.visit(node.upper))
-            #return "[0...%s]" % (self.visit(node.upper))
         if node.lower and not node.step:
-            #return "slice(%s, null)" % (self.visit(node.lower))
             return "%s..-1" % (self.visit(node.lower))
-            #return "[%s..-1]" % (self.visit(node.lower))
         if not node.lower and not node.upper and not node.step:
-            #return "slice(null)"
             return "0..-1"
-            #return "[0..-1]"
         raise NotImplementedError("Slice")
 
     def visit_Subscript(self, node):

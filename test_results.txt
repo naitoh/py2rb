@@ -46,6 +46,7 @@ tests/basic/lambda_map.py [4]: ....                              [OK]
 tests/basic/list.py [4]: ....                                    [OK]
 tests/basic/list2.py [4]: ....                                   [OK]
 tests/basic/list3.py [4]: ....                                   [OK]
+tests/basic/listcomp1.py [4]: ....                               [OK]
 tests/basic/literals.py [4]: ....                                [OK]
 tests/basic/logicalops.py [4]: ....                              [OK]
 tests/basic/loops.py [4]: ....                                   [OK]
@@ -199,6 +200,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 200 tests in 67.999s
+Ran 201 tests in 68.637s
 
 OK (expected failures=32)
