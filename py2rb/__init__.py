@@ -1039,9 +1039,13 @@ class RB(object):
         <python> import imported.submodules.submodulea import foo as bar
         <ruby>   require_relative 'imported/submodules/submodulea'
                  alias bar foo
+        * Case 4.
+        <python> import . import foo as bar
+        <ruby>   require_relative 'foo'
         Module(body=[ImportFrom(module='foo', names=[ alias(name='bar', asname=None)], level=0), 
         """
-        if node.module not in self.module_map:
+        if node.module != None and \
+           node.module not in self.module_map:
             mod_name = node.module.replace('.', '/')
             mod_name_i = node.module.replace('.', '/') + '/' + node.names[0].name
             for path, rel_path in self.mod_paths.items():
@@ -1059,7 +1063,10 @@ class RB(object):
                  self.write("alias %s %s" % (node.names[0].asname, node.names[0].name))
             return
 
-        mod_name = self.module_map[node.module]
+        if node.module == None:
+            mod_name = node.names[0].name
+        else:
+            mod_name = self.module_map[node.module]
         self.write("require '%s'" % mod_name)
 
         """ T.B.D
@@ -1258,6 +1265,13 @@ class RB(object):
         Bytes(bytes s)
         """
         return node.s
+
+    # Python 3
+    def visit_Ellipsis(self, node):
+        """
+        Ellipsis
+        """
+        return 'false'
 
     def visit_Str(self, node):
         """
