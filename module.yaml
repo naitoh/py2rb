@@ -43,8 +43,17 @@ numpy:
   order_methods_without_bracket: {
     array: {
       arg_1 : 'Numo::NArray', # np.array([x1, x2]) => Numo::NArray[x1, x2]
-      #arg_2 : ''              # np.array(x > 0, dtype=np.int) => x > 0
-      arg_2 : 'Numo::NArray'   # np.array([5], dtype=np.float32) => Numo::NArray[5]
+      arg_2 : {
+        'dtype: %s.float32' : 'Numo::NArray', # np.array([5], dtype=np.float32) => Numo::NArray[5]
+        'dtype: %s.int' : ''                  # np.array(x > 0, dtype=np.int) => x > 0
+      }
+    },
+    prod: {
+      arg_1 : 'Numo::NArray[%s].prod', # np.prod(shape) => Numo::NArray[shape].prod
+      arg_2 : {
+        'dtype: %s.int32' : 'Numo::Int32[%s].prod',      # np.prod(shape, dtype=np.int32) => Numo::Int32[shape].prod
+        'dtype: %s.float32' : 'Numo::Float32[%s].prod'
+      }
     },
     linspace: 'Numo::DFloat.linspace'
   }

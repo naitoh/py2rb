@@ -1450,10 +1450,28 @@ class RB(object):
                     return "%s" % self.order_methods_without_bracket[func]['arg_0']
             elif len(rb_args) == 1:
                 if 'arg_1' in self.order_methods_without_bracket[func].keys():
-                    return "%s%s" % (self.order_methods_without_bracket[func]['arg_1'], rb_args[0])
+                    if "%s" in self.order_methods_without_bracket[func]['arg_1']:
+                        return self.order_methods_without_bracket[func]['arg_1'] % rb_args[0]
+                    else:
+                        return "%s%s" % (self.order_methods_without_bracket[func]['arg_1'], rb_args[0])
             elif len(rb_args) == 2:
                 if 'arg_2' in self.order_methods_without_bracket[func].keys():
-                    return "%s%s" % (self.order_methods_without_bracket[func]['arg_2'], rb_args[0])
+                    if not isinstance(self.order_methods_without_bracket[func]['arg_2'],  dict):
+                        return "%s%s" % (self.order_methods_without_bracket[func]['arg_2'], rb_args[0])
+                    else:
+                        for key in self.order_methods_without_bracket[func]['arg_2'].keys():
+                            """ [Function convert to Method]
+                            <Python> np.prod(shape, dtype=np.int32)
+                            <Ruby>   Numo::Int32[shape].prod
+                            """
+                            key2 = key            # key2: %s.int32
+                            if "%s" in key:
+                               key2 = (key % ins) # key2: np.int32
+                            if rb_args[1] == key2:
+                                if "%s" in self.order_methods_without_bracket[func]['arg_2'][key]:
+                                    return self.order_methods_without_bracket[func]['arg_2'][key] % rb_args[0]
+                                else:
+                                    return "%s%s" % (self.order_methods_without_bracket[func]['arg_2'][key], rb_args[0])
         elif func in self.order_methods_with_bracket.keys():
             """ [Function convert to Method]
             <Python> np.exp(-x)

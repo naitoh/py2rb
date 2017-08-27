@@ -37,7 +37,6 @@ KNOWN_TO_FAIL = [
     "tests/strings/string_format_efg.py",
     "tests/strings/string_format_o.py", # not support
     "tests/strings/string_format_x.py", # not support
-    "tests/numpy/step_function.py", # Need bug fix
     ]
 
 
