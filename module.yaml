@@ -90,6 +90,7 @@ six:
     PY3: 'true',
     integer_types: '[Integer]'
   }
+  range_map: {moves.range: ''}
 
 collections:
   id:

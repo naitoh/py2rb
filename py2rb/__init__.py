@@ -1014,6 +1014,10 @@ class RB(object):
             if method_value != None:
                 if method_key == 'id':
                     self.write("require '%s'" % method_value)
+                elif method_key == 'range_map':
+                    for key, value in six.iteritems(method_value):
+                        mod_org_method = "%s.%s" % (mod_as_name, key)
+                        RB.__dict__[method_key].add(mod_org_method)
                 #elif method_key == 'order_inherited_methods':
                 #    # no use mod_as_name (Becase Inherited Methods)
                 #    for key, value in six.iteritems(method_value):

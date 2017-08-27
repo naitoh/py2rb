@@ -149,6 +149,7 @@ tests/os/walk.py [4]: ....                                       [OK]
 tests/six/integer_types.py [4]: ....                             [OK]
 tests/six/iteritems.py [4]: ....                                 [OK]
 tests/six/itervalues.py [4]: ....                                [OK]
+tests/six/moves.range.py [4]: ....                               [OK]
 tests/six/py23.py [4]: ....                                      [OK]
 tests/strings/count.py [4]: ....                                 [OK]
 tests/strings/find.py [4]: ....                                  [OK]
@@ -207,6 +208,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 208 tests in 72.199s
+Ran 209 tests in 73.030s
 
 OK (expected failures=31)
