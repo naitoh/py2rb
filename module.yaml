@@ -81,7 +81,10 @@ copy:
 
 six:
   id:
-  reverse_methods: {itervalues: 'values'}
+  reverse_methods: {
+    itervalues: 'values',
+    iteritems: 'to_a'
+  }
   attribute_map: {
     PY2: 'false',
     PY3: 'true',
