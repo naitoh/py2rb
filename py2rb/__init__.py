@@ -1179,6 +1179,29 @@ class RB(object):
                     (i, t, self.visit(node.generators[0].ifs[0]), t, \
                      self.visit(node.elt))
 
+    def visit_DictComp(self, node):
+        """
+        DictComp(expr key, expr value, comprehension* generators)
+        """
+        i = self.visit(node.generators[0].iter) # ast.Tuple, ast.List, ast.*
+        if isinstance(node.generators[0].target, ast.Name):
+            t = self.visit(node.generators[0].target)
+        else:
+            # ast.Tuple
+            self._tuple_type = ''
+            t = self.visit(node.generators[0].target)
+            self._tuple_type = '[]'
+        if len(node.generators[0].ifs) == 0:
+            """ <Python> {key: data for key, data in {'a': 7}.items()}
+                <Ruby>   {'a', 7}.to_a.map{|key, data| [key, data]}.to_h  """
+            return "%s.map{|%s|[%s, %s]}.to_h" % (i, t, self.visit(node.key), self.visit(node.value))
+        else:
+            """ <Python> {key: data for key, data in {'a': 7}.items() if data > 6}
+                <Ruby>   {'a', 7}.to_a.select{|key, data| data > 6}.map{|key, data| [key, data]}.to_h  """
+            return "%s.select{|%s| %s}.map{|%s|[%s, %s]}.to_h" % \
+                    (i, t, self.visit(node.generators[0].ifs[0]), t, \
+                     self.visit(node.key), self.visit(node.value))
+
     def visit_Lambda(self, node):
         """
         Lambda(arguments args, expr body)
