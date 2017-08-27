@@ -49,7 +49,7 @@ class RB(object):
     # isinstance(foo, String) => foo.is_a?(String)
     methods_map_middle = {
         'isinstance' : 'is_a?',
-        'hasattr'   : 'respond_to?',
+        'hasattr'    : 'instance_variable_defined?',
     }
     # np.array([x1, x2]) => Numo::NArray[x1, x2]
     order_methods_without_bracket = {}
@@ -1014,7 +1014,7 @@ class RB(object):
             if method_value != None:
                 if method_key == 'id':
                     self.write("require '%s'" % method_value)
-                elif method_key == 'range_map':
+                elif method_key in ('range_map', 'dict_map'):
                     for key, value in six.iteritems(method_value):
                         mod_org_method = "%s.%s" % (mod_as_name, key)
                         RB.__dict__[method_key].add(mod_org_method)
@@ -1389,6 +1389,28 @@ class RB(object):
                (method in self._classes_self_functions_args[ins]) and \
                (not ([None] in self._classes_self_functions_args[ins][method])):
                 func_arg = self._classes_self_functions_args[ins][method]
+
+        """ [Class Instance Create] :
+        <Python> foo()
+        <Ruby>   Foo.new()
+        """
+        if func in self._class_names:
+            func = (func[0]).upper() + func[1:] + '.new'
+
+        if func in self.methods_map_middle.keys():
+            if func == 'hasattr':
+                """ [Function convert to Method]
+                <Python> hasattr(foo, bar)
+                <Ruby>   foo.instance_variable_defined? :@bar
+                """
+                return "%s.%s :@%s" % (rb_args[0], self.methods_map_middle[func], rb_args[1][1:-1])
+            else:
+                """ [Function convert to Method]
+                <Python> isinstance(foo, String)
+                <Ruby>   foo.is_a?String
+                """
+                return "%s.%s%s" % (rb_args[0], self.methods_map_middle[func], rb_args[1])
+
         if is_static == False:
             if ((len(rb_args) != 0 ) and (rb_args[0] == 'self')):
                 del rb_args[0]
@@ -1426,13 +1448,6 @@ class RB(object):
         else:
             rb_args_s = ", ".join(rb_args)
 
-        """ [Class Instance Create] :
-        <Python> foo()
-        <Ruby>   Foo.new()
-        """
-        if func in self._class_names:
-            func = (func[0]).upper() + func[1:] + '.new'
-
         #if len(rb_args) == 1:
         #    if func in self.order_methods_with_bracket_1.keys():
         #        if (type(rb_args[0]) == int) or (type(rb_args[0]) == str):
@@ -1460,12 +1475,6 @@ class RB(object):
             else:
                 if 'arg_2' in self.reverse_methods[func].keys():
                     return "(%s).%s(%s)" % (rb_args[0], self.reverse_methods[func]['arg_2'], ", ".join(rb_args[1:]))
-        elif func in self.methods_map_middle.keys():
-            """ [Function convert to Method]
-            <Python> isinstance(foo, String)
-            <Ruby>   foo.is_a?String
-            """
-            return "%s.%s%s" % (rb_args[0], self.methods_map_middle[func], rb_args[1])
         elif func in self.order_methods_without_bracket.keys():
             """ [Function convert to Method]
             <Python> np.array([x1, x2])
@@ -1570,12 +1579,14 @@ class RB(object):
             if len(node.args) == 0:
                 return "{}"
             elif len(node.args) == 1:
-                rb_args = []
                 if isinstance(node.args[0], ast.List):
+                    rb_args = []
                     for elt in node.args[0].elts:
                         self._tuple_type = '=>'
                         rb_args.append(self.visit(elt))
                         self._tuple_type = '[]'
+                elif isinstance(node.args[0], ast.Dict):
+                    return rb_args[0]
             else:
                  raise RubyError("dict in argument list Error")
             return "{%s}" % (", ".join(rb_args))

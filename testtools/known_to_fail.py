@@ -8,7 +8,7 @@ KNOWN_TO_FAIL = [
     "tests/basic/generator.py",
     "tests/basic/default.py",    # Can't call local valiable in arguments.
     "tests/basic/for_in2.py",    # Can't support dict (not use items()/keys()/values()) case.
-    "tests/basic/hasattr.py",
+    "tests/basic/hasattr2.py",
     "tests/basic/oo_super.py",   # Multiple inheritance can not be supported
     "tests/basic/oo_diamond.py", # Multiple inheritance can not be supported
     "tests/basic/oo_static_inherit2.py", # A class method of the lowercase name class is unsupported.

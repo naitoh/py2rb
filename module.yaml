@@ -94,7 +94,7 @@ six:
 
 collections:
   id:
-  order_methods_without_bracket: {
+  dict_map: {
     OrderedDict: ''
   }
 
