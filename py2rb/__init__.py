@@ -63,6 +63,7 @@ class RB(object):
 
     # float(foo) => foo.to_f
     reverse_methods = {
+        'type'  : 'class',
         'abs'   : 'abs',            # Numeric
         'int'   : 'to_i',
         'float' : 'to_f',
@@ -1630,12 +1631,21 @@ class RB(object):
         Attribute(expr value, identifier attr, expr_context ctx)
         """
         attr = node.attr
+        if (attr != '') and isinstance(node.value, ast.Name) and (node.value.id != 'self'):
+            mod_attr = "%s.%s" % (self.visit(node.value), attr)
+        else:
+            mod_attr = ''
         if not (isinstance(node.value, ast.Name) and (node.value.id == 'self')):
             if attr in self.attribute_map.keys():
                 """ [Attribute method converter]
                 <Python> fuga.append(bar)
                 <Ruby>   fuga.push(bar)   """
                 attr = self.attribute_map[attr]
+            if mod_attr in self.attribute_map.keys():
+                """ [Attribute method converter]
+                <Python> six.PY3 # True
+                <Ruby>   true   """
+                return self.attribute_map[mod_attr]
             if self._func_args_len == 0:
                 """ [Attribute method converter without args]
                 <Python> fuga.split()
