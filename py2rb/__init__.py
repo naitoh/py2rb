@@ -42,8 +42,31 @@ class RB(object):
         'zip'   : 'zip_p',
         #'print' : 'puts',
         '__file__' : '__FILE__',
-        # ideally we should check, that this name is available:
-        #'py_builtins' : '___py_hard_to_collide',
+    }
+
+    exception_map = {
+        'AssertionError'      : 'RuntimeError', # assert => raise
+        'AttributeError'      : 'NoMethodError',
+        'EOFError'            : 'EOFError',
+        'KeyboardInterrupt'   : 'Interrupt',
+        'KeyError'            : 'KeyError',
+        'MemoryError'         : 'NoMemoryError',
+        'NameError'           : 'NameError',
+        'ImportError'         : 'LoadError',
+        'IndexError'          : 'IndexError',
+        'ModuleNotFoundError' : 'LoadError',
+        'NameError'           : 'NameError',
+        #'NotImplementedError' : 'NotImplementedError',
+        'OSError'             : 'IOError',
+        'RecursionError'      : 'SystemStackError',
+        'RuntimeError'        : 'RuntimeError',
+        #'StopIteration'       : 'StopIteration',
+        'SyntaxError'         : 'SyntaxError',
+        'SystemError'         : 'ScriptError',
+        'SystemExit'          : 'SystemExit',
+        'TypeError'           : 'ArgumentError',
+        'ValueError'          : 'TypeError',
+        'ZeroDivisionError'   : 'ZeroDivisionError',
     }
 
     # isinstance(foo, String) => foo.is_a?(String)
@@ -118,27 +141,6 @@ class RB(object):
     range_map = set([                # Array
         'range',
         'xrange',
-    ])
-
-    builtin = set([
-        'NotImplementedError',
-        'ZeroDivisionError',
-        'AssertionError',
-        'AttributeError',
-        'RuntimeError',
-        'ImportError',
-        'TypeError',
-        'ValueError',
-        'NameError',
-        'IndexError',
-        'KeyError',
-        'StopIteration',
-
-        '_int',
-        '_float',
-        #'max',
-        #'min',
-        'sum',
     ])
 
     bool_op = {
@@ -975,12 +977,15 @@ class RB(object):
         self.write("end")
 
     def visit_Assert(self, node):
+        """
+        Assert(expr test, expr? msg)
+        """
         test = self.visit(node.test)
 
         if node.msg is not None:
-            self.write("assert(%s, %s);" % (test, self.visit(node.msg)))
+            self.write("raise %s unless %s" % (self.visit(node.msg), test))
         else:
-            self.write("assert(%s);" % test)
+            self.write("raise unless %s" % test)
 
     def visit_Import(self, node):
         """
@@ -1301,11 +1306,10 @@ class RB(object):
         except KeyError:
             pass
 
-        #if id in self.builtin:
-        #    id = "py_builtins." + id;
-
-        #~ if id in self._classes:
-            #~ id = '_' + id;
+        try:
+            id = self.exception_map[id]
+        except KeyError:
+            pass
 
         return id
 
@@ -1344,7 +1348,7 @@ class RB(object):
         Call(expr func, expr* args, keyword* keywords)
         """
         rb_args = [ self.visit(arg) for arg in node.args ]
-        """ [method argument set Method Objec] :
+        """ [method argument set Method Object] :
         <Python> def describe():
                      return "world"
                  describe = mydecorator(describe)
@@ -1654,8 +1658,17 @@ class RB(object):
         else:
             if node.exc is None:
                 self.write("raise")
-            else:
+            elif isinstance(node.exc, ast.Name):
                 self.write("raise %s" % self.visit(node.exc))
+            elif isinstance(node.exc, ast.Call):
+                if len(node.exc.args) == 0:
+                    self.write("raise %s" % self.visit(node.exc))
+                else:
+                    """ [Exception] :
+                    <Python> raise ValueError('foo.')
+                    <Ruby>   raise TypeError, "foo."
+                    """
+                    self.write("raise %s, %s" % (self.visit(node.exc.func), self.visit(node.exc.args[0])))
 
     def visit_Print(self, node):
         assert node.dest is None
