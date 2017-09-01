@@ -1591,6 +1591,8 @@ class RB(object):
                         self._tuple_type = '[]'
                 elif isinstance(node.args[0], ast.Dict):
                     return rb_args[0]
+                elif isinstance(node.args[0], ast.Name):
+                    return "%s.dup" % rb_args[0]
             else:
                  raise RubyError("dict in argument list Error")
             return "{%s}" % (", ".join(rb_args))
