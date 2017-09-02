@@ -46,6 +46,7 @@ tests/basic/kwargs2.py [4]: ....                                 [OK]
 tests/basic/kwargs3.py [4]: ....                                 [OK]
 tests/basic/lambda.py [4]: ....                                  [OK]
 tests/basic/lambda2.py [4]: ....                                 [OK]
+tests/basic/lambda3.py [4]: ....                                 [OK]
 tests/basic/lambda_map.py [4]: ....                              [OK]
 tests/basic/list.py [4]: ....                                    [OK]
 tests/basic/list2.py [4]: ....                                   [OK]
@@ -210,6 +211,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 211 tests in 72.203s
+Ran 212 tests in 70.946s
 
 OK (expected failures=31)

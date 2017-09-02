@@ -710,9 +710,7 @@ class RB(object):
                 # set lambda functions
                 if isinstance(node.value, ast.Lambda):
                     self._lambda_functions.append(var)
-                    self.write("%s = lambda %s" % (var, value))
-                else:
-                    self.write("%s = %s" % (var, value))
+                self.write("%s = %s" % (var, value))
             elif isinstance(target, ast.Attribute):
                 var = self.visit(target)
                 """ [instance variable] : 
@@ -1144,7 +1142,15 @@ class RB(object):
         <Python 2> (expr* args, identifier? vararg, identifier? kwarg, expr* defaults)
         <Python 3> (arg* args, arg? vararg, arg* kwonlyargs, expr* kw_defaults, arg? kwarg, expr* defaults)
         """
-        return ", ".join([self.visit(arg) for arg in node.args])
+        args = []
+        for arg in node.args:
+            args.append(self.visit(arg))
+        if node.vararg:
+            if six.PY2:
+                args.append("*%s" % node.vararg)
+            else:
+                args.append("*%s" % self.visit(node.vararg))
+        return ", ".join(args)
 
     def visit_GeneratorExp(self, node):
         """
@@ -1216,12 +1222,19 @@ class RB(object):
         Lambda(arguments args, expr body)
         """
         """ [Lambda Definition] : 
-        <Python> lambda x:x*x
-        <Ruby>   lambda{|x| x*x}
+        <Python> lambda x,y :x*y
+        <Ruby>   lambda{|x,y| x*y}
+        <Python> lambda *x: print(x)
+        <Ruby>   lambda {|*x| print(x)}
+        <Python> def foo(x, y):
+                     x(y)
+                 foo(lambda x: print(a), a)
+        <Ruby>   def foo(x, y)
+                     x.(y)
+                 end
+                 foo(lambda{|x| print(a)}, a)
         """
-        #return "function(%s) {return %s}" % (self.visit(node.args), self.visit(node.body))
-        #return "lambda{|%s| %s}" % (self.visit(node.args), self.visit(node.body))
-        return "{|%s| %s}" % (self.visit(node.args), self.visit(node.body))
+        return "lambda{|%s| %s}" % (self.visit(node.args), self.visit(node.body))
 
     def visit_BoolOp(self, node):
         return self.get_bool_op(node).join([ "(%s)" % self.visit(val) for val in node.values ])
@@ -1526,8 +1539,7 @@ class RB(object):
                 <Python> map(lambda x: x**2, [1,2])
                 <Ruby>   [1, 2].map{|x| x**2}
                 """
-                #return "%s.%s{%s}" % (rb_args[1], func, rb_args[0])
-                return "%s.%s%s" % (rb_args[1], func, rb_args[0])
+                return "%s.%s%s" % (rb_args[1], func, rb_args[0].replace('lambda', ''))
             else:
                 """ <Python> map(foo, [1, 2])
                     <Ruby>   [1, 2].map{|_|foo(_)} """
@@ -1596,20 +1608,17 @@ class RB(object):
             else:
                  raise RubyError("dict in argument list Error")
             return "{%s}" % (", ".join(rb_args))
-        elif isinstance(node.func, ast.Lambda):
-            """ [Lambda Call] :
-            <Python> (lambda x:x*x)(4)
-            <Ruby>    lambda{|x| x*x}.call(4)
-            """
-            return "lambda%s.call(%s)" % (func, rb_args_s)
         elif isinstance(node.func, ast.Attribute) and (node.func.attr in self.call_attribute_map):
             """ [Function convert to Method]
             <Python> ' '.join(['a', 'b'])
             <Ruby>   ['a', 'b'].join(' ')
             """
             return "%s.%s" % (rb_args_s, func)
-        elif (func in self._lambda_functions):
+        elif isinstance(node.func, ast.Lambda) or \
+           (func in self._lambda_functions):
             """ [Lambda Call] :
+            <Python> (lambda x:x*x)(4)
+            <Ruby>    lambda{|x| x*x}.call(4)
             <Python> foo = lambda x:x*x
                      foo(4)
             <Ruby>   foo = lambda{|x| x*x}

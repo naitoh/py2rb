@@ -1,1 +1,2 @@
-print((lambda x:x*x)(4))
+l = lambda *x: print("%s %s %s" % x)
+l(1,2,3)
