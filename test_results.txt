@@ -139,6 +139,7 @@ tests/modules/import.py [4]: ......                              [OK]
 tests/modules/import_global.py [4]: .......                      [OK]
 tests/modules/import_multi.py [4]: ......                        [OK]
 tests/numpy/and_gate.py [4]: ....                                [OK]
+tests/numpy/array2string.py [4]: ....                            [OK]
 tests/numpy/ellipsis.py [4]: ....                                [OK]
 tests/numpy/product.py [4]: ....                                 [OK]
 tests/numpy/relu.py [4]: ....                                    [OK]
@@ -211,6 +212,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 212 tests in 70.946s
+Ran 213 tests in 74.165s
 
 OK (expected failures=31)

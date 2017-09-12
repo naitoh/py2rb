@@ -79,6 +79,7 @@ class RB(object):
     order_methods_with_bracket_2_1_x = {}
     order_methods_with_bracket = {}
     order_methods_with_bracket_1 = {}
+    methods_map = {}
     ignore = {}
     range_methods = {}
     mod_class_name = {}
@@ -1426,12 +1427,17 @@ class RB(object):
                 <Python> isinstance(foo, String)
                 <Ruby>   foo.is_a?String
                 """
-                return "%s.%s%s" % (rb_args[0], self.methods_map_middle[func], rb_args[1])
+                if len(rb_args) == 1:
+                    return "%s.%s" % (rb_args[0], self.methods_map_middle[func])
+                else:
+                    return "%s.%s%s" % (rb_args[0], self.methods_map_middle[func], rb_args[1])
 
         if is_static == False:
             if ((len(rb_args) != 0 ) and (rb_args[0] == 'self')):
                 del rb_args[0]
                 self._func_args_len = len(rb_args)
+
+        """ Use keywoard argments in function defined case."""
         if func_arg != None:
             if ((len(rb_args) != 0 ) and (rb_args[0] == 'self')):
                args = rb_args[1:]
@@ -1457,7 +1463,6 @@ class RB(object):
             """
             for kw in node.keywords:
                 rb_args.append("%s: %s" % (kw.arg, self.visit(kw.value)))
-
         if len(rb_args) == 0:
             rb_args_s = ''
         elif len(rb_args) == 1:
@@ -1487,11 +1492,80 @@ class RB(object):
             if not isinstance(self.reverse_methods[func],  dict):
                 return "(%s).%s" % (rb_args_s, self.reverse_methods[func])
             if len(rb_args) == 1:
-                if 'arg_1' in self.reverse_methods[func].keys():
-                    return "(%s).%s" % (rb_args_s, self.reverse_methods[func]['arg_1'])
+                if 'arg_count_1' in self.reverse_methods[func].keys():
+                    return "(%s).%s" % (rb_args_s, self.reverse_methods[func]['arg_count_1'])
             else:
-                if 'arg_2' in self.reverse_methods[func].keys():
-                    return "(%s).%s(%s)" % (rb_args[0], self.reverse_methods[func]['arg_2'], ", ".join(rb_args[1:]))
+                if 'arg_count_2' in self.reverse_methods[func].keys():
+                    return "(%s).%s(%s)" % (rb_args[0], self.reverse_methods[func]['arg_count_2'], ", ".join(rb_args[1:]))
+        elif func in self.methods_map.keys():
+            """ [Function convert to Method]
+            <Python> np.prod(shape, axis=1, keepdims=True)
+            <Ruby>   Numo::NArray[shape].prod(axis:1, keepdims:true)
+            """
+            args_hash = {}
+            m_args = []
+            for i in range(len(rb_args)):
+                if ': ' in rb_args[i]:
+                    key, value = rb_args[i].split(': ', 1)
+                else:
+                    key = self.methods_map[func]['key'][i]
+                    value = rb_args[i]
+                args_hash[key] = value
+                if key in self.methods_map[func]['val'].keys():
+                    if self.methods_map[func]['val'][key] == True:
+                        m_args.append(value)
+                    elif type(self.methods_map[func]['val'][key]) == str:
+                        m_args.append("%s: %s" % (key, value))
+            if len(args_hash) == 0:
+                raise RubyError("methods_map defalut argument Error : not found args")
+
+            data_key =  self.methods_map[func]['main_data_key']
+            if 'main_func_methodname' in self.methods_map[func]:
+                func_methodname = self.methods_map[func]['main_func_methodname']
+            else:
+                func_methodname = ''
+            main_data = args_hash[data_key]
+            if 'main_func' in self.methods_map[func]:
+                main_func = "%s.%s" % (main_data, self.methods_map[func]['main_func'])
+            else:
+                func_key =  self.methods_map[func]['main_func_key']
+                main_func = ''
+                for kw, val in args_hash.items():
+                    if kw in self.methods_map[func]['val'].keys() and \
+                       type(self.methods_map[func]['val'][kw]) != bool:
+                        if isinstance(self.methods_map[func]['val'][kw], dict):
+                            for key in self.methods_map[func]['val'][kw].keys():
+                                """ [Function convert to Method]
+                                <Python> np.prod(shape, dtype=np.int32)
+                                <Ruby>   Numo::Int32[shape].prod
+                                """
+                                key2 = key            # key2: %s.int32
+                                if "%s" in key:
+                                     key2 = (key % ins) # key2: np.int32
+                                if val == key2:
+                                    if "%s%s" in self.methods_map[func]['val'][kw][key]:
+                                        main_func = self.methods_map[func]['val'][kw][key] % (main_data, func_methodname)
+                                    elif "%s" in self.methods_map[func]['val'][kw][key]:
+                                        main_func = self.methods_map[func]['val'][kw][key] % func_methodname
+                                    else:
+                                        raise RubyError("methods_map format Error : '%s' is not include.")
+                else:
+                    if main_func == '' and \
+                       'None' in self.methods_map[func]['val'][func_key].keys():
+                        if "%s%s" in self.methods_map[func]['val'][func_key]['None']:
+                            main_func = self.methods_map[func]['val'][func_key]['None'] % (main_data, func_methodname)
+                        elif "%s" in self.methods_map[func]['val'][func_key]['None']:
+                            main_func = self.methods_map[func]['val'][func_key]['None'] % func_methodname
+                        else:
+                            raise RubyError("methods_map format Error : '%s' is not include.")
+                if main_func == '':
+                    raise RubyError("methods_map main function Error : not found args")
+
+            if self.methods_map[func]['bracket'] == True:
+                return "%s(%s)" % (main_func, ', '.join(m_args))
+            else:
+                return "%s%s" % (main_func, ', '.join(m_args))
+
         elif func in self.order_methods_without_bracket.keys():
             """ [Function convert to Method]
             <Python> np.array([x1, x2])
@@ -1503,17 +1577,17 @@ class RB(object):
                 if 'arg_0' in self.order_methods_without_bracket[func].keys():
                     return "%s" % self.order_methods_without_bracket[func]['arg_0']
             elif len(rb_args) == 1:
-                if 'arg_1' in self.order_methods_without_bracket[func].keys():
-                    if "%s" in self.order_methods_without_bracket[func]['arg_1']:
-                        return self.order_methods_without_bracket[func]['arg_1'] % rb_args[0]
+                if 'arg_count_1' in self.order_methods_without_bracket[func].keys():
+                    if "%s" in self.order_methods_without_bracket[func]['arg_count_1']:
+                        return self.order_methods_without_bracket[func]['arg_count_1'] % rb_args[0]
                     else:
-                        return "%s%s" % (self.order_methods_without_bracket[func]['arg_1'], rb_args[0])
+                        return "%s%s" % (self.order_methods_without_bracket[func]['arg_count_1'], rb_args[0])
             elif len(rb_args) == 2:
-                if 'arg_2' in self.order_methods_without_bracket[func].keys():
-                    if not isinstance(self.order_methods_without_bracket[func]['arg_2'],  dict):
-                        return "%s%s" % (self.order_methods_without_bracket[func]['arg_2'], rb_args[0])
+                if 'arg_count_2' in self.order_methods_without_bracket[func].keys():
+                    if not isinstance(self.order_methods_without_bracket[func]['arg_count_2'],  dict):
+                        return "%s%s" % (self.order_methods_without_bracket[func]['arg_count_2'], rb_args[0])
                     else:
-                        for key in self.order_methods_without_bracket[func]['arg_2'].keys():
+                        for key in self.order_methods_without_bracket[func]['arg_count_2'].keys():
                             """ [Function convert to Method]
                             <Python> np.prod(shape, dtype=np.int32)
                             <Ruby>   Numo::Int32[shape].prod
@@ -1522,10 +1596,10 @@ class RB(object):
                             if "%s" in key:
                                key2 = (key % ins) # key2: np.int32
                             if rb_args[1] == key2:
-                                if "%s" in self.order_methods_without_bracket[func]['arg_2'][key]:
-                                    return self.order_methods_without_bracket[func]['arg_2'][key] % rb_args[0]
+                                if "%s" in self.order_methods_without_bracket[func]['arg_count_2'][key]:
+                                    return self.order_methods_without_bracket[func]['arg_count_2'][key] % rb_args[0]
                                 else:
-                                    return "%s%s" % (self.order_methods_without_bracket[func]['arg_2'][key], rb_args[0])
+                                    return "%s%s" % (self.order_methods_without_bracket[func]['arg_count_2'][key], rb_args[0])
         elif func in self.order_methods_with_bracket.keys():
             """ [Function convert to Method]
             <Python> np.exp(-x)
