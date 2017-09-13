@@ -34,12 +34,20 @@ class RB(object):
         False : 'false',
         None  : 'nil',
     }
+    func_name_map = {
+        'zip'   : 'zip_p',
+    }
     name_map = {
         #'self'   : 'this',
         'True'  : 'true',  # python 2.x
         'False' : 'false', # python 2.x
         'None'  : 'nil',   # python 2.x
-        'zip'   : 'zip_p',
+        'str'   : 'String',
+        'int'   : 'Integer',
+        'float' : 'Float',
+        'list'  : 'Array',
+        'tuple' : 'Array',
+        'dict'  : 'Hash',
         #'print' : 'puts',
         '__file__' : '__FILE__',
     }
@@ -232,6 +240,7 @@ class RB(object):
         # This lists all lambda functions:
         self._lambda_functions = []
         self._import_files = []
+        self._call = False
 
     def new_dummy(self):
         dummy = "__dummy%d__" % self.dummy
@@ -1316,7 +1325,10 @@ class RB(object):
         """
         id = node.id
         try:
-            id = self.name_map[id]
+            if self._call:
+                id = self.func_name_map[id]
+            else:
+                id = self.name_map[id]
         except KeyError:
             pass
 
@@ -1372,7 +1384,9 @@ class RB(object):
                  describe = mydecorator(method(:describe))
         """
         self._func_args_len = len(rb_args)
+        self._call = True
         func = self.visit(node.func)
+        self._call = False
         if not func in self.iter_map:
             for i in range(len(rb_args)):
                 if rb_args[i] in self._functions.keys():
@@ -1430,7 +1444,7 @@ class RB(object):
                 if len(rb_args) == 1:
                     return "%s.%s" % (rb_args[0], self.methods_map_middle[func])
                 else:
-                    return "%s.%s%s" % (rb_args[0], self.methods_map_middle[func], rb_args[1])
+                    return "%s.%s %s" % (rb_args[0], self.methods_map_middle[func], rb_args[1])
 
         if is_static == False:
             if ((len(rb_args) != 0 ) and (rb_args[0] == 'self')):

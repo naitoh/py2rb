@@ -2,8 +2,8 @@
 
 l = ['a','b','c']
 
-def intest(item,list):
-    if item in list:
+def intest(item,ll):
+    if item in ll:
         print(str(item) + ' is in list')
     else:
         print(str(item) + ' is not in list')

@@ -22,7 +22,6 @@ KNOWN_TO_FAIL = [
     "tests/decorator/decorator.py",
 
     "tests/lists/reduce.py",
-    "tests/lists/subclass.py",
 
     "tests/libraries/xmlwriter.py",
 

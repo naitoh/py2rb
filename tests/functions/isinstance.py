@@ -24,3 +24,20 @@ if isinstance(e,Spam):
 if isinstance(e,Eggs):
     print("e is Eggs - correct")
 
+if isinstance(1, int):
+    print("int - correct")
+
+if isinstance(0.1, float):
+    print("float - correct")
+
+if isinstance('str', str):
+    print("str - correct")
+
+if isinstance([0], list):
+    print("list - correct")
+
+if isinstance((0, 1), tuple):
+    print("tuple - correct")
+
+if isinstance({'a': 1}, dict):
+    print("dict - correct")

@@ -132,6 +132,8 @@ numpy:
     sum: 'sum'                    # np.sum(w*x) => (w*x).sum
   range_methods:
     arange: 'Numo::DFloat.new'    # np.arange(-5.0, 5.0, 0.1) => Numo::DFloat.new(20).seq(-1,0.1)
+  attribute_map:
+    ndarray: 'Numo::NArray'
 
 os:
   id: 
