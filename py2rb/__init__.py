@@ -240,6 +240,7 @@ class RB(object):
         # This lists all lambda functions:
         self._lambda_functions = []
         self._import_files = []
+        self._imports = []
         self._call = False
 
     def new_dummy(self):
@@ -1009,7 +1010,7 @@ class RB(object):
         """
         mod_name = node.names[0].name
         if mod_name not in self.module_map:
-            self._import_files.append(mod_name)
+            self._import_files.append(node.names[0].name)
             mod_name = node.names[0].name.replace('.', '/')
             for path, rel_path in self.mod_paths.items():
                 if path.endswith(mod_name + '.py'):
@@ -1023,22 +1024,35 @@ class RB(object):
         else:
             mod_as_name = node.names[0].asname
 
+        if 'mod_name' in self.module_map[mod_name]:
+            _mod_name = self.module_map[mod_name]['mod_name']
+        else:
+            _mod_name = ''
+
         for method_key, method_value in six.iteritems(self.module_map[mod_name]):
-            if method_value != None:
-                if method_key == 'id':
+            if method_value == None:
+                continue
+            if method_key == 'mod_name':
+                continue
+
+            if method_key == 'id':
+                if not node.names[0].name in self._imports:
                     self.write("require '%s'" % method_value)
-                elif method_key in ('range_map', 'dict_map'):
-                    for key, value in six.iteritems(method_value):
-                        mod_org_method = "%s.%s" % (mod_as_name, key)
-                        RB.__dict__[method_key].add(mod_org_method)
-                #elif method_key == 'order_inherited_methods':
-                #    # no use mod_as_name (Becase Inherited Methods)
-                #    for key, value in six.iteritems(method_value):
-                #        RB.__dict__[method_key][key] = value
-                else:
-                    for key, value in six.iteritems(method_value):
-                        mod_org_method = "%s.%s" % (mod_as_name, key)
-                        RB.__dict__[method_key][mod_org_method] = value
+                    self._imports.append(node.names[0].name)
+            elif method_key in ('range_map', 'dict_map'):
+                for key, value in six.iteritems(method_value):
+                    mod_org_method = "%s.%s" % (mod_as_name, key)
+                    RB.__dict__[method_key].add(mod_org_method)
+            #elif method_key == 'order_inherited_methods':
+            #    # no use mod_as_name (Becase Inherited Methods)
+            #    for key, value in six.iteritems(method_value):
+            #        RB.__dict__[method_key][key] = value
+            else: # method_key == 'methods_map', etc..
+                for key, value in six.iteritems(method_value): # method_value: {'array':, 'prod': .. }
+                    mod_org_method = "%s.%s" % (mod_as_name, key)
+                    RB.__dict__[method_key][mod_org_method] = value
+                    if isinstance(RB.__dict__[method_key][mod_org_method], dict):
+                        RB.__dict__[method_key][mod_org_method]['mod'] = _mod_name + '::'
 
     def visit_ImportFrom(self, node):
         """
@@ -1047,24 +1061,21 @@ class RB(object):
         e.g.
         from foo import bar
           => require 'foo'
-             include 'Foo'
-        * Case 1.
-        <python> import imported.submodules.submodulea import bar
-        <ruby>   require_relative 'imported/submodules/submodulea'
-        * Case 2.
-        <python> import imported.submodules.submodulea import foo
-        <ruby>   require_relative 'imported/submodules/submodulea/foo'
-        * Case 3.
-        <python> import imported.submodules.submodulea import foo as bar
-        <ruby>   require_relative 'imported/submodules/submodulea'
-                 alias bar foo
-        * Case 4.
-        <python> import . import foo as bar
-        <ruby>   require_relative 'foo'
-        Module(body=[ImportFrom(module='foo', names=[ alias(name='bar', asname=None)], level=0), 
+             include Foo
+        * Case 1.  <python> import imported.submodules.submodulea import bar
+                   <ruby>   require_relative 'imported/submodules/submodulea'
+        * Case 2.  <python> import imported.submodules.submodulea import foo
+                   <ruby>   require_relative 'imported/submodules/submodulea/foo'
+        * Case 3.  <python> import imported.submodules.submodulea import foo as bar
+                   <ruby>   require_relative 'imported/submodules/submodulea'
+                            alias bar foo
+        * Case 4.  <python> import . import foo as bar
+                   <ruby>   require_relative 'foo'
+                   Module(body=[ImportFrom(module='foo', names=[ alias(name='bar', asname=None)], level=0), 
         """
         if node.module != None and \
            node.module not in self.module_map:
+            self._import_files.append(node.module)
             mod_name = node.module.replace('.', '/')
             mod_name_i = node.module.replace('.', '/') + '/' + node.names[0].name
             for path, rel_path in self.mod_paths.items():
@@ -1082,22 +1093,55 @@ class RB(object):
                  self.write("alias %s %s" % (node.names[0].asname, node.names[0].name))
             return
 
-        if node.module == None:
-            mod_name = node.names[0].name
-        else:
-            mod_name = self.module_map[node.module]
-        self.write("require '%s'" % mod_name)
-
-        """ T.B.D
-        for method_key, method_value in six.iteritems(self.module_map[node.module]):
-            if method_value != None:
-                if method_key == 'id':
-                    self.write("require '%s'" % method_value)
-                    self.write("include '%s'" % method_value)
-                else:
-                    for key, value in six.iteritems(method_value):
-                        RB.__dict__[method_key][key] = value
         """
+        <python> from numpy import array
+                     array([1, 1])
+        <ruby>   require 'numo/narray'
+                 include Numo
+                 NArray[1, 1]
+        ImportFrom(module='numpy', names=[ alias(name='array', asname=None)], level=0),
+        Expr( value= Call(
+              func= Name(id='array', ctx= Load()),
+              args=[ List(elts=[ Num(n=1), Num(n=1)], ctx= Load())], keywords=[]))
+        """
+        # Not Use?
+        #if node.module == None:
+        #    mod_name = node.names[0].name
+        #else:
+        #    mod_name = self.module_map[node.module]
+        if node.module not in self.module_map:
+            return
+
+        if 'mod_name' in self.module_map[node.module].keys():
+            _mod_name = self.module_map[node.module]['mod_name']
+        else:
+            _mod_name = ''
+
+        for method_key, method_value in six.iteritems(self.module_map[node.module]):
+            if method_key == 'id':
+                if node.module not in self._imports:
+                    self.write("require '%s'" % method_value)
+                    self._imports.append(node.module)
+
+        for method_key, method_value in six.iteritems(self.module_map[node.module]):
+            if method_value == None:
+                continue
+            if method_key == 'id':
+                continue
+
+            if method_key == 'mod_name':
+                self.write("include %s" % method_value)
+            else: # method_key == 'methods_map', etc..
+                for key, value in six.iteritems(method_value): # method_value: {'array':, 'prod': .. }
+                    if key not in RB.__dict__[method_key].keys():
+                        RB.__dict__[method_key][key] = value
+                    if isinstance(RB.__dict__[method_key][key], dict):
+                        if node.names[0].name == '*':
+                            RB.__dict__[method_key][key]['mod'] = ''
+                        elif node.names[0].name == key:
+                            RB.__dict__[method_key][key]['mod'] = ''
+                        else:
+                            RB.__dict__[method_key][key]['mod'] = _mod_name + '::'
 
     def _visit_Exec(self, node):
         pass
@@ -1328,7 +1372,12 @@ class RB(object):
             if self._call:
                 id = self.func_name_map[id]
             else:
-                id = self.name_map[id]
+                if id in self.methods_map.keys():
+                    rtn = self.get_methods_map(id)
+                    if rtn != '':
+                        id = rtn
+                else:
+                    id = self.name_map[id]
         except KeyError:
             pass
 
@@ -1368,6 +1417,76 @@ class RB(object):
         else:
             txt = '"' + txt + '"'
         return txt
+
+    def get_methods_map(self, func, rb_args=False, ins=False):
+        """ [Function convert to Method]
+        <Python> np.prod(shape, axis=1, keepdims=True)
+        <Ruby>   Numo::NArray[shape].prod(axis:1, keepdims:true)
+        """
+        if rb_args == False:
+            if self.methods_map[func]['key'] != False:
+                return ''
+        mod = ''
+        if 'mod' in self.methods_map[func].keys():
+            mod = self.methods_map[func]['mod']
+        func_methodname = ''
+        main_data = ''
+        main_func = ''
+        m_args = []
+        args_hash = {}
+        if rb_args:
+            for i in range(len(rb_args)):
+                if ': ' in rb_args[i]:
+                    key, value = rb_args[i].split(': ', 1)
+                else:
+                    key = self.methods_map[func]['key'][i]
+                    value = rb_args[i]
+                args_hash[key] = value
+                if key in self.methods_map[func]['val'].keys():
+                    if self.methods_map[func]['val'][key] == True:
+                        m_args.append(value)
+                    elif type(self.methods_map[func]['val'][key]) == str:
+                        m_args.append("%s: %s" % (key, value))
+            if len(args_hash) == 0:
+                raise RubyError("methods_map defalut argument Error : not found args")
+
+            data_key = self.methods_map[func]['main_data_key']
+            if 'main_func_methodname' in self.methods_map[func].keys():
+                func_methodname = self.methods_map[func]['main_func_methodname']
+            main_data = args_hash[data_key]
+
+        if 'main_func' in self.methods_map[func].keys():
+            if main_data:
+                main_func = "%s.%s" % (main_data, self.methods_map[func]['main_func'])
+            else:
+                main_func = self.methods_map[func]['main_func']  % {'mod': mod}
+        else:
+            func_key =  self.methods_map[func]['main_func_key']
+            for kw, val in args_hash.items():
+                if kw in self.methods_map[func]['val'].keys() and \
+                   type(self.methods_map[func]['val'][kw]) != bool:
+                    if isinstance(self.methods_map[func]['val'][kw], dict):
+                        for key in self.methods_map[func]['val'][kw].keys():
+                            """ [Function convert to Method]
+                            <Python> np.prod(shape, dtype=np.int32)
+                            <Ruby>   Numo::Int32[shape].prod
+                            """
+                            key2 = key            # key2: %s.int32
+                            if "%s" in key:
+                                 key2 = (key % ins) # key2: np.int32
+                            if val == key2:
+                                main_func = self.methods_map[func]['val'][kw][key] % {'mod': mod, 'data': main_data, 'name': func_methodname}
+            else:
+                if main_func == '' and \
+                   'None' in self.methods_map[func]['val'][func_key].keys():
+                    main_func = self.methods_map[func]['val'][func_key]['None'] % {'mod': mod, 'data': main_data, 'name': func_methodname}
+            if main_func == '':
+                raise RubyError("methods_map main function Error : not found args")
+
+        if self.methods_map[func]['bracket'] == True:
+            return "%s(%s)" % (main_func, ', '.join(m_args))
+        else:
+            return "%s%s" % (main_func, ', '.join(m_args))
 
     def visit_Call(self, node):
         """
@@ -1409,6 +1528,7 @@ class RB(object):
             if (func in self._functions) and \
                (not ([None] in self._functions[func])):
                 func_arg = self._functions[func]
+            ins = ''
         else:
             ins, method = func.split('.', 1)
             if (method in self._class_functions):
@@ -1512,74 +1632,7 @@ class RB(object):
                 if 'arg_count_2' in self.reverse_methods[func].keys():
                     return "(%s).%s(%s)" % (rb_args[0], self.reverse_methods[func]['arg_count_2'], ", ".join(rb_args[1:]))
         elif func in self.methods_map.keys():
-            """ [Function convert to Method]
-            <Python> np.prod(shape, axis=1, keepdims=True)
-            <Ruby>   Numo::NArray[shape].prod(axis:1, keepdims:true)
-            """
-            args_hash = {}
-            m_args = []
-            for i in range(len(rb_args)):
-                if ': ' in rb_args[i]:
-                    key, value = rb_args[i].split(': ', 1)
-                else:
-                    key = self.methods_map[func]['key'][i]
-                    value = rb_args[i]
-                args_hash[key] = value
-                if key in self.methods_map[func]['val'].keys():
-                    if self.methods_map[func]['val'][key] == True:
-                        m_args.append(value)
-                    elif type(self.methods_map[func]['val'][key]) == str:
-                        m_args.append("%s: %s" % (key, value))
-            if len(args_hash) == 0:
-                raise RubyError("methods_map defalut argument Error : not found args")
-
-            data_key =  self.methods_map[func]['main_data_key']
-            if 'main_func_methodname' in self.methods_map[func]:
-                func_methodname = self.methods_map[func]['main_func_methodname']
-            else:
-                func_methodname = ''
-            main_data = args_hash[data_key]
-            if 'main_func' in self.methods_map[func]:
-                main_func = "%s.%s" % (main_data, self.methods_map[func]['main_func'])
-            else:
-                func_key =  self.methods_map[func]['main_func_key']
-                main_func = ''
-                for kw, val in args_hash.items():
-                    if kw in self.methods_map[func]['val'].keys() and \
-                       type(self.methods_map[func]['val'][kw]) != bool:
-                        if isinstance(self.methods_map[func]['val'][kw], dict):
-                            for key in self.methods_map[func]['val'][kw].keys():
-                                """ [Function convert to Method]
-                                <Python> np.prod(shape, dtype=np.int32)
-                                <Ruby>   Numo::Int32[shape].prod
-                                """
-                                key2 = key            # key2: %s.int32
-                                if "%s" in key:
-                                     key2 = (key % ins) # key2: np.int32
-                                if val == key2:
-                                    if "%s%s" in self.methods_map[func]['val'][kw][key]:
-                                        main_func = self.methods_map[func]['val'][kw][key] % (main_data, func_methodname)
-                                    elif "%s" in self.methods_map[func]['val'][kw][key]:
-                                        main_func = self.methods_map[func]['val'][kw][key] % func_methodname
-                                    else:
-                                        raise RubyError("methods_map format Error : '%s' is not include.")
-                else:
-                    if main_func == '' and \
-                       'None' in self.methods_map[func]['val'][func_key].keys():
-                        if "%s%s" in self.methods_map[func]['val'][func_key]['None']:
-                            main_func = self.methods_map[func]['val'][func_key]['None'] % (main_data, func_methodname)
-                        elif "%s" in self.methods_map[func]['val'][func_key]['None']:
-                            main_func = self.methods_map[func]['val'][func_key]['None'] % func_methodname
-                        else:
-                            raise RubyError("methods_map format Error : '%s' is not include.")
-                if main_func == '':
-                    raise RubyError("methods_map main function Error : not found args")
-
-            if self.methods_map[func]['bracket'] == True:
-                return "%s(%s)" % (main_func, ', '.join(m_args))
-            else:
-                return "%s%s" % (main_func, ', '.join(m_args))
-
+            return self.get_methods_map(func, rb_args, ins)
         elif func in self.order_methods_without_bracket.keys():
             """ [Function convert to Method]
             <Python> np.array([x1, x2])
@@ -1796,6 +1849,14 @@ class RB(object):
                 <Python> six.PY3 # True
                 <Ruby>   true   """
                 return self.attribute_map[mod_attr]
+            if attr in self.methods_map.keys():
+                rtn = self.get_methods_map(attr)
+                if rtn != '':
+                    return rtn
+            if mod_attr in self.methods_map.keys():
+                rtn =  self.get_methods_map(mod_attr)
+                if rtn != '':
+                    return rtn
             if self._func_args_len == 0:
                 """ [Attribute method converter without args]
                 <Python> fuga.split()

@@ -56,6 +56,7 @@
 
 numpy:
   id: numo/narray # import numpy as np => require 'numo/narray'
+  mod_name: Numo  # from numpy import array => require 'numo/narray'; include Numo # mod: mod_name + '::'
   order_methods_without_bracket:
     linspace: 'Numo::DFloat.linspace'
   methods_map:
@@ -71,18 +72,18 @@ numpy:
       val:
         object: False                             # Not use argument data
         dtype: &dtype
-          'None':       'Numo::NArray%s%s'       # np.array([5], dtype=np.float32) => Numo::NArray[5]
-          '%s.int8':    'Numo::Int8%s%s'
-          '%s.int16':   'Numo::Int16%s%s'        # np.array([5], dtype=np.int16) => Numo::Int16[5]
-          '%s.int32':   'Numo::Int32%s%s'
-          '%s.int64':   'Numo::Int64%s%s'
-          '%s.uint8':   'Numo::UInt8%s%s'
-          '%s.uint16':  'Numo::UInt16%s%s'
-          '%s.uint32':  'Numo::UInt32%s%s'
-          '%s.uint64':  'Numo::UInt64%s%s'
-          '%s.float32': 'Numo::SFloat%s%s'
-          '%s.float64': 'Numo::DFloat%s%s'
-          '%s.int':     '%s%s'                   # np.array(x > 0, dtype=np.int) => x > 0
+          'None':       '%(mod)sNArray%(data)s%(name)s'       # np.array([5], dtype=np.float32) => Numo::NArray[5]
+          '%s.int8':    '%(mod)sInt8%(data)s%(name)s'
+          '%s.int16':   '%(mod)sInt16%(data)s%(name)s'        # np.array([5], dtype=np.int16) => Numo::Int16[5]
+          '%s.int32':   '%(mod)sInt32%(data)s%(name)s'
+          '%s.int64':   '%(mod)sInt64%(data)s%(name)s'
+          '%s.uint8':   '%(mod)sUInt8%(data)s%(name)s'
+          '%s.uint16':  '%(mod)sUInt16%(data)s%(name)s'
+          '%s.uint32':  '%(mod)sUInt32%(data)s%(name)s'
+          '%s.uint64':  '%(mod)sUInt64%(data)s%(name)s'
+          '%s.float32': '%(mod)sSFloat%(data)s%(name)s'
+          '%s.float64': '%(mod)sDFloat%(data)s%(name)s'
+          '%s.int':     '%(data)s%(name)s'                   # np.array(x > 0, dtype=np.int) => x > 0
     prod:
       # prod(a, axis=None, dtype=None, out=None, keepdims=<class numpy._globals._NoValue>)
       # => prod(axis: nil, keepdims: false, nan: false)
@@ -123,6 +124,10 @@ numpy:
       val:
         a: False                                  # Not use argument data
         separator: True                           # Use argument data # np.array2string(x, separator=%s) => x.format_to_a().join(%s)
+    ndarray:
+      bracket: False
+      main_func: '%(mod)sNArray'                   # convert function name : np.ndarray => Numo::NArray
+      key: False
   order_methods_with_bracket:
     exp: 'Numo::NMath.exp'        # np.exp(-x) => Numo::NMath.exp(-x)
     sin: 'Numo::NMath.sin'
@@ -132,8 +137,6 @@ numpy:
     sum: 'sum'                    # np.sum(w*x) => (w*x).sum
   range_methods:
     arange: 'Numo::DFloat.new'    # np.arange(-5.0, 5.0, 0.1) => Numo::DFloat.new(20).seq(-1,0.1)
-  attribute_map:
-    ndarray: 'Numo::NArray'
 
 os:
   id: 
