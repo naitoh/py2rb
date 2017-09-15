@@ -4,17 +4,6 @@
 # Python module name:
 #   Ruby module name: # import numpy as np => require 'numo/narray'
 #
-#   order_methods_without_bracket:
-#     Python method name: Ruby method name # Case independent of the number of arguments.
-#
-#   order_methods_without_bracket:
-#     Python method name:
-#       arg_count_0: Ruby method name # Case without arguments.
-#       arg_count_1: Ruby method name # Case with only one argument.
-#       arg_count_2: Ruby method name # Case with two arguments.
-#
-#     e.g. np.array([x1, x2]) => Numo::NArray[x1, x2]
-#
 #   order_methods_with_bracket:
 #     Python method name: Ruby method name # Case independent of the number of arguments.
 #
@@ -39,11 +28,12 @@
 #
 #   methods_map:
 #     Python method name:
-#       bracket: False            => True: use bracket,  False: not use bracket
+#       ins_bracket: True         => True: use bracket, False: not use bracket(default) # e.g. (1+5).sum
+#       bracket: False            => True: use bracket(default), False: not use bracket # e.g. Numo::NArray[object]
 #       key: []                   => arguments list
 #       main_data_key: 'object'   => Main data key name
 #       main_func_key: 'data'     => convert function key name
-#       main_func_methodname: ''  => convert function name (default : '')
+#       main_func_methodname: ''  => convert function (attribute) name (default : '')
 #       val:                      => arguments dict
 #         object: False           => Not use argument data
 #         dtype:
@@ -57,8 +47,6 @@
 numpy:
   id: numo/narray # import numpy as np => require 'numo/narray'
   mod_name: Numo  # from numpy import array => require 'numo/narray'; include Numo # mod: mod_name + '::'
-  order_methods_without_bracket:
-    linspace: 'Numo::DFloat.linspace'
   methods_map:
     array:
       # array(object, dtype=None, copy=True, order='K', subok=False, ndmin=0)
@@ -66,13 +54,12 @@ numpy:
       # => Numo::Int32[object]
       bracket: False
       key: ['object', 'dtype', 'copy', 'order', 'subok', 'ndmin']
-      main_data_key: 'object'                     # Main data
-      main_func_key: 'dtype'                      # convert function key name
-      main_func_methodname: ''                    # convert function name (default : '')
+      main_data_key: object                       # Main data
+      main_func_key: dtype                        # convert function key name
+      main_func_key_nm: dtype_nm                  # convert function key name (not match case)
       val:
         object: False                             # Not use argument data
         dtype: &dtype
-          'None':       '%(mod)sNArray%(data)s%(name)s'       # np.array([5], dtype=np.float32) => Numo::NArray[5]
           '%s.int8':    '%(mod)sInt8%(data)s%(name)s'
           '%s.int16':   '%(mod)sInt16%(data)s%(name)s'        # np.array([5], dtype=np.int16) => Numo::Int16[5]
           '%s.int32':   '%(mod)sInt32%(data)s%(name)s'
@@ -84,57 +71,139 @@ numpy:
           '%s.float32': '%(mod)sSFloat%(data)s%(name)s'
           '%s.float64': '%(mod)sDFloat%(data)s%(name)s'
           '%s.int':     '%(data)s%(name)s'                   # np.array(x > 0, dtype=np.int) => x > 0
+        dtype_nm: &dtype_nm '%(mod)sNArray%(data)s%(name)s'  # np.array([5], dtype=np.float32) => Numo::NArray[5]
     prod:
       # prod(a, axis=None, dtype=None, out=None, keepdims=<class numpy._globals._NoValue>)
       # => prod(axis: nil, keepdims: false, nan: false)
       #  e.g.
       #    np.prod(shape, axis=1, keepdims=True) => Numo::NArray[shape].prod(axis:1, keepdims:true)
       #    np.prod(shape, axis=0,dtype=np.int32) => Numo::Int32[shape].prod(axis:0)
-      bracket: True
       key:
-        - 'a'
-        - 'axis'
-        - 'dtype'
-        - 'out'
-        - 'keepdims'
-      main_data_key: 'a'                          # Main data
-      main_func_key: 'dtype'                      # convert function key name
-      main_func_methodname: '.prod'               # convert function name
+        - a
+        - axis
+        - dtype
+        - out
+        - keepdims
+      main_data_key: a                            # Main data
+      main_func_key: dtype                        # convert function key name
+      main_func_key_nm: dtype_nm                  # convert function key name (not match case)
+      main_func_methodname: '.prod'               # convert function (attribute) name
       val:
         a: False                                  # Not use argument data
-        axis: 'axis'                              # Use keyword argument data
+        axis: axis                                # Use keyword argument data
         dtype: *dtype
+        dtype_nm: *dtype_nm
         out: False                                # Not use argument data
-        keepdims: 'keepdims'                      # Use keyword argument data
+        keepdims: keepdims                        # Use keyword argument data
     array2string:
       # array2string(a, max_line_width=None, precision=None, suppress_small=None, separator=' ', prefix='', style=<built-in function repr>, formatter=None)[source]
       # => format_to_a(separator: ' ')
-      bracket: True
       key:
-        - 'a'
-        - 'max_line_width'
-        - 'precision'
-        - 'suppress_small'
-        - 'separator'
-        - 'prefix'
-        - 'style'
-        - 'formatter'
-      main_data_key: 'a'                          # Main data
-      main_func: 'format_to_a.join'               # convert function name : np.array2string(x) => x.format_to_a()
+        - a
+        - max_line_width
+        - precision
+        - suppress_small
+        - separator
+        - prefix
+        - style
+        - formatter
+      main_data_key: a                            # Main data
+      main_func: format_to_a.join                 # convert function name : np.array2string(x) => x.format_to_a()
       val:
         a: False                                  # Not use argument data
         separator: True                           # Use argument data # np.array2string(x, separator=%s) => x.format_to_a().join(%s)
+    sum:
+      # (a, axis=None, dtype=None, out=None, keepdims=<class numpy._globals._NoValue>)[source]
+      key:
+        - a
+        - axis
+        - dtype
+        - out
+        - keepdims
+      val:
+        a: False                                  # Not use argument data
+      ins_bracket: True
+      main_data_key: a                            # Main data
+      main_func: ''                               # convert function name : np.sum(w*x) => (w*x).sum
+      main_func_methodname: sum                   # convert function (attribute) name
     ndarray:
       bracket: False
-      main_func: '%(mod)sNArray'                   # convert function name : np.ndarray => Numo::NArray
-      key: False
-  order_methods_with_bracket:
-    exp: 'Numo::NMath.exp'        # np.exp(-x) => Numo::NMath.exp(-x)
-    sin: 'Numo::NMath.sin'
-    cos: 'Numo::NMath.cos'
-    maximum: 'Numo::NArray.maximum'
-  reverse_methods:
-    sum: 'sum'                    # np.sum(w*x) => (w*x).sum
+      main_func: '%(mod)sNArray'                  # convert function name : np.ndarray => Numo::NArray
+    exp:
+      # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNMath.exp'               # np.exp(-x) => Numo::NMath.exp(-x)
+      key:
+        - x
+        - out
+        - where
+        - casting
+        - order
+        - dtype
+        - subok
+      val:
+        x: True
+    sin:
+      # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNMath.sin'
+      key:
+        - x
+        - out
+        - where
+        - casting
+        - order
+        - dtype
+        - subok
+      val:
+        x: True
+    cos:
+      # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNMath.cos'
+      key:
+        - x
+        - out
+        - where
+        - casting
+        - order
+        - dtype
+        - subok
+      val:
+        x: True
+    maximum:
+      # (x1, x2, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNArray.maximum'
+      key:
+        - x1
+        - x2
+        - out
+        - where
+        - casting
+        - same_kind
+        - order
+        - dtype
+        - subok
+      val:
+        x1: True
+        x2: True
+    linspace:
+      # (start, stop, num=50, endpoint=True, retstep=False, dtype=None)
+      main_func_key: dtype                        # convert function key name
+      main_func_key_nm: dtype_nm                  # convert function key name (not match case)
+      main_func_methodname: '.linspace'           # convert function (attribute) name
+      key:
+        - start
+        - stop
+        - num
+        - endpoint
+        - retstep
+        - dtype
+      val:
+        start: True
+        stop: True
+        num: True
+        endpoint : False
+        retstep : False
+        dtype: *dtype
+        dtype_nm: '%(mod)sDFloat%(data)s%(name)s'
   range_methods:
     arange: 'Numo::DFloat.new'    # np.arange(-5.0, 5.0, 0.1) => Numo::DFloat.new(20).seq(-1,0.1)
 
