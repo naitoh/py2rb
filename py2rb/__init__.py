@@ -7,6 +7,7 @@ import inspect
 from . import formater
 import re
 import yaml
+import glob
 
 def scope(func):
     func.scope = True
@@ -17,9 +18,10 @@ class RubyError(Exception):
 
 class RB(object):
 
-    f = open('module.yaml', 'r')
-    module_map = yaml.load(f) 
-    f.close()
+    module_map = {}
+    for filename in glob.glob('*.yaml'):
+        with open(filename, 'r') as f:
+            module_map.update(yaml.load(f))
 
     # python 3
     name_constant_map = {

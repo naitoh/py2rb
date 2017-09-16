@@ -1,0 +1,78 @@
+#
+#  Usage
+# --------
+# Python library name:
+#   Ruby library name: # import weakref => require 'weakref'
+#   id: Ruby module name
+#     e.g. id: numo/narray # import numpy as np => require 'numo/narray'
+#
+#   order_methods_with_bracket:
+#     Python method name: Ruby method name # Case independent of the number of arguments.
+#
+#     e.g. os.path.dirnam(name) => File.dirname(name)
+#
+#   reverse_methods:
+#     arg_count_1: Ruby method name # Case with only one argument.
+#     arg_count_2: Ruby method name # Case with two arguments.
+#       e.g. heapq.heappop(list)        => list.pop
+#       e.g. heapq.heappush(list, item) => list.push(item)
+#
+
+os:
+  id:
+  order_methods_with_bracket:
+    path.dirname: 'File.dirname'
+    path.basename: 'File.basename'
+    path.join: 'File.join'
+    walk: 'PyLib.walk'
+
+copy:
+  id:
+  reverse_methods:
+    copy: 'dup'    # copy(foo) => (foo).dup
+
+six:
+  id:
+  reverse_methods:
+    itervalues: 'values'
+    iteritems: 'to_a'
+  attribute_map:
+    PY2: 'false'
+    PY3: 'true'
+    integer_types: '[Integer]'
+  range_map:
+    moves.range: ''
+
+functools:
+  id:
+
+collections:
+  id:
+  dict_map:
+    OrderedDict: ''
+
+warnings:
+  id:
+  order_methods_with_bracket:
+    warn: 'warn'
+
+weakref:
+  id: weakref
+  order_methods_with_bracket:
+    ref: 'WeakRef.new'
+
+# Provisional implementation.
+heapq:
+  id:
+  reverse_methods:
+    heappush:
+      arg_count_2: 'push'
+    heappop:
+      arg_count_1: 'pop'
+
+# Provisional implementation.
+traceback:
+  id:
+  reverse_methods:
+    format_list: to_a
+
