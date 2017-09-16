@@ -17,16 +17,9 @@ class RubyError(Exception):
 
 class RB(object):
 
-    f = open('ruby.yaml', 'r')
-    func_map = yaml.load(f) 
-    f.close()
-
     f = open('module.yaml', 'r')
     module_map = yaml.load(f) 
     f.close()
-    #module_map = {
-    #    'numpy' : {'id': 'numo/narray', 'order_methods': {'array' : 'Numo::NArray'}, 'reverse_methods': {'sum': 'sum'}}
-    #}
 
     # python 3
     name_constant_map = {
@@ -83,9 +76,7 @@ class RB(object):
         'hasattr'    : 'instance_variable_defined?',
     }
     # np.array([x1, x2]) => Numo::NArray[x1, x2]
-    order_methods_with_bracket_2_1_x = {}
     order_methods_with_bracket = {}
-    order_methods_with_bracket_1 = {}
     methods_map = {}
     ignore = {}
     mod_class_name = {}
@@ -262,10 +253,6 @@ class RB(object):
         return self.comparison_op[node.__class__.__name__]
 
     def visit(self, node, scope=None):
-        for method_key, method_value in six.iteritems(self.func_map):
-            if method_value != None:
-                for key, value in six.iteritems(method_value):
-                    RB.__dict__[method_key][key] = value
         try:
             visitor = getattr(self, 'visit_' + self.name(node))
         except AttributeError:
@@ -1427,8 +1414,9 @@ class RB(object):
                 return ''
 
         key_list = False
-        if 'key' in method_map.keys():
-            if rb_args != False:
+        key_order_list = False
+        if rb_args != False:
+            if 'key' in method_map.keys():
                 """ key: - ['stop']                           : len(rb_args) == 1
                          - ['start', 'stop', 'step', 'dtype'] : len(rb_args) != 1
                 """
@@ -1438,6 +1426,13 @@ class RB(object):
                         break
                 else:
                     key_list = l
+            if 'key_order' in method_map.keys():
+                for l in method_map['key_order']:
+                    if len(rb_args) == len(l):
+                        key_order_list = l
+                        break
+                else:
+                    key_order_list = l
 
         rtn = False
         if rb_args != False:
@@ -1475,6 +1470,12 @@ class RB(object):
                     key = key_list[i]
                     value = rb_args[i]
                 args_hash[key] = value
+            if key_order_list != False:
+                key_list = key_order_list
+            for key in key_list:
+                if key not in args_hash:
+                    continue
+                value = args_hash[key]
                 if key in method_map['val'].keys():
                     if method_map['val'][key] == True:
                         m_args.append(value)
@@ -1647,14 +1648,6 @@ class RB(object):
         else:
             rb_args_s = ", ".join(rb_args)
 
-        #if len(rb_args) == 1:
-        #    if func in self.order_methods_with_bracket_1.keys():
-        #        if (type(rb_args[0]) == int) or (type(rb_args[0]) == str):
-        #            """ [Function convert to Method]
-        #            <Python> print(-x)
-        #            <Ruby>   puts(-x)
-        #            """
-        #            return "%s(%s)" % (self.order_methods_with_bracket_1[func], rb_args[0])
         if func in self.ignore.keys():
             """ [Function convert to Method]
             <Python> unittest.main()
@@ -1678,8 +1671,8 @@ class RB(object):
             return self.get_methods_map(self.methods_map[func], rb_args, ins)
         elif func in self.order_methods_with_bracket.keys():
             """ [Function convert to Method]
-            <Python> np.exp(-x)
-            <Ruby>   Numo::NMath.exp(-x)
+            <Python> os.path.dirnam(name)
+            <Ruby>   File.dirname(name)
             """
             return "%s(%s)" % (self.order_methods_with_bracket[func], ','.join(rb_args))
         elif func in self.iter_map:
@@ -1762,21 +1755,14 @@ class RB(object):
             """ [Inherited Instance Method] """
             for base_class in self._base_classes:
                 base_func = "%s.%s" % (base_class, func)
+                if base_func in self.methods_map.keys():
+                    return self.get_methods_map(self.methods_map[base_func], rb_args, ins)
                 if base_func in self.order_methods_with_bracket.keys():
                     """ [Inherited Instance Method] :
                     <Python> self.assertEqual()
                     <Ruby>   assert_equal()
                     """
                     return "%s(%s)" % (self.order_methods_with_bracket[base_func], ','.join(rb_args))
-                if base_func in self.order_methods_with_bracket_2_1_x.keys():
-                    """ [Inherited Instance Method] :
-                    <Python> self.assertIn('foo', ['foo', 'bar'], 'message test')
-                    <Ruby>   assert_include(['foo', 'bar'],'foo','message test')
-                    """
-                    args_arr = [rb_args[1], rb_args[0]]
-                    if len(rb_args) > 2:
-                        args_arr += (rb_args[2:])
-                    return "%s(%s)" % (self.order_methods_with_bracket_2_1_x[base_func], ','.join(args_arr))
             else:
                 if (func in self._scope or func[0] == '@') and \
                    func.find('.') == -1: # Proc call
@@ -1911,9 +1897,9 @@ class RB(object):
                         <Python> self.(assert)
                         <Ruby>   assert()
                         """
-                        if func in self.order_methods_with_bracket.keys():
+                        if func in self.methods_map.keys():
                             return "%s" % (attr)
-                        if func in self.order_methods_with_bracket_2_1_x.keys():
+                        if func in self.order_methods_with_bracket.keys():
                             return "%s" % (attr)
                         if (base_class in self._classes_self_functions) and \
                            (attr in self._classes_self_functions[base_class]):

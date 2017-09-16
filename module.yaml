@@ -14,9 +14,6 @@
 #     Python method name: Ruby method name # Case independent of the number of arguments.
 #     e.g. os.path.dirnam(name) => File.dirname(name)
 #
-#   order_methods_with_bracket_2_1_x:
-#     e.g. assertIn(1, [1,2]) => assert_include([1,2], 1)
-#
 #   reverse_methods:
 #     arg_count_1: Ruby method name # Case with only one argument.
 #     arg_count_2: Ruby method name # Case with two arguments.
@@ -28,8 +25,11 @@
 #       ins_bracket: True          => True: use bracket, False: not use bracket(default) # e.g. (1+5).sum
 #       bracket: False             => True: use bracket(default), False: not use bracket # e.g. Numo::NArray[object]
 #       key:
-#         - ['start']              => argument count 1 (len(key[..]) == 1) case
-#         - ['start', 'second'..]  => argument count 2 (len(key[..]) == 2) or not match (key[-1]) case
+#         - ['second']             => argument count 1 (len(key[..]) == 1) case
+#         - ['first', 'second'..]  => argument count 2 (len(key[..]) == 2) or not match (key[-1]) case
+#       key_order:                 => key order change setting
+#         - ['second']             => argument count 1 (len(key_order[..]) == 1) case
+#         - ['second', 'first'..]  => argument count 2 (len(key_order[..]) == 2) or not match (key[-1]) case
 #       main_data_key: object      => Main data key name
 #       main_func_key: dtype       => convert function key name
 #       main_func_key_nm: dtype_nm => convert function key name (not match case)
@@ -45,6 +45,10 @@
 #       rtn:
 #         - "%(start)s"            => customize return string (main_func + rtn) : argument count 1 (rtn[0]) case
 #         - "%(start)s %(second)s" => customize return string (main_func + rtn) : argument count 2 (rtn[1]) or over (rtn[-1]) case
+#
+#   ignore:
+#     Python method name:          # ignore case
+#       e.g.    main: ''
 #
 
 numpy:
@@ -249,13 +253,42 @@ traceback:
 
 unittest:
   id: test/unit
+  mod_name: Test::Unit
   mod_class_name:
     TestCase: 'Test::Unit::TestCase'
-  order_methods_with_bracket_2_1_x:
-    TestCase.assertIn: 'assert_include'
-    TestCase.assertEqual: 'assert_equal'
-  order_methods_with_bracket:
-    TestCase.assertTrue: 'assert'
+  methods_map:
+    TestCase.assertIn:
+      # (first, second, msg=None)
+      main_func: 'assert_include'
+      key:
+        - [first, second, msg]
+      key_order:
+        # <Python> self.assertIn('foo', ['foo', 'bar'], 'message test')
+        # <Ruby>   assert_include(['foo', 'bar'],'foo','message test')
+        - [second, first, msg]
+      val:
+        first: True
+        second: True
+        msg: True
+    TestCase.assertEqual:
+      # (first, second, msg=None)
+      main_func: 'assert_equal'
+      key:
+        - [first, second, msg]
+      key_order:
+        - [second, first, msg]
+      val:
+        first: True
+        second: True
+        msg: True
+    TestCase.assertTrue:
+      # (expr, msg=None)
+      main_func: 'assert'
+      key:
+        - [expr, msg]
+      val:
+        expr: True
+        msg: True
   ignore:
     main: ''
 
