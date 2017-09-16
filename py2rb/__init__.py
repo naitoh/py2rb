@@ -88,7 +88,6 @@ class RB(object):
     order_methods_with_bracket_1 = {}
     methods_map = {}
     ignore = {}
-    range_methods = {}
     mod_class_name = {}
     order_inherited_methods = {}
 
@@ -1426,6 +1425,30 @@ class RB(object):
         if rb_args == False:
             if 'key' in method_map.keys():
                 return ''
+
+        key_list = False
+        if 'key' in method_map.keys():
+            if rb_args != False:
+                """ key: - ['stop']                           : len(rb_args) == 1
+                         - ['start', 'stop', 'step', 'dtype'] : len(rb_args) != 1
+                """
+                for l in method_map['key']:
+                    if len(rb_args) == len(l):
+                        key_list = l
+                        break
+                else:
+                    key_list = l
+
+        rtn = False
+        if rb_args != False:
+            if 'rtn' in method_map.keys():
+                for i in range(len(method_map['rtn'])):
+                    if len(rb_args) == i + 1:
+                        rtn = method_map['rtn'][i]
+                        break
+                else:
+                    rtn = method_map['rtn'][-1]
+
         mod = ''
         if 'mod' in method_map.keys():
             mod = method_map['mod']
@@ -1449,7 +1472,7 @@ class RB(object):
                 if ': ' in rb_args[i]:
                     key, value = rb_args[i].split(': ', 1)
                 else:
-                    key = method_map['key'][i]
+                    key = key_list[i]
                     value = rb_args[i]
                 args_hash[key] = value
                 if key in method_map['val'].keys():
@@ -1498,6 +1521,10 @@ class RB(object):
                     main_func = method_map['val'][func_key_nm] % {'mod': mod, 'data': main_data, 'name': func_methodname}
             if main_func == '':
                 raise RubyError("methods_map main function Error : not found args")
+
+        if rtn:
+            rtn = rtn % args_hash
+            return "%s%s" % (main_func, rtn)
 
         if bracket:
             return "%s(%s)" % (main_func, ', '.join(m_args))
@@ -1667,23 +1694,6 @@ class RB(object):
                 """ <Python> map(foo, [1, 2])
                     <Ruby>   [1, 2].map{|_|foo(_)} """
                 return "%s.%s{|_| %s(_)}" % (rb_args[1], func, rb_args[0])
-        elif func in self.range_methods.keys():
-            """ [range Function convert to Method]
-            <Python> np.arange(-1.0, 1.0, 0.1)
-            <Ruby>   Numo::DFloat.new(20).seq(-1,0.1)
-            """
-            if len(node.args) == 1:
-                """ [0, 1, 2, 3, 4, 5] <Python> np.range(6)
-                                       <Ruby>   Numo::DFloat.new(6).seq(0) """
-                return "%s(%s).seq(0)" % (self.range_methods[func], rb_args[0])
-            elif len(node.args) == 2:
-                """ [1, 2, 3, 4, 5] <Python> np.range(1,6) # s:start, e:stop
-                                    <Ruby>   Numo::DFloat.new(6-1).seq(1) """
-                return "%(m)s(%(e)s-(%(s)s)).seq(%(s)s)" % {'m':self.range_methods[func], 's':rb_args[0], 'e':rb_args[1]}
-            else:
-                """ [1, 3, 5] <Python> np.range(1,6,2) # s:start, e:stop, t:step
-                              <Ruby>   Numo::DFloat.new(((6-1)/2.to_f).ceil).seq(1,2) """
-                return "%(m)s(((%(e)s-(%(s)s))/(%(t)s).to_f).ceil).seq(%(s)s,%(t)s)" % {'m':self.range_methods[func], 's':rb_args[0], 'e':rb_args[1], 't':rb_args[2]}
         elif func in self.range_map:
             """ [range] """
             if len(node.args) == 1:
