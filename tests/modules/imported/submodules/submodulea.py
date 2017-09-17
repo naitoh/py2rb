@@ -1,3 +1,3 @@
 
-def bar():
-    print("imported.modules.submodules.modulea.bar()")
+def foo():
+    print("imported.modules.submodules.modulea.foo()")

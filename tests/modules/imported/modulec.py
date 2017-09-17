@@ -1,6 +1,6 @@
 
 import imported.submodules.submodulea
 
-def foo2():
-    print("imported.modulec.foo2()")
-    imported.submodules.submodulea.bar()
+def foo():
+    print("imported.modulec.foo()")
+    imported.submodules.submodulea.foo()

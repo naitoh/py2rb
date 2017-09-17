@@ -179,9 +179,14 @@ class RB(object):
             'Is'    : "===",
         }
 
-    def __init__(self, mod_paths = {}):
+    def __init__(self, path = '', base_path_count=0, mod_paths = {}):
+        self._path = [x.capitalize() for x in path.split('/')]
+        self._base_path_count = base_path_count
+        self._module_functions = []
+        self._is_module = False
         self.mod_paths = mod_paths
         self.__formater = formater.Formater()
+        self.capitalize = self.__formater.capitalize
         self.write = self.__formater.write
         self.read = self.__formater.read
         self.clear = self.__formater.clear
@@ -269,9 +274,32 @@ class RB(object):
         """
         Module(stmt* body)
         """
+        self._module_functions = []
+        if self._path != ['']:
+            """
+            <Python> imported/moduleb.py
+            <Ruby>   module Imported (base_path_count=0)
+                       module Moduleb (base_path_count=1)
+            """
+            for i in range(len(self._path)):
+                if i < self._base_path_count:
+                    continue
+                p = self._path[i]
+                self.write("module %s" % p)
+                self._is_module = True
+                self.indent()
+
         for stmt in node.body:
             self.visit(stmt)
 
+        if self._path != ['']:
+            if self._module_functions:
+                self.write("module_function %s" % ', '.join([':' + x for x in self._module_functions]))
+            for i in range(len(self._path)):
+                if i < self._base_path_count:
+                    continue
+                self.dedent()
+                self.write("end")
 
     @scope
     def visit_FunctionDef(self, node):
@@ -417,6 +445,11 @@ class RB(object):
             self._functions_rb_args_default[node.name] = rb_args_default
 
         if is_setter:
+            if self._is_module and not self._class_name:
+                self._module_functions.append(func_name)
+                #self.write("def self.%s=(%s)" % (func_name, rb_args))
+            #else:
+            #    self.write("def %s=(%s)" % (func_name, rb_args))
             self.write("def %s=(%s)" % (func_name, rb_args))
         elif is_closure:
             """ [function closure] :
@@ -436,6 +469,11 @@ class RB(object):
                 self.write("%s = lambda do |%s|" % (func_name, rb_args))
             self._lambda_functions.append(func_name)
         else:
+            if self._is_module and not self._class_name:
+                self._module_functions.append(func_name)
+                #self.write("def self.%s(%s)" % (func_name, rb_args))
+            #else:
+            #    self.write("def %s(%s)" % (func_name, rb_args))
             self.write("def %s(%s)" % (func_name, rb_args))
 
         if self._class_name is None:
@@ -1075,7 +1113,9 @@ class RB(object):
                     break
             else:
                 self.write("require_relative '%s'" % mod_name)
-            #self.write("include '%s'" % mod_name[0]upper() + mod_name[1:]) # T.B.D
+            base = '::'.join([self.capitalize(x) for x in node.module.split('.')[self._base_path_count:]])
+            self.write("include %s" % base)
+
             if node.names[0].asname != None:
                  self.write("alias %s %s" % (node.names[0].asname, node.names[0].name))
             return
@@ -1558,9 +1598,27 @@ class RB(object):
                     if rb_args[i][-1] != ')' and \
                        not rb_args[i] in self._scope:
                         rb_args[i] = 'method(:%s)' % rb_args[i]
+
         for f in self._import_files:
             if func.startswith(f):
                 func = func.replace(f + '.', '')
+                if self._path != ['']:
+                    if func in self._class_names:
+                        func = self.capitalize(func) + '.new'
+                    """ <Python> imported.moduleb.moduleb_class
+                        <Ruby>   Imported::Moduleb::Moduleb_class (base_path_count=0)
+                                           Moduleb::Moduleb_class (base_path_count=1)
+                    """
+                    base = '::'.join([self.capitalize(x) for x in f.split('.')[self._base_path_count:]]) + '::'
+                    func = base + func
+                    break
+
+        """ [Class Instance Create] :
+        <Python> foo()
+        <Ruby>   Foo.new()
+        """
+        if func in self._class_names:
+            func = self.capitalize(func) + '.new'
 
         """ [method argument set Keyword Variables] :
         <Python> def foo(a, b=3):
@@ -1587,13 +1645,6 @@ class RB(object):
                (method in self._classes_self_functions_args[ins]) and \
                (not ([None] in self._classes_self_functions_args[ins][method])):
                 func_arg = self._classes_self_functions_args[ins][method]
-
-        """ [Class Instance Create] :
-        <Python> foo()
-        <Ruby>   Foo.new()
-        """
-        if func in self._class_names:
-            func = (func[0]).upper() + func[1:] + '.new'
 
         if func in self.methods_map_middle.keys():
             if func == 'hasattr':
@@ -2075,7 +2126,7 @@ class RB(object):
         return self.visit(node.value)
         #return "[%s]" % (self.visit(node.value))
 
-def convert_py2rb(s, modules = [], mod_paths = {}):
+def convert_py2rb(s, path='', base_path_count=0, modules=[], mod_paths={}):
     """
     Takes Python code as a string 's' and converts this to Ruby.
 
@@ -2085,7 +2136,7 @@ def convert_py2rb(s, modules = [], mod_paths = {}):
     'x[3..-1]'
 
     """
-    v = RB(mod_paths)
+    v = RB(path, base_path_count, mod_paths)
     for m in modules:
         t = ast.parse(m)
         v.visit(t)

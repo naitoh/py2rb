@@ -5,7 +5,7 @@ class Formater(object):
     A very simple code formater that handles efficient concatenation and indentation of lines.
     """
 
-    def __init__(self, indent_string="    "):
+    def __init__(self, indent_string="  "):
         self.__buffer = []
         self.__indentation = 0
         self.__indent_string = indent_string
@@ -69,4 +69,10 @@ class Formater(object):
                 text, self.__string_buffer = self.__string_buffer[:size], \
                     self.__string_buffer[size:]
                 return text
+
+    def capitalize(self, text):
+        """
+        Returns a capitalize string.
+        """
+        return text[0].upper() + text[1:]
 

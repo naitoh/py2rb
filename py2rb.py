@@ -26,6 +26,18 @@ def main():
                       default=False,
                       help="include py-builtins.rb library in the output")
 
+    parser.add_option("--base-path",
+                      action="store",
+                      dest="base_path",
+                      default=False,
+                      help="set default module target path")
+
+    parser.add_option("--base-path-count",
+                      action="store",
+                      dest="base_path_count",
+                      default=0,
+                      help="set default module target path nest count")
+
     options, args = parser.parse_args()
     if len(args) != 0:
         filename = args[0]
@@ -68,7 +80,12 @@ def main():
             mod_paths[f] = name_path
             mods.append(open(f).read()) #unsafe for large files!
         s = open(filename).read() #unsafe for large files!
-        output.write(convert_py2rb(s, mods, mod_paths))
+        name_path = ''
+        if options.base_path:
+            rel_path = os.path.relpath(filename, options.base_path)
+            name_path, ext = os.path.splitext(rel_path)
+        base_path_count = int(options.base_path_count)
+        output.write(convert_py2rb(s, name_path, base_path_count, mods, mod_paths))
     else:
         parser.print_help()
 

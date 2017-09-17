@@ -131,8 +131,8 @@ def compile_and_run_file_test(file_path, file_name=None):
             rb_path = name_path + ".rb"
             compiler_error =  py_path + ".comp.err"
             compile_command = (
-                'python py2rb.py --include-require "%s" %s > "%s" 2> "%s"'
-                ) % (py_path, ' '.join(mod_paths), rb_path, compiler_error)
+                'python py2rb.py --base-path %s --base-path-count 1 --include-require "%s" %s > "%s" 2> "%s"'
+                ) % (os.path.dirname(self.templ['py_path']), py_path, ' '.join(mod_paths), rb_path, compiler_error)
             commands.append(compile_command)
 
             for mod_path in mod_paths:
@@ -155,7 +155,7 @@ def compile_and_run_file_test(file_path, file_name=None):
                 ) % self.templ
             commands.append(ruby_command)
             for cmd in commands:
-                #print(cmd)
+                #print(cmd) # debug
                 self.assertEqual(0, os.system(cmd))
                 self.reportProgres()
             # Partial Match
