@@ -1,18 +1,18 @@
 
-class baseklass(object):
+class Baseklass(object):
 
     @staticmethod
     def sayhello():
         print("baseklass says hello")
 
-class klass(baseklass):
+class Klass(Baseklass):
 
     pass
 
 
 if __name__ == '__main__':
 
-    k = klass()
+    k = Klass()
     k.sayhello()
-    klass.sayhello()
-    baseklass.sayhello()
+    Klass.sayhello()
+    Baseklass.sayhello()

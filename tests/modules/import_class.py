@@ -2,8 +2,8 @@
 
 import modules.klasses
 
-k = modules.klasses.klass()
+k = modules.klasses.Klass()
 
 k.sayhello()
-modules.klasses.klass.sayhello()
+modules.klasses.Klass.sayhello()
 
