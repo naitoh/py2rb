@@ -1084,19 +1084,58 @@ class RB(object):
         ImportFrom(identifier? module, alias* names, int? level)
 
         e.g.
-        from foo import bar
-          => require 'foo'
-             include Foo
-        * Case 1.  <python> import imported.submodules.submodulea import bar
-                   <ruby>   require_relative 'imported/submodules/submodulea'
-        * Case 2.  <python> import imported.submodules.submodulea import foo
-                   <ruby>   require_relative 'imported/submodules/submodulea/foo'
-        * Case 3.  <python> import imported.submodules.submodulea import foo as bar
-                   <ruby>   require_relative 'imported/submodules/submodulea'
-                            alias bar foo
-        * Case 4.  <python> import . import foo as bar
-                   <ruby>   require_relative 'foo'
-                   Module(body=[ImportFrom(module='foo', names=[ alias(name='bar', asname=None)], level=0), 
+        * Case 1. import function
+          <python> * tests/modules/import.py
+                     from modules.modulea import modulea_fn
+                     modulea_fn()
+                   * tests/modules/imported/modulea.py
+                     def modulea_fn():
+          <ruby>   * tests/modules/import.rb
+                     require_relative 'imported/modulea'
+                     include Modulea
+                     modulea_fn()
+                   * tests/modules/imported/modulea.rb
+                     module Modulea
+                       def modulea_fn()
+                     end
+          Module(body=[ImportFrom(module='modules.modulea', names=[ alias(name='modulea_fn', asname=None)], level=0)])
+        * Case 2. import function with alias
+          <python> * tests/modules/import.py
+                     from imported.moduleb import moduleb_fn as modb_fn
+                     modb_fn()
+                   * tests/modules/imported/moduleb.py
+                     def moduleb_fn():
+          <ruby>   * tests/modules/import.rb
+                     require_relative 'imported/moduleb'
+                     include Moduleb
+                     alias modb_fn moduleb_fn
+                     modb_fn()
+                   * tests/modules/imported/moduleb.rb
+                     module Moduleb
+                       def moduleb_fn()
+                     end
+          Module(body=[ImportFrom(module='imported.moduleb', names=[ alias(name='moduleb_fn', asname='modb_fn')], level=0)])
+        * Case 3. import module
+          <Python> * tests/modules/imported/modulee.py
+                     from imported.submodules import submodulea
+                     submodulea.foo()
+                   * tests/modules/imported/submodules/submodulea.py
+                     def foo():
+          <Ruby>   * tests/modules/imported/modulee.rb
+                     require_relative 'submodules/submodulea'
+                     include Submodules
+                     Submodulea::foo()
+                   * tests/modules/imported/submodules/submodulea.rb
+                     module Submodules
+                       module Submodulea
+                         def foo()
+                       end
+                     end
+        * Case 4. from '.' case.
+          <python> from . import foo as bar
+          <ruby>   require_relative 'foo'
+          Module(body=[ImportFrom(module='foo', names=[ alias(name='bar', asname=None)], level=0)
+          test case: tests/modules/import_alias.py
         """
         if node.module != None and \
            node.module not in self.module_map:
@@ -1603,14 +1642,47 @@ class RB(object):
             if func.startswith(f):
                 func = func.replace(f + '.', '')
                 if self._path != ['']:
-                    if func in self._class_names:
-                        func = self.capitalize(func) + '.new'
                     """ <Python> imported.moduleb.moduleb_class
                         <Ruby>   Imported::Moduleb::Moduleb_class (base_path_count=0)
                                            Moduleb::Moduleb_class (base_path_count=1)
                     """
-                    base = '::'.join([self.capitalize(x) for x in f.split('.')[self._base_path_count:]]) + '::'
-                    func = base + func
+                    if func in self._class_names:
+                        func = self.capitalize(func) + '.new'
+                    """ <Python> * tests/modules/imported/modulec.py
+                                   import imported.submodules.submodulea
+                                   imported.submodules.submodulea.foo()
+                        <Ruby>   * tests/modules/imported/modulec.rb
+                                   require_relative 'submodules/submodulea'
+                                   Submodules::Submodulea::foo()
+                    """
+                    base = '::'.join([self.capitalize(x) for x in f.split('.')[self._base_path_count:]])
+                    if base != '':
+                        func = base + '::' + func
+                    break
+
+            f = '.'.join(f.split('.')[self._base_path_count:])
+            for path, rel_path in self.mod_paths.items():
+                rel_path = rel_path.replace('/', '.')
+                if rel_path.startswith(f + '.'):
+                    f = rel_path.replace(f + '.', '')
+                    break
+
+            if func.startswith(f):
+                func = func.replace(f + '.', '')
+                if self._path != ['']:
+                    if func in self._class_names:
+                        func = self.capitalize(func) + '.new'
+                    """ <Python> * tests/modules/imported/modulee.py
+                                   from imported.submodules import submodulea
+                                   submodulea.foo()
+                        <Ruby>   * tests/modules/imported/modulee.rb
+                                   require_relative 'submodules/submodulea'
+                                   include Submodules
+                                   Submodulea::foo()
+                    """
+                    base = '::'.join([self.capitalize(x) for x in f.split('.')])
+                    if base != '':
+                        func = base + '::' + func
                     break
 
         """ [Class Instance Create] :
