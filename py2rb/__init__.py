@@ -406,9 +406,6 @@ class RB(object):
             # Function Method
             func_name = node.name
 
-        if self._class_name:
-            self.indent()
-
         """ star arguments """
         if node.args.vararg:
             if six.PY2:
@@ -493,7 +490,6 @@ class RB(object):
         self.write('end')
 
         if self._class_name:
-            self.dedent()
             self._scope = []
         else:
             if node.decorator_list:
@@ -562,6 +558,7 @@ class RB(object):
             self.write("class %s" % (class_name))
         else:
             self.write("class %s < %s" % (class_name, ', '.join(bases)))
+        self.indent()
         self._class_name = class_name
         self._rclass_names.add(class_name)
 
@@ -577,13 +574,11 @@ class RB(object):
                 else:
                     self._self_functions.append(stmt.name)
         if len(self._class_functions) != 0:
-            self.indent()
             self.write("def method_missing(method, *args)")
             self.indent()
             self.write("self.class.__send__ method, *args")
             self.dedent()
             self.write("end")
-            self.dedent()
 
         self._classes_functions[node.name] = self._class_functions
         self._classes_self_functions[node.name] = self._self_functions
@@ -601,12 +596,10 @@ class RB(object):
                 #    value = "[%s]" % self.visit(stmt.value)
                 #else:
                 #    value = self.visit(stmt.value)
-                self.indent()
                 for t in stmt.targets:
                     var = self.visit(t)
                     self.write("@@%s = %s" % (var, value))
                     self._class_variables.append(var)
-                self.dedent()
             else:
                 self.visit(stmt)
         if len(self._functions_rb_args_default) != 0:
@@ -625,18 +618,15 @@ class RB(object):
         self._class_name = None
 
         for v in (self._class_variables):
-            self.indent()
             self.write("def self.%s; @@%s; end" % (v,v))
             self.write("def self.%s=(val); @@%s=val; end" % (v,v))
             self.write("def %s; @%s = @@%s if @%s.nil?; @%s; end" % (v,v,v,v,v))
             self.write("def %s=(val); @%s=val; end" % (v,v))
-            self.dedent()
 
         for func in self._self_functions:
-            self.indent()
             if func in self.attribute_map.keys():
                 self.write("alias :%s :%s" % (self.attribute_map[func], func))
-            self.dedent()
+        self.dedent()
         self.write("end")
         self._self_functions = []
         self._self_functions_args = {}
