@@ -1131,11 +1131,20 @@ class RB(object):
                          def foo()
                        end
                      end
-        * Case 4. from '.' case.
-          <python> from . import foo as bar
-          <ruby>   require_relative 'foo'
-          Module(body=[ImportFrom(module='foo', names=[ alias(name='bar', asname=None)], level=0)
-          test case: tests/modules/import_alias.py
+        * Case 4. import class with alias
+          <python> * tests/modules/import_alias.py
+                     from imported.alias_classes import spam as eggs
+                     e = eggs()
+                   * tests/modules/imported/alias_classes.py
+                     class spam:
+          <ruby>   * tests/modules/import_alias.rb
+                     require_relative 'imported/alias_classes'
+                     include Alias_classes
+                     Eggs = Spam
+                     e = Eggs.new()
+                   * tests/modules/imported/alias_classes.rb
+                     module Alias_classes
+                       class Spam
         """
         if node.module != None and \
            node.module not in self.module_map:
@@ -1156,7 +1165,12 @@ class RB(object):
             self.write("include %s" % base)
 
             if node.names[0].asname != None:
-                 self.write("alias %s %s" % (node.names[0].asname, node.names[0].name))
+                 if node.names[0].name in self._class_names:
+                     self.write("%s = %s" % (self.capitalize(node.names[0].asname), self.capitalize(node.names[0].name)))
+                     self._class_names.add(node.names[0].asname)
+                     self._classes_self_functions_args[node.names[0].asname] = self._classes_self_functions_args[node.names[0].name]
+                 else:
+                     self.write("alias %s %s" % (node.names[0].asname, node.names[0].name))
             return
 
         """

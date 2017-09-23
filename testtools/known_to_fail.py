@@ -25,7 +25,6 @@ KNOWN_TO_FAIL = [
 
     "tests/libraries/xmlwriter.py",
 
-    "tests/modules/import_alias.py",
     "tests/modules/import_class.py",
     "tests/modules/import_diamond.py",
     "tests/modules/module_name.py",
