@@ -17,3 +17,6 @@ x = np.prod([[1.,2.],[3.,4.]], axis=1)
 print(list(x))
 x = np.prod([3.,4.], keepdims=True)
 print(list(x))
+a = [3.,4.]
+x = np.prod(a, dtype= np.int32)
+print(int(x))

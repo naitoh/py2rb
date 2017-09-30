@@ -12,8 +12,10 @@
 #
 #   methods_map:
 #     Python method name:
-#       ins_bracket: True          => True: use bracket, False: not use bracket(default) # e.g. (1+5).sum
-#       bracket: False             => True: use bracket(default), False: not use bracket # e.g. Numo::NArray[object]
+#       ins_bracket: True          => instance bracket : True: use bracket, False: not use bracket(default) # e.g. (1+5).sum
+#       bracket: False             => argument bracket
+#                                     True: use bracket(default) # e.g. Numo::NArray.cast([3.0, 4.0]).prod(keepdims: true)
+#                                     False: not use bracket 
 #       key:
 #         - ['second']             => argument count 1 (len(key[..]) == 1) case
 #         - ['first', 'second'..]  => argument count 2 (len(key[..]) == 2) or not match (key[-1]) case

@@ -12,8 +12,10 @@
 #
 #   methods_map:
 #     Python method name:
-#       ins_bracket: True          => True: use bracket, False: not use bracket(default) # e.g. (1+5).sum
-#       bracket: False             => True: use bracket(default), False: not use bracket # e.g. Numo::NArray[object]
+#       ins_bracket: True          => instance bracket : True: use bracket, False: not use bracket(default) # e.g. (1+5).sum
+#       bracket: False             => argument bracket
+#                                     True: use bracket(default) # e.g. Numo::NArray.cast([3.0, 4.0]).prod(keepdims: true)
+#                                     False: not use bracket                                              ^^^^^^^^^^^^^^^^
 #       key:
 #         - ['second']             => argument count 1 (len(key[..]) == 1) case
 #         - ['first', 'second'..]  => argument count 2 (len(key[..]) == 2) or not match (key[-1]) case
@@ -58,18 +60,18 @@ numpy:
       val:
         object: False                             # Not use argument data
         dtype: &dtype
-          '%s.int8':    '%(mod)sInt8%(data)s%(name)s'
-          '%s.int16':   '%(mod)sInt16%(data)s%(name)s'        # np.array([5], dtype=np.int16) => Numo::Int16[5]
-          '%s.int32':   '%(mod)sInt32%(data)s%(name)s'
-          '%s.int64':   '%(mod)sInt64%(data)s%(name)s'
-          '%s.uint8':   '%(mod)sUInt8%(data)s%(name)s'
-          '%s.uint16':  '%(mod)sUInt16%(data)s%(name)s'
-          '%s.uint32':  '%(mod)sUInt32%(data)s%(name)s'
-          '%s.uint64':  '%(mod)sUInt64%(data)s%(name)s'
-          '%s.float32': '%(mod)sSFloat%(data)s%(name)s'
-          '%s.float64': '%(mod)sDFloat%(data)s%(name)s'
-          '%s.int':     '%(data)s%(name)s'                   # np.array(x > 0, dtype=np.int) => x > 0
-        dtype_nm: &dtype_na '%(mod)sNArray%(data)s%(name)s'  # np.array([5], dtype=np.float32) => Numo::NArray[5]
+          '%s.int8':    '%(mod)sInt8.cast(%(data)s)%(name)s'
+          '%s.int16':   '%(mod)sInt16.cast(%(data)s)%(name)s'        # np.array([5], dtype=np.int16) => Numo::Int16.cast([5])
+          '%s.int32':   '%(mod)sInt32.cast(%(data)s)%(name)s'
+          '%s.int64':   '%(mod)sInt64.cast(%(data)s)%(name)s'
+          '%s.int':     '%(mod)sInt64.cast(%(data)s)%(name)s'
+          '%s.uint8':   '%(mod)sUInt8.cast(%(data)s)%(name)s'
+          '%s.uint16':  '%(mod)sUInt16.cast(%(data)s)%(name)s'
+          '%s.uint32':  '%(mod)sUInt32.cast(%(data)s)%(name)s'
+          '%s.uint64':  '%(mod)sUInt64.cast(%(data)s)%(name)s'
+          '%s.float32': '%(mod)sSFloat.cast(%(data)s)%(name)s'
+          '%s.float64': '%(mod)sDFloat.cast(%(data)s)%(name)s'
+        dtype_nm: &dtype_na '%(mod)sNArray.cast(%(data)s)%(name)s'  # np.array([5], dtype=np.float32) => Numo::NArray.cast([5])
     prod:
       # prod(a, axis=None, dtype=None, out=None, keepdims=<class numpy._globals._NoValue>)
       # => prod(axis: nil, keepdims: false, nan: false)
