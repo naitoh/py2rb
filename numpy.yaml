@@ -114,6 +114,12 @@ numpy:
     ndarray:
       bracket: False
       main_func: '%(mod)sNArray'                  # convert function name : np.ndarray => Numo::NArray
+    nan:
+      bracket: False
+      main_func: 'Float::NAN'
+    inf:
+      bracket: False
+      main_func: 'Float::INFINITY'
     exp:
       # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
       main_func: '%(mod)sNMath.exp'               # np.exp(-x) => Numo::NMath.exp(-x)
@@ -184,4 +190,3 @@ numpy:
         # <Ruby>   Numo::DFloat.new(((6-1)/2.to_f).ceil).seq(1, 2)
         #          =>[1, 3, 5]
         - ".new(((%(stop)s-(%(start)s))/(%(step)s).to_f).ceil).seq(%(start)s, %(step)s)"
-
