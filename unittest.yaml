@@ -4,7 +4,7 @@
 # Python module name:
 #   id: Ruby module name
 #     e.g. id: numo/narray # import numpy as np => require 'numo/narray'
-#   mod_name: Ruby module namespace
+#   mod_name: Ruby module namespace : %(mod)s
 #     e.g. mod_name: Numo  # from numpy import array => require 'numo/narray'; include Numo # mod: mod_name + '::'
 #   mod_class_name:
 #     Pyth n class name: Ruby class name    # For class inheritance
@@ -12,27 +12,26 @@
 #
 #   methods_map:
 #     Python method name:
-#       ins_bracket: True          => instance bracket : True: use bracket, False: not use bracket(default) # e.g. (1+5).sum
 #       bracket: False             => argument bracket
 #                                     True: use bracket(default) # e.g. Numo::NArray.cast([3.0, 4.0]).prod(keepdims: true)
-#                                     False: not use bracket 
+#                                     False: not use bracket                                              ^^^^^^^^^^^^^^^^
 #       key:
 #         - ['second']             => argument count 1 (len(key[..]) == 1) case
 #         - ['first', 'second'..]  => argument count 2 (len(key[..]) == 2) or not match (key[-1]) case
 #       key_order:                 => key order change setting
 #         - ['second']             => argument count 1 (len(key_order[..]) == 1) case
 #         - ['second', 'first'..]  => argument count 2 (len(key_order[..]) == 2) or not match (key[-1]) case
-#       main_data_key: object      => Main data key name
+#       main_data_key: object      => Main data key name : %(data)s
+#
+#       main_func: '(%(data)s).sum'  # convert to Ruby method
+#        or
 #       main_func_key: dtype       => convert function key name
-#       main_func_key_nm: dtype_nm => convert function key name (not match case)
-#       main_func_methodname: ''   => convert function (attribute) name (default : '')
+#       main_func_hash_nm: 'NArray' => convert function name (not match(default) case)
+#       main_func_hash: *func_hash  => convert function name (match case)
+#
 #       val:                       => arguments dict
 #         object: False            => Not use argument data
-#         dtype:
-#           'None'     : 'Numo::NArray%s%s'
-#              => not match case convert to Ruby method (% main_data_key's data, main_func_methodname's data)
-#           '%s.int8'  : 'Numo::Int8%s%s'
-#              => match case convert to Ruby method (% main_data_key's data, main_func_methodname's data)
+#         dtype:  '%(mod)s%(main_func)s.cast(%(data)s)'  # convert to Ruby method
 #         axis: axis               => Use keyword argument data
 #       rtn:
 #         - "%(start)s"            => customize return string (main_func + rtn) : argument count 1 (rtn[0]) case

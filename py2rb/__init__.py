@@ -31,6 +31,7 @@ class RB(object):
     }
     func_name_map = {
         'zip'   : 'zip_p',
+        #'print' : 'p',
     }
     name_map = {
         #'self'   : 'this',
@@ -43,7 +44,6 @@ class RB(object):
         'list'  : 'Array',
         'tuple' : 'Array',
         'dict'  : 'Hash',
-        #'print' : 'puts',
         '__file__' : '__FILE__',
     }
 
@@ -1537,16 +1537,11 @@ class RB(object):
         if 'bracket' in method_map.keys():
             if method_map['bracket'] == False:
                 bracket = False
-        ins_bracket = False
-        if 'ins_bracket' in method_map.keys():
-            if method_map['ins_bracket'] == True:
-                ins_bracket = True
-
-        func_methodname = ''
         main_data = ''
         main_func = ''
         m_args = []
         args_hash = {}
+        func_key = method_map.get('main_func_key', '')  # dtype
         if rb_args:
             for i in range(len(rb_args)):
                 if ': ' in rb_args[i]:
@@ -1558,6 +1553,8 @@ class RB(object):
             if key_order_list != False:
                 key_list = key_order_list
             for key in key_list:
+                if key == func_key:
+                    continue
                 if key not in args_hash:
                     continue
                 value = args_hash[key]
@@ -1573,40 +1570,26 @@ class RB(object):
                 data_key = method_map['main_data_key']
                 main_data = args_hash[data_key]
 
-            if 'main_func_methodname' in method_map.keys():
-                func_methodname = method_map['main_func_methodname']
-
         if 'main_func' in method_map.keys():
-            if main_data:
-                if ins_bracket:
-                    main_func = "(%s).%s%s" % (main_data, method_map['main_func'], func_methodname)
-                else:
-                    main_func = "%s.%s%s" % (main_data, method_map['main_func'], func_methodname)
-            else:
-                main_func = method_map['main_func'] % {'mod': mod}
-                main_func = "%s%s" % (main_func, func_methodname)
+            main_func = method_map['main_func'] % {'mod': mod, 'data': main_data}
         else:
-            func_key    = method_map['main_func_key']
-            func_key_nm = method_map['main_func_key_nm']
             for kw, val in args_hash.items():
-                if kw in method_map['val'].keys() and \
-                   type(method_map['val'][kw]) == dict:
-                    for key in method_map['val'][kw].keys():
+                if kw in method_map['val'].keys() and kw == func_key:
+                    for key in method_map['main_func_hash'].keys():
                         """ [Function convert to Method]
-                        <Python> np.prod(shape, dtype=np.int32)
-                        <Ruby>   Numo::Int32[shape].prod
+                        <Python> dtype=np.int32
+                        <Ruby>   Numo::Int32
                         """
-                        key2 = key            # key2: %s.int32
                         if "%s" in key:
                             key2 = (key % ins) # key2: np.int32
                         if val == key2:
-                            main_func = method_map['val'][kw][key] % {'mod': mod, 'data': main_data, 'name': func_methodname}
+                            main_func = method_map['main_func_hash'][key] 
             else:
-                if main_func == '' and \
-                   func_key_nm in method_map['val'].keys():
-                    main_func = method_map['val'][func_key_nm] % {'mod': mod, 'data': main_data, 'name': func_methodname}
-            if main_func == '':
-                raise RubyError("methods_map main function Error : not found args")
+                if main_func == '' and 'main_func_hash_nm' in method_map.keys():
+                    main_func = method_map['main_func_hash_nm']
+            main_func = method_map['val'][func_key] % {'mod': mod, 'data': main_data, 'main_func': main_func}
+        if main_func == '':
+            raise RubyError("methods_map main function Error : not found args")
 
         if rtn:
             rtn = rtn % args_hash
@@ -1929,6 +1912,7 @@ class RB(object):
                     """
                     self.write("raise %s, %s" % (self.visit(node.exc.func), self.visit(node.exc.args[0])))
 
+    # python 2.x
     def visit_Print(self, node):
         assert node.dest is None
         assert node.nl
