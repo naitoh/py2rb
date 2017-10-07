@@ -74,6 +74,7 @@ tests/basic/print.py [4]: ....                                   [OK]
 tests/basic/raise.py [4]: ....                                   [OK]
 tests/basic/raise2.py [4]: ....                                  [OK]
 tests/basic/scope.py [4]: ....                                   [OK]
+tests/basic/set.py [4]: ....                                     [OK]
 tests/basic/str1.py [4]: ....                                    [OK]
 tests/basic/str_endswith.py [4]: ....                            [OK]
 tests/basic/sumcomp.py [4]: ....                                 [OK]
@@ -222,6 +223,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 223 tests in 94.339s
+Ran 224 tests in 84.944s
 
 OK (expected failures=28)

@@ -31,6 +31,7 @@ class RB(object):
     }
     func_name_map = {
         'zip'   : 'zip_p',
+        'set'   : 'Set.new',
         #'print' : 'p',
     }
     name_map = {

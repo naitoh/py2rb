@@ -298,3 +298,11 @@ module Numo
     end
   end
 end
+
+require 'set'
+class Set
+  def remove(x)
+    self.delete(x)
+    return
+  end
+end
