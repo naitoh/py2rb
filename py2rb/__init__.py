@@ -91,6 +91,9 @@ class RB(object):
     reverse_methods = {
         'type'  : 'class',
         'abs'   : 'abs',            # Numeric
+        'bin'   : 'to_s(2)',
+        'oct'   : 'to_s(8)',
+        'hex'   : 'to_s(16)',
         'int'   : 'to_i',
         'float' : 'to_f',
         'str'   : 'to_s',
