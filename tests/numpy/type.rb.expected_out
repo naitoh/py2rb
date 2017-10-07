@@ -1,0 +1,12 @@
+Numo::Int8
+Numo::Int16
+Numo::Int32
+Numo::Int64
+Numo::Int64
+Numo::UInt8
+Numo::UInt16
+Numo::UInt32
+Numo::UInt64
+Numo::UInt64
+Numo::SFloat
+Numo::DFloat

@@ -46,6 +46,42 @@ numpy:
   id: numo/narray # import numpy as np => require 'numo/narray'
   mod_name: Numo  # from numpy import array => require 'numo/narray'; include Numo # mod: mod_name + '::'
   methods_map:
+    int8:
+      bracket: False
+      main_func: 'Numo::Int8'
+    int16:
+      bracket: False
+      main_func: 'Numo::Int16'
+    int32:
+      bracket: False
+      main_func: 'Numo::Int32'
+    int64:
+      bracket: False
+      main_func: 'Numo::Int64'
+    int:
+      bracket: False
+      main_func: 'Numo::Int64'
+    uint8:
+      bracket: False
+      main_func: 'Numo::UInt8'
+    uint16:
+      bracket: False
+      main_func: 'Numo::UInt16'
+    uint32:
+      bracket: False
+      main_func: 'Numo::UInt32'
+    uint64:
+      bracket: False
+      main_func: 'Numo::UInt64'
+    uint:
+      bracket: False
+      main_func: 'Numo::UInt64'
+    float32:
+      bracket: False
+      main_func: 'Numo::SFloat'
+    float64:
+      bracket: False
+      main_func: 'Numo::DFloat'
     array:
       # array(object, dtype=None, copy=True, order='K', subok=False, ndmin=0)
       # => Numo::NArray[object]
