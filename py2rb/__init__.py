@@ -76,6 +76,9 @@ class RB(object):
     methods_map_middle = {
         'isinstance' : 'is_a?',
         'hasattr'    : 'instance_variable_defined?',
+        #'getattr'    : 'send',
+        #'getattr'    : 'method',
+        'getattr'    : 'getattr',
     }
     # np.array([x1, x2]) => Numo::NArray[x1, x2]
     order_methods_with_bracket = {}
@@ -1615,9 +1618,11 @@ class RB(object):
                  describe = mydecorator(method(:describe))
         """
         self._func_args_len = len(rb_args)
-        self._call = True
+        if not isinstance(node.func, ast.Call):
+            self._call = True
         func = self.visit(node.func)
-        self._call = False
+        if not isinstance(node.func, ast.Call):
+            self._call = False
         if not func in self.iter_map:
             for i in range(len(rb_args)):
                 if rb_args[i] in self._functions.keys():
@@ -1712,6 +1717,11 @@ class RB(object):
                 <Ruby>   foo.instance_variable_defined? :@bar
                 """
                 return "%s.%s :@%s" % (rb_args[0], self.methods_map_middle[func], rb_args[1][1:-1])
+            elif func == 'getattr':
+                if len(rb_args) == 2:
+                    return "%s.%s(%s)" % (rb_args[0], self.methods_map_middle[func], rb_args[1])
+                else:
+                    return "%s.%s(%s, %s)" % (rb_args[0], self.methods_map_middle[func], rb_args[1], rb_args[2])
             else:
                 """ [Function convert to Method]
                 <Python> isinstance(foo, String)
@@ -1759,6 +1769,9 @@ class RB(object):
             rb_args_s = rb_args[0]
         else:
             rb_args_s = ", ".join(rb_args)
+
+        if isinstance(node.func, ast.Call):
+            return "%s.(%s)" % (func, rb_args_s)
 
         if func in self.ignore.keys():
             """ [Function convert to Method]

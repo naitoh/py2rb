@@ -35,6 +35,7 @@ tests/basic/for_in.py [4]: ....                                  [OK]
 tests/basic/for_range1.py [4]: ....                              [OK]
 tests/basic/for_range2.py [4]: ....                              [OK]
 tests/basic/for_step.py [4]: ....                                [OK]
+tests/basic/getattr.py [4]: ....                                 [OK]
 tests/basic/globalvar.py [4]: ....                               [OK]
 tests/basic/hasattr1.py [4]: ....                                [OK]
 tests/basic/helloworld.py [4]: ....                              [OK]
@@ -220,6 +221,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 221 tests in 105.843s
+Ran 222 tests in 96.731s
 
 OK (expected failures=28)

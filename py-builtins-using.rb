@@ -8,4 +8,5 @@ using PythonSplitEx
 using PythonStripEx
 using PythonStringCountEx
 using PythonRemoveEx
+using PythonMethodEx
 

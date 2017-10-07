@@ -11,6 +11,22 @@ module PythonZipEx
   end
 end
 
+module PythonMethodEx
+  refine Object do
+    def getattr(*a)
+      if singleton_class.class_variables.include? "@@#{a[0]}".to_sym
+        send(a[0])
+      elsif public_methods.include? a[0].to_sym
+        method(a[0])
+      elsif a.size == 2
+        return a[1]
+      else
+        raise NoMethodError, "undefined method `#{a[0]}'"
+      end
+    end
+  end
+end
+
 module PythonPrintEx
   refine Object do
     def print(*args)
