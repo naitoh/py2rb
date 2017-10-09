@@ -250,3 +250,35 @@ numpy:
         # <Ruby>   Numo::DFloat.new(((6-1)/2.to_f).ceil).seq(1, 2)
         #          =>[1, 3, 5]
         - ".new(((%(stop)s-(%(start)s))/(%(step)s).to_f).ceil).seq(%(start)s, %(step)s)"
+    full:
+      # full(shape, fill_value, dtype=None, order='C')
+      # => fill(other)
+      key:
+        - [shape, fill_value, dtype, order]
+      main_data_key: shape                        # Main data
+      main_func_key: dtype                        # convert function key name
+      main_func_hash_nm: 'DFloat'                 # convert function name (not match(default) case)
+      main_func_hash: *func_hash                  # convert function name
+      val:
+        shape: False                              # Not use argument data
+        fill_value: True                          # Use argument data
+        dtype: '%(mod)s%(main_func)s.new(%(data)s).fill' # convert function
+        order: False                              # Not use argument data
+    any:
+      # (a, axis=None, out=None, keepdims=<class numpy._globals._NoValue>)
+      main_func: '%(mod)sBit.cast(%(data)s).any?'               # np.any([False]) => Numo::Bit.cast([False])any?()
+      main_data_key: a                       # Main data
+      key:
+        - [a, axis, out, keepdims]
+      val:
+        a: False
+        axis: axis
+    all:
+      # (a, axis=None, out=None, keepdims=<class numpy._globals._NoValue>)
+      main_func: '%(mod)sBit.cast(%(data)s).all?'               # np.all([False]) => Numo::Bit.cast([False])all?()
+      main_data_key: a                       # Main data
+      key:
+        - [a, axis, out, keepdims]
+      val:
+        a: False
+        axis: axis
