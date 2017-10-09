@@ -135,6 +135,7 @@ class RB(object):
 
     list_map = set([                 # Array
         'list',
+        'tuple',
     ])
 
     dict_map = set([                 # Hash
