@@ -107,6 +107,18 @@ numpy:
       val:
         object: False                             # Not use argument data
         dtype:  '%(mod)s%(main_func)s.cast(%(data)s)'  # np.array([5], dtype=np.float32) => Numo::NArray.cast([5])
+    asarray:
+      # asarray(a, dtype=None, order=None)
+      # => cast(array)
+      key:
+        - [a, dtype, order]
+      main_func_key: dtype                        # convert function key name
+      main_func_hash_nm: 'NArray'                 # convert function name (not match(default) case)
+      main_func_hash: *func_hash                  # convert function name
+      val:
+        a: True                                   # Not use argument data
+        dtype: '%(mod)s%(main_func)s.cast'        # convert function
+        order: False                              # Not use argument data
     prod:
       # prod(a, axis=None, dtype=None, out=None, keepdims=<class numpy._globals._NoValue>)
       # => prod(axis: nil, keepdims: false, nan: false)
