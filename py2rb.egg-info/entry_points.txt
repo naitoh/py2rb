@@ -1,0 +1,3 @@
+[console_scripts]
+py2rb = py2rb:main
+
