@@ -119,6 +119,18 @@ numpy:
         a: True                                   # Use argument data
         dtype: '%(mod)s%(main_func)s.cast'        # convert function
         order: False                              # Not use argument data
+    insert: # => insert : instance_method
+      # (arr, obj, values, axis=None)
+      # => (indice, values, axis: nil)
+      key:
+        - [arr, obj, values, axis]
+      main_data_key: arr                          # Main data : %(data)s
+      main_func: '(%(data)s).insert'              # convert function : np.insert(a, 1, 5, axis=1) => a.insert(1, 5, axis: 1)
+      val:
+        arr: False                                # Not use argument data
+        obj: True                                 # Use argument data
+        values: True                              # Use argument data
+        axis: axis                                # Use keyword argument data
     prod: # => prod : instance_method
       # prod(a, axis=None, dtype=None, out=None, keepdims=<class numpy._globals._NoValue>)
       # => prod(axis: nil, keepdims: false, nan: false)
