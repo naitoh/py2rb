@@ -80,6 +80,22 @@ unittest:
       val:
         expr: True
         msg: True
+    TestCase.assertRaises:
+      # (exception, callable, *args, **kwds)
+      main_func: 'assert_raise'
+      key:
+        - [exception]
+        - [exception, callable]
+      val:
+        exception: False
+        callable: False
+      rtn:
+        # <Python> self.assertRaises(TypeError)
+        # <Ruby> assert_raise(klass1, klass2, ..., message = "") { ... }
+        - "(%(exception)s)"
+        # <Python> self.assertRaises(TypeError, foo)
+        # <Ruby> assert_raise(klass1, klass2, ..., message = "") { foo }
+        - "(%(exception)s){%(callable)s}"
   ignore:
     main: ''
 
