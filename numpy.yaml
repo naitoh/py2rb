@@ -226,6 +226,76 @@ numpy:
         - [x, out, where, casting, order, dtype, subok]
       val:
         x: True
+    tan: # => tan : class_method
+      # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNMath.tan'
+      key:
+        - [x, out, where, casting, order, dtype, subok]
+      val:
+        x: True
+    sinh: # => sinh : class_method
+      # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNMath.sinh'
+      key:
+        - [x, out, where, casting, order, dtype, subok]
+      val:
+        x: True
+    cosh: # => cosh : class_method
+      # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNMath.cosh'
+      key:
+        - [x, out, where, casting, order, dtype, subok]
+      val:
+        x: True
+    tanh: # => tanh : class_method
+      # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNMath.tanh'
+      key:
+        - [x, out, where, casting, order, dtype, subok]
+      val:
+        x: True
+    arcsin: # => asin : class_method
+      # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNMath.asin'
+      key:
+        - [x, out, where, casting, order, dtype, subok]
+      val:
+        x: True
+    arccos: # => acos : class_method
+      # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNMath.acos'
+      key:
+        - [x, out, where, casting, order, dtype, subok]
+      val:
+        x: True
+    arctan: # => atan : class_method
+      # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNMath.atan'
+      key:
+        - [x, out, where, casting, order, dtype, subok]
+      val:
+        x: True
+    arcsinh: # => asinh : class_method
+      # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNMath.asinh'
+      key:
+        - [x, out, where, casting, order, dtype, subok]
+      val:
+        x: True
+    arccosh: # => acosh : class_method
+      # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNMath.acosh'
+      key:
+        - [x, out, where, casting, order, dtype, subok]
+      val:
+        x: True
+    arctanh: # => atanh : class_method
+      # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNMath.atanh'
+      key:
+        - [x, out, where, casting, order, dtype, subok]
+      val:
+        x: True
     maximum:
       # (x1, x2, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
       main_func: '%(mod)sNArray.maximum'
