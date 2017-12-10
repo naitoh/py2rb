@@ -1,0 +1,16 @@
+sudo: false
+language: python
+python:
+  - 3.5
+  - 3.6
+before_install:
+  - gem update bundler
+install:
+  - pip install numpy PyYAML
+  - gem install numo-narray
+script:
+  - python --version
+  - ruby --version
+  - python run_tests.py -a
+  - cat tests/*/*.py.comp.err
+  - cat tests/*/*.py.err
