@@ -10,7 +10,6 @@ from . import formater
 import re
 import yaml
 import glob
-import copy
 
 def scope(func):
     func.scope = True
@@ -249,7 +248,6 @@ class RB(object):
         self._import_files = []
         self._imports = []
         self._call = False
-        self._conv = True # use YAML convert case.
 
     def new_dummy(self):
         dummy = "__dummy%d__" % self.dummy
@@ -1405,41 +1403,29 @@ class RB(object):
         """
         Compare(expr left, cmpop* ops, expr* comparators)
         """
-        assert len(node.ops) == len(node.comparators)
-
-        def compare_pair(left, comp, op):
-            if (left == '__name__') and (comp == '"__main__"') or \
-               (left == '"__main__"') and (comp == '__name__'):
-                """ <Python>  __name__ == '__main__':
-                    <Ruby>    __FILE__ == $0          """
-                left = '__FILE__'
-                comp = '$0'
-            if isinstance(op, ast.In):
-                return "%s.include?(%s)" % (comp, left)
-            elif isinstance(op, ast.NotIn):
-                return "!%s.include?(%s)" % (comp, left)
-            elif isinstance(op, ast.Eq):
-                return "%s == %s" % (left, comp)
-            elif isinstance(op, ast.NotEq):
-                return "%s != %s" % (left, comp)
-            elif isinstance(op, ast.IsNot):
-                return "!%s.equal?(%s)" % (left, comp)
-            else:
-                return "%s %s %s" % (left, self.get_comparison_op(op), comp)
-
-        compare_list = []
-        for i in range(len(node.ops)):
-            if i == 0:
-                left = self.visit(node.left)
-            else:
-                left = comp
-            comp = self.visit(node.comparators[i])
-            op = node.ops[i]
-            pair = compare_pair(left, comp, op)
-            if len(node.ops) == 1:
-                return pair
-            compare_list.append('(' + pair + ')')
-        return ' and '.join(compare_list)
+        assert len(node.ops) == 1
+        assert len(node.comparators) == 1
+        op = node.ops[0]
+        left = self.visit(node.left)
+        comp = self.visit(node.comparators[0])
+        if (left == '__name__') and (comp == '"__main__"') or \
+           (left == '"__main__"') and (comp == '__name__'):
+            """ <Python>  __name__ == '__main__':
+                <Ruby>    __FILE__ == $0          """
+            left = '__FILE__'
+            comp = '$0'
+        if isinstance(op, ast.In):
+            return "%s.include?(%s)" % (comp, left)
+        elif isinstance(op, ast.NotIn):
+            return "!%s.include?(%s)" % (comp, left)
+        elif isinstance(op, ast.Eq):
+            return "%s == %s" % (left, comp)
+        elif isinstance(op, ast.NotEq):
+            return "%s != %s" % (left, comp)
+        elif isinstance(op, ast.IsNot):
+            return "!%s.equal?(%s)" % (left, comp)
+        else:
+            return "%s %s %s" % (left, self.get_comparison_op(op), comp)
 
     # python 3
     def visit_Starred(self, node):
@@ -1777,7 +1763,6 @@ class RB(object):
         #    else:
         #       rb_args.append(self.visit(arg))
         # ast.Tuple, ast.List, ast.*
-        rb_args_base = copy.deepcopy(rb_args)
         if node.keywords:
             """ [Keyword Argument] : 
             <Python> foo(1, fuga=2):
@@ -1785,9 +1770,6 @@ class RB(object):
             """
             for kw in node.keywords:
                 rb_args.append("%s: %s" % (kw.arg, self.visit(kw.value)))
-                self._conv = False
-                rb_args_base.append("%s: %s" % (kw.arg, self.visit(kw.value)))
-                self._conv = True
         if len(rb_args) == 0:
             rb_args_s = ''
         elif len(rb_args) == 1:
@@ -1818,7 +1800,7 @@ class RB(object):
                 if 'arg_count_2' in self.reverse_methods[func].keys():
                     return "(%s).%s(%s)" % (rb_args[0], self.reverse_methods[func]['arg_count_2'], ", ".join(rb_args[1:]))
         elif func in self.methods_map.keys():
-            return self.get_methods_map(self.methods_map[func], rb_args_base, ins)
+            return self.get_methods_map(self.methods_map[func], rb_args, ins)
         elif func in self.order_methods_with_bracket.keys():
             """ [Function convert to Method]
             <Python> os.path.dirnam(name)
@@ -1978,11 +1960,11 @@ class RB(object):
                 <Python> six.PY3 # True
                 <Ruby>   true   """
                 return self.attribute_map[mod_attr]
-            if self._conv and (attr in self.methods_map.keys()):
+            if attr in self.methods_map.keys():
                 rtn = self.get_methods_map(self.methods_map[attr])
                 if rtn != '':
                     return rtn
-            if self._conv and (mod_attr in self.methods_map.keys()):
+            if mod_attr in self.methods_map.keys():
                 rtn =  self.get_methods_map(self.methods_map[mod_attr])
                 if rtn != '':
                     return rtn
