@@ -15,7 +15,7 @@ Execute the following::
 Dependencies
 --------
 
-- Python 3.5
+- Python 3.5, 3.6
 - Ruby 2.4 or later
 
 
@@ -25,19 +25,18 @@ Usage
 Sample Code 1::
 
     $ cat tests/basic/oo_inherit_simple.py
-
     class bar(object):
 
         def __init__(self,name):
             self.name = name
-    
+
         def setname(self,name):
             self.name = name
-    
+
     class foo(bar):
-        
+
         registered = []
-    
+
         def __init__(self,val,name):
             self.fval = val
             self.register(self)
@@ -59,12 +58,12 @@ Sample Code 1::
         @staticmethod
         def register(f):
             foo.registered.append(f)
-    
+
         @staticmethod
         def printregistered():
             for r in foo.registered:
                 print(r.msg())
-    
+
     a = foo(10,'a')
     a.setname('aaa')
     b = foo(20,'b')
@@ -86,60 +85,67 @@ The above will result in ::
 
     $ ./py2rb.py tests/basic/oo_inherit_simple.py
     class Bar
-        def initialize(name)
-            @name = name
-        end
-        def setname(name)
-            @name = name
-        end
+      def initialize(name)
+        @name = name
+      end
+      def setname(name)
+        @name = name
+      end
     end
     class Foo < Bar
-        @@registered = []
-        def initialize(val, name)
-            @fval = val
-            Foo.register(self)
-            @name = name
+      def method_missing(method, *args)
+        self.class.__send__ method, *args
+      end
+      @@registered = []
+      def initialize(val, name)
+        @fval = val
+        Foo.register(self)
+        @name = name
+      end
+      def inc()
+        @fval += 1
+      end
+      def msg(a: nil, b: nil, c: nil)
+        txt = ""
+        varargs = [a, b, c]
+        for arg in varargs
+          if arg === nil
+            next
+          end
+          txt += (arg).to_s
+          txt += ","
         end
-        def inc()
-            @fval += 1
+        return (((txt)+(@name))+(" says:"))+((@fval).to_s)
+      end
+      def self.register(f)
+        @@registered.push(f)
+      end
+      def self.printregistered()
+        for r in @@registered
+          print(r.msg())
         end
-        def msg(a=nil, b=nil, c=nil)
-            txt = ""
-            varargs = [a, b, c]
-            for arg in varargs
-                if arg === nil
-                    next
-                end
-                txt += (arg).to_s
-                txt += ","
-            end
-            return (((txt)+(@name))+(" says:"))+((@fval).to_s)
-        end
-        def self.register(f)
-            @@registered.push(f)
-        end
-        def self.printregistered()
-            for r in @@registered
-                print(r.msg)
-            end
-        end
+      end
+      def self.registered; @@registered; end
+      def self.registered=(val); @@registered=val; end
+      def registered; @registered = @@registered if @registered.nil?; @registered; end
+      def registered=(val); @registered=val; end
     end
-    a = Foo.new(10,"a")
+    a = Foo.new(10, "a")
     a.setname("aaa")
-    b = Foo.new(20,"b")
-    c = Foo.new(30,"c")
-    a.inc
-    a.inc
-    c.inc
-    print(a.msg)
-    print(b.msg)
-    print(c.msg(2,3,4))
+    b = Foo.new(20, "b")
+    c = Foo.new(30, "c")
+    a.inc()
+    a.inc()
+    c.inc()
+    print(a.msg())
+    print(b.msg())
+    print(c.msg(a: 2, b: 3, c: 4))
     print("---")
-    Foo.printregistered
+    Foo.printregistered()
 
 Sample Code 2::
 
-    $ cat tests/numpy/numpy_and.py
+    $ cat tests/deep-learning-from-scratch/and_gate.py
     # coding: utf-8
     import numpy as np
 
@@ -153,30 +159,32 @@ Sample Code 2::
         else:
             return 1
 
-    for xs in [(0, 0), (1, 0), (0, 1), (1, 1)]:
-        y = AND(xs[0], xs[1])
-        print(str(xs) + " -> " + str(y))
+    if __name__ == '__main__':
+        for xs in [(0, 0), (1, 0), (0, 1), (1, 1)]:
+            y = AND(xs[0], xs[1])
+            print(str(xs) + " -> " + str(y))
 
 The above will result in ::
 
-    $ ./py2rb.py tests/numpy/numpy_and.py
+    $ ./py2rb.py tests/deep-learning-from-scratch/and_gate.py
     require 'numo/narray'
-    def AND (x1, x2)
-        x = Numo::NArray[x1, x2]
-        w = Numo::NArray[0.5, 0.5]
-        b = -(0.7)
-        tmp = (((w)*(x)).sum)+(b)
-        if tmp <= 0
-            return 0
-        else
-            return 1
-        end
+    def AND(x1, x2)
+      x = Numo::NArray.cast([x1, x2])
+      w = Numo::NArray.cast([0.5, 0.5])
+      b = -(0.7)
+      tmp = (((w)*(x)).sum())+(b)
+      if tmp <= 0
+        return 0
+      else
+        return 1
+      end
     end
-    for xs in [[0, 0], [1, 0], [0, 1], [1, 1]]
-        y = AND(xs[0],xs[1])
+    if __FILE__ == $0
+      for xs in [[0, 0], [1, 0], [0, 1], [1, 1]]
+        y = AND(xs[0], xs[1])
         print((((xs).to_s)+(" -> "))+((y).to_s))
+      end
     end
-
 
 Tests
 -----
