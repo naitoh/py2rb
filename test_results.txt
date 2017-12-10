@@ -169,6 +169,7 @@ tests/os/path_basename.py [4]: ....                              [OK]
 tests/os/path_dirname.py [4]: ....                               [OK]
 tests/os/path_join.py [4]: ....                                  [OK]
 tests/os/walk.py [4]: ....                                       [OK]
+tests/random/random_random.py [4]: ....                          [OK]
 tests/six/integer_types.py [4]: ....                             [OK]
 tests/six/iteritems.py [4]: ....                                 [OK]
 tests/six/itervalues.py [4]: ....                                [OK]
@@ -230,6 +231,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 231 tests in 102.466s
+Ran 232 tests in 122.364s
 
 OK (expected failures=28)

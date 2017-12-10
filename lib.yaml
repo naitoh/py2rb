@@ -61,6 +61,11 @@ weakref:
   order_methods_with_bracket:
     ref: 'WeakRef.new'
 
+random:
+  id:
+  order_methods_with_bracket:
+    random: 'Random.rand'
+
 # Provisional implementation.
 heapq:
   id:
