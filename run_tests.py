@@ -43,6 +43,8 @@ def main():
             print
             print("*", str(test), "*")
             print(error)
+    if results.errors or results.failures:
+        exit(1)
 
 if __name__ == "__main__":
   main()
