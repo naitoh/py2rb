@@ -1,8 +1,8 @@
-# TESTS for the py-builtins.rb module
+# TESTS for the py2rb/builtins/module.rb module
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..'))
 require 'test/unit'
-require 'py-builtins'
+require 'module'
 
 class PyBultinsTest < Test::Unit::TestCase
   using PythonZipEx

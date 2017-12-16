@@ -22,7 +22,8 @@ class RubyError(Exception):
 class RB(object):
 
     module_map = {}
-    for filename in glob.glob('*.yaml'):
+    yaml_files = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'modules/*.yaml')
+    for filename in glob.glob(yaml_files):
         with open(filename, 'r') as f:
             module_map.update(yaml.load(f))
 
@@ -2256,13 +2257,13 @@ def main():
                       action="store_true",
                       dest="include_require",
                       default=False,
-                      help="require py-builtins.rb library in the output")
+                      help="require builtins/module.rb library in the output")
 
     parser.add_option("--include-builtins",
                       action="store_true",
                       dest="include_builtins",
                       default=False,
-                      help="include py-builtins.rb library in the output")
+                      help="include builtins/module.rb library in the output")
 
     parser.add_option("--base-path",
                       action="store",
@@ -2286,27 +2287,28 @@ def main():
         else:
             output = sys.stdout
 
+        builtins_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'builtins')
         if options.include_require:
-            if os.path.dirname(__file__):
-                require = open(os.path.join(os.path.dirname(__file__),
-                                            "py-builtins-require.rb")).read()
-                using = open(os.path.join(os.path.dirname(__file__),
-                                          "py-builtins-using.rb")).read()
+            if builtins_dir:
+                require = open(os.path.join(builtins_dir,
+                                            "require.rb")).read()
+                using = open(os.path.join(builtins_dir,
+                                          "using.rb")).read()
             else:
-                require = open("py-builtins-require.rb").read()
-                using = open("py-builtins-using.rb").read()
+                require = open("require.rb").read()
+                using = open("using.rb").read()
             output.write(require)
             output.write(using)
 
         if options.include_builtins:
-            if os.path.dirname(__file__):
-                builtins = open(os.path.join(os.path.dirname(__file__),
-                                             "py-builtins.rb")).read()
-                using = open(os.path.join(os.path.dirname(__file__),
-                                          "py-builtins-using.rb")).read()
+            if builtins_dir:
+                builtins = open(os.path.join(builtins_dir,
+                                             "module.rb")).read()
+                using = open(os.path.join(builtins_dir,
+                                          "using.rb")).read()
             else:
-                builtins = open("py-builtins.rb").read()
-                using = open("py-builtins-using.rb").read()
+                builtins = open("module.rb").read()
+                using = open("using.rb").read()
             output.write(builtins)
             output.write(using)
 

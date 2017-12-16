@@ -30,11 +30,21 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
     keywords='python ruby',
-    packages=find_packages(exclude=['tests']),
+    packages=['py2rb'],
+    package_data = {
+        'py2rb': ['modules/lib.yaml',
+                  'modules/numpy.yaml',
+                  'modules/unittest.yaml',
+                  'builtins/require.rb',
+                  'builtins/using.rb',
+                  'builtins/module.rb', ]
+    },
     install_requires=[
         'pyyaml',
+        'numpy',
     ],
     entry_points={
         'console_scripts': [

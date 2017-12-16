@@ -39,7 +39,7 @@ def run_with_stdlib(file_path, file_name=None):
         def runTest(self):
             """The actual test goes here."""
             cmd = (
-                  'ruby "py-builtins.rb" '
+                  'ruby "py2rb/builtins/module.rb" '
                   ' "%(rb_path)s" > "%(rb_out_path)s" 2> "%(rb_error)s"'
                   )% self.templ
             self.assertEqual(0, os.system(cmd))
@@ -150,7 +150,7 @@ def compile_and_run_file_test(file_path, file_name=None):
             commands.append(python_command)
             commands.extend(self.get_mod_path(self.templ['py_path'], self.templ['name']))
             ruby_command = (
-                'ruby -I . "%(rb_path)s" > "%(rb_out_path)s" 2> '
+                'ruby -I py2rb/builtins "%(rb_path)s" > "%(rb_out_path)s" 2> '
                 '"%(rb_error)s"' 
                 ) % self.templ
             commands.append(ruby_command)

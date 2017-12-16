@@ -1,5 +1,5 @@
 py2rb.py
-=====
+========
 
 A code translator using AST from Python to Ruby.
 This is basically a NodeVisitor with ruby output.
@@ -10,10 +10,14 @@ Installation
 
 Execute the following::
 
+    pip install py2rb
+
+    or
+
     git clone git://github.com/naitoh/py2rb.git
 
 Dependencies
---------
+------------
 
 - Python 3.5, 3.6
 - Ruby 2.4 or later
@@ -83,7 +87,7 @@ Sample Code 1::
 
 The above will result in ::
 
-    $ ./py2rb.py tests/basic/oo_inherit_simple.py
+    $ py2rb tests/basic/oo_inherit_simple.py
     class Bar
       def initialize(name)
         @name = name
@@ -166,7 +170,7 @@ Sample Code 2::
 
 The above will result in ::
 
-    $ ./py2rb.py tests/deep-learning-from-scratch/and_gate.py
+    $ py2rb tests/deep-learning-from-scratch/and_gate.py
     require 'numo/narray'
     def AND(x1, x2)
       x = Numo::NArray.cast([x1, x2])
