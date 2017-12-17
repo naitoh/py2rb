@@ -131,7 +131,7 @@ def compile_and_run_file_test(file_path, file_name=None):
             rb_path = name_path + ".rb"
             compiler_error =  py_path + ".comp.err"
             compile_command = (
-                'python py2rb.py --base-path %s --base-path-count 1 --include-require "%s" %s > "%s" 2> "%s"'
+                'python py2rb.py --base-path %s --base-path-count 1 --include-require "%s" %s -f -o "%s" 2> "%s"'
                 ) % (os.path.dirname(self.templ['py_path']), py_path, ' '.join(mod_paths), rb_path, compiler_error)
             commands.append(compile_command)
 

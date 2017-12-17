@@ -2248,30 +2248,36 @@ def main():
     parser = OptionParser(usage="%prog [options] filename [module filename [module filename [..]]]",
                           description="Python to Ruby compiler.")
 
-    parser.add_option("--output",
+    parser.add_option("-o", "--output",
                       action="store",
                       dest="output",
                       help="write output to OUTPUT")
 
-    parser.add_option("--include-require",
+    parser.add_option("-f", "--force",
+                      action="store_true",
+                      dest="force",
+                      default=False,
+                      help="force write output to OUTPUT")
+
+    parser.add_option("-r", "--include-require",
                       action="store_true",
                       dest="include_require",
                       default=False,
                       help="require builtins/module.rb library in the output")
 
-    parser.add_option("--include-builtins",
+    parser.add_option("-b","--include-builtins",
                       action="store_true",
                       dest="include_builtins",
                       default=False,
                       help="include builtins/module.rb library in the output")
 
-    parser.add_option("--base-path",
+    parser.add_option("-p", "--base-path",
                       action="store",
                       dest="base_path",
                       default=False,
                       help="set default module target path")
 
-    parser.add_option("--base-path-count",
+    parser.add_option("-c", "--base-path-count",
                       action="store",
                       dest="base_path_count",
                       default=0,
@@ -2283,6 +2289,10 @@ def main():
         subfilenames = args[1:]
 
         if options.output:
+            if not options.force:
+                if os.path.exists(options.output):
+                    sys.stderr.write('Error : %s already exists.\n' % options.output)
+                    exit(1)
             output = open(options.output, "w")
         else:
             output = sys.stdout
@@ -2326,6 +2336,7 @@ def main():
             name_path, ext = os.path.splitext(rel_path)
         base_path_count = int(options.base_path_count)
         output.write(convert_py2rb(s, name_path, base_path_count, mods, mod_paths))
+        output.close
     else:
         parser.print_help()
 
