@@ -2300,42 +2300,44 @@ def main():
         builtins_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'builtins')
         if options.include_require:
             if builtins_dir:
-                require = open(os.path.join(builtins_dir,
-                                            "require.rb")).read()
-                using = open(os.path.join(builtins_dir,
-                                          "using.rb")).read()
+                require = open(os.path.join(builtins_dir, "require.rb"))
+                using = open(os.path.join(builtins_dir, "using.rb"))
             else:
-                require = open("require.rb").read()
-                using = open("using.rb").read()
-            output.write(require)
-            output.write(using)
+                require = open("require.rb")
+                using = open("using.rb")
+            output.write(require.read())
+            output.write(using.read())
+            require.close
+            using.close
 
         if options.include_builtins:
             if builtins_dir:
-                builtins = open(os.path.join(builtins_dir,
-                                             "module.rb")).read()
-                using = open(os.path.join(builtins_dir,
-                                          "using.rb")).read()
+                builtins = open(os.path.join(builtins_dir, "module.rb"))
+                using = open(os.path.join(builtins_dir, "using.rb"))
             else:
-                builtins = open("module.rb").read()
-                using = open("using.rb").read()
-            output.write(builtins)
-            output.write(using)
+                builtins = open("module.rb")
+                using = open("using.rb")
+            output.write(builtins.read())
+            output.write(using.read())
+            builtins.close
+            using.close
 
         mods = []
         mod_paths = {}
-        for f in subfilenames:
-            rel_path = os.path.relpath(f, os.path.dirname(filename))
+        for sf in subfilenames:
+            rel_path = os.path.relpath(sf, os.path.dirname(filename))
             name_path, ext = os.path.splitext(rel_path)
-            mod_paths[f] = name_path
-            mods.append(open(f).read()) #unsafe for large files!
-        s = open(filename).read() #unsafe for large files!
+            mod_paths[sf] = name_path
+            with open(sf, 'r') as f:
+                mods.append(f.read()) #unsafe for large files!
         name_path = ''
         if options.base_path:
             rel_path = os.path.relpath(filename, options.base_path)
             name_path, ext = os.path.splitext(rel_path)
         base_path_count = int(options.base_path_count)
-        output.write(convert_py2rb(s, name_path, base_path_count, mods, mod_paths))
+        with open(filename, 'r') as f:
+            s = f.read() #unsafe for large files!
+            output.write(convert_py2rb(s, name_path, base_path_count, mods, mod_paths))
         output.close
     else:
         parser.print_help()

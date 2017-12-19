@@ -111,15 +111,16 @@ def compile_and_run_file_test(file_path, file_name=None):
         def get_mod_path(self, py_path, name, base_path=''):
             if base_path == '':
                 base_path = py_path
-            text = open(py_path).read()
             results = []
-            results_f = re.findall(r"^from +([.\w]+) +import +([*\w]+)", text, re.M)
-            if results_f:
-                for res in results_f:
-                    results.append(res[0])
-                    if res[1] != '*':
-                        results.append('.'.join(res))
-            results.extend(re.findall(r"^import +([.\w]+)", text, re.M))
+            with open(py_path, 'r') as f:
+                text = f.read()
+                results_f = re.findall(r"^from +([.\w]+) +import +([*\w]+)", text, re.M)
+                if results_f:
+                    for res in results_f:
+                        results.append(res[0])
+                        if res[1] != '*':
+                            results.append('.'.join(res))
+                results.extend(re.findall(r"^import +([.\w]+)", text, re.M))
             mod_paths = []
             if results:
                 for result in results:
@@ -161,20 +162,28 @@ def compile_and_run_file_test(file_path, file_name=None):
             # Partial Match
             if os.path.exists(self.templ["rb_out_expected_in_path"]):
                 # Fixed statement partial match
+                f = open(self.templ["rb_out_expected_in_path"])
+                g = open(self.templ["rb_out_path"])
                 self.assertIn(
-                    open(self.templ["rb_out_expected_in_path"]).read(),
-                    open(self.templ["rb_out_path"]).read()
+                    f.read(),
+                    g.read()
                     )
+                f.close()
+                g.close()
             else: # Full text match
                 # Fixed sentence matching
                 if os.path.exists(self.templ["rb_out_expected_path"]):
                     expected_file_path = self.templ["rb_out_expected_path"]
                 else: # Dynamic sentence matching
                     expected_file_path = self.templ["py_out_path"]
+                f = open(expected_file_path, 'r')
+                g = open(self.templ["rb_out_path"])
                 self.assertEqual(
-                    open(expected_file_path).readlines(),
-                    open(self.templ["rb_out_path"]).readlines()
+                    f.readlines(),
+                    g.readlines()
                     )
+                f.close()
+                g.close()
             self.reportProgres()
 
         def __str__(self):
