@@ -191,7 +191,12 @@ class RB(object):
             'Is'    : "===",
         }
 
+    # Error Stop Mode
+    def mode(self, mode):
+        self._mode = mode
+
     def __init__(self, path = '', base_path_count=0, mod_paths = {}):
+        self._mode = 0 # Error Stop Mode : 0:stop(defalut), 1:warning(for all script mode), 2:no error(for module mode)
         self._path = [x.capitalize() for x in path.split('/')]
         self._base_path_count = base_path_count
         self._module_functions = []
@@ -276,7 +281,12 @@ class RB(object):
         try:
             visitor = getattr(self, 'visit_' + self.name(node))
         except AttributeError:
-            raise RubyError("syntax not supported (%s)" % node)
+            if not self._mode:
+                raise RubyError("syntax not supported (%s)" % node)
+            else:
+                if self._mode == 1:
+                    sys.stderr.write("Warning : syntax not supported (%s)\n" % node)
+                return ''
 
         if hasattr(visitor, 'statement'):
             return visitor(node, scope)
@@ -355,7 +365,8 @@ class RB(object):
                              end
                     """
             if self._class_name and not is_static and not is_property and not is_setter:
-                raise RubyError("decorators are not supported")
+                if self._mode == 1:
+                    sys.stderr.write("Warning : decorators are not supported : %s\n" % self.visit(node.decorator_list[0]))
 
         defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
         """ Class Method """
@@ -708,7 +719,15 @@ class RB(object):
         """
         Assign(expr* targets, expr value)
         """
-        assert len(node.targets) == 1
+        if len(node.targets) != 1:
+            if not self._mode:
+                assert len(node.targets) == 1
+            else:
+                if self._mode == 1:
+                    for t in node.targets:
+                        sys.stderr.write("Warning : Assign (%s)\n" % self.visit(t))
+                return ''
+
         target = node.targets[0]
         #~ if self._class_name:
             #~ target = self._class_name + '.' + target
@@ -2225,7 +2244,7 @@ class RB(object):
         return self.visit(node.value)
         #return "[%s]" % (self.visit(node.value))
 
-def convert_py2rb(s, path='', base_path_count=0, modules=[], mod_paths={}):
+def convert_py2rb(s, path='', base_path_count=0, modules=[], mod_paths={}, no_stop=False):
     """
     Takes Python code as a string 's' and converts this to Ruby.
 
@@ -2235,17 +2254,79 @@ def convert_py2rb(s, path='', base_path_count=0, modules=[], mod_paths={}):
     'x[3..-1]'
 
     """
+
+    # get modules information
     v = RB(path, base_path_count, mod_paths)
+    v.mode(2)
     for m in modules:
         t = ast.parse(m)
         v.visit(t)
     v.clear()
+
+    # convert target file
     t = ast.parse(s)
+    if no_stop:
+        v.mode(1)
+    else:
+        v.mode(0)
     v.visit(t)
     return v.read()
 
+def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=None, require=None, builtins=None, output=None, force=None, no_stop=False):
+    if output:
+        if not force:
+            if os.path.exists(output):
+                sys.stderr.write('Error : %s already exists.\n' % output)
+                return 1
+        output = open(output, "w")
+    else:
+        output = sys.stdout
+
+    builtins_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'builtins')
+    if require:
+        if builtins_dir:
+            require = open(os.path.join(builtins_dir, "require.rb"))
+            using = open(os.path.join(builtins_dir, "using.rb"))
+        else:
+            require = open("require.rb")
+            using = open("using.rb")
+        output.write(require.read())
+        output.write(using.read())
+        require.close
+        using.close
+
+    if builtins:
+        if builtins_dir:
+            builtins = open(os.path.join(builtins_dir, "module.rb"))
+            using = open(os.path.join(builtins_dir, "using.rb"))
+        else:
+            builtins = open("module.rb")
+            using = open("using.rb")
+        output.write(builtins.read())
+        output.write(using.read())
+        builtins.close
+        using.close
+
+    mods = []
+    mod_paths = {}
+    for sf in subfilenames:
+        rel_path = os.path.relpath(sf, os.path.dirname(filename))
+        name_path, ext = os.path.splitext(rel_path)
+        mod_paths[sf] = name_path
+        with open(sf, 'r') as f:
+            mods.append(f.read()) #unsafe for large files!
+    name_path = ''
+    if base_path:
+        rel_path = os.path.relpath(filename, base_path)
+        name_path, ext = os.path.splitext(rel_path)
+    with open(filename, 'r') as f:
+        s = f.read() #unsafe for large files!
+        output.write(convert_py2rb(s, name_path, base_path_count, mods, mod_paths, no_stop=no_stop))
+    output.close
+    return 0
+
 def main():
-    parser = OptionParser(usage="%prog [options] filename [module filename [module filename [..]]]",
+    parser = OptionParser(usage="%prog [options] filename.py [module filename [module filename [..]]] [-f] [-o output_filename.rb] [-(r|b)]\n       %prog [options] filename.py -a [-f] [-(r|b)]",
                           description="Python to Ruby compiler.")
 
     parser.add_option("-o", "--output",
@@ -2258,6 +2339,12 @@ def main():
                       dest="force",
                       default=False,
                       help="force write output to OUTPUT")
+
+    parser.add_option("-v", "--verbose",
+                      action="store_true",
+                      dest="verbose",
+                      default=False,
+                      help="verbose option to get more information.")
 
     parser.add_option("-r", "--include-require",
                       action="store_true",
@@ -2280,68 +2367,89 @@ def main():
     parser.add_option("-c", "--base-path-count",
                       action="store",
                       dest="base_path_count",
+                      type="int",
                       default=0,
                       help="set default module target path nest count")
 
+    parser.add_option("-a", "--all",
+                      action="store_true",
+                      dest="all",
+                      default=False,
+                      help="convert all local dependent module files of specified Python file. *.py => *.rb")
+
     options, args = parser.parse_args()
-    if len(args) != 0:
-        filename = args[0]
-        subfilenames = args[1:]
 
-        if options.output:
-            if not options.force:
-                if os.path.exists(options.output):
-                    sys.stderr.write('Error : %s already exists.\n' % options.output)
-                    exit(1)
-            output = open(options.output, "w")
-        else:
-            output = sys.stdout
+    def get_mod_path(py_path, name, base_path=''):
+        if base_path == '':
+            base_path = py_path
+        results = []
+        with open(py_path, 'r') as f:
+            text = f.read()
+            results_f = re.findall(r"^from +([.\w]+) +import +([*\w]+)", text, re.M)
+            if results_f:
+                for res in results_f:
+                    if options.verbose:
+                        print(res)
+                    #results.append(res[0])
+                    if res[1] != '*':
+                        results.append('.'.join(res))
+            if options.verbose:
+                print(results_f)
+            results.extend(re.findall(r"^import +([.\w]+)", text, re.M))
+        mod_paths = []
+        if options.verbose:
+            print("base_path: %s" % base_path)
+        if results:
+            for result in results:
+                mod_path = base_path.replace(name, '', 1) + result.replace('.', '/') + '.py'
+                if options.verbose:
+                    print("name: %s" % name)
+                    print("mod_path: %s" % mod_path)
+                if os.path.exists(mod_path):
+                    mod_paths.append(mod_path)
+                    if options.verbose:
+                        print(mod_paths)
+        commands = []
+        name_path, ext = os.path.splitext(py_path)
+        cmd = {
+            "py_path": py_path,
+            "mod_paths":  mod_paths,
+            "rb_path": name_path + '.rb',
+        }
+        commands.append(cmd)
+        for mod_path in mod_paths:
+            commands.extend(get_mod_path(mod_path, name, base_path))
 
-        builtins_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'builtins')
-        if options.include_require:
-            if builtins_dir:
-                require = open(os.path.join(builtins_dir, "require.rb"))
-                using = open(os.path.join(builtins_dir, "using.rb"))
-            else:
-                require = open("require.rb")
-                using = open("using.rb")
-            output.write(require.read())
-            output.write(using.read())
-            require.close
-            using.close
+        return commands
 
-        if options.include_builtins:
-            if builtins_dir:
-                builtins = open(os.path.join(builtins_dir, "module.rb"))
-                using = open(os.path.join(builtins_dir, "using.rb"))
-            else:
-                builtins = open("module.rb")
-                using = open("using.rb")
-            output.write(builtins.read())
-            output.write(using.read())
-            builtins.close
-            using.close
-
-        mods = []
-        mod_paths = {}
-        for sf in subfilenames:
-            rel_path = os.path.relpath(sf, os.path.dirname(filename))
-            name_path, ext = os.path.splitext(rel_path)
-            mod_paths[sf] = name_path
-            with open(sf, 'r') as f:
-                mods.append(f.read()) #unsafe for large files!
-        name_path = ''
-        if options.base_path:
-            rel_path = os.path.relpath(filename, options.base_path)
-            name_path, ext = os.path.splitext(rel_path)
-        base_path_count = int(options.base_path_count)
-        with open(filename, 'r') as f:
-            s = f.read() #unsafe for large files!
-            output.write(convert_py2rb(s, name_path, base_path_count, mods, mod_paths))
-        output.close
-    else:
+    if len(args) == 0:
         parser.print_help()
+        exit(1)
 
+    filename = args[0]
+
+    if options.all:
+        commands = []
+        name =  "/".join(os.path.dirname(filename).split('/')[:-1]) + '/'
+        commands.extend(get_mod_path(filename, name , os.path.dirname(filename) + '/'))
+        for cmd in commands:
+            subfilenames = cmd['mod_paths']
+            print('Try : ' + cmd['py_path'] + ' -> ' + cmd['rb_path'] + ' : ', end='')
+            rtn = convert_py2rb_write(cmd['py_path'], options.base_path_count, subfilenames,
+                base_path=options.base_path,
+                require=options.include_require, builtins=options.include_builtins,
+                output=cmd['rb_path'], force=options.force, no_stop=True)
+            if 0 == rtn:
+                print('[OK]')
+            else:
+                print('[Error]')
+
+    else:
+        subfilenames = args[1:]
+        convert_py2rb_write(filename, options.base_path_count, subfilenames,
+            base_path=options.base_path,
+            require=options.include_require, builtins=options.include_builtins,
+            output=options.output, force=options.force)
 
 if __name__ == '__main__':
     main()
