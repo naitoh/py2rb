@@ -218,6 +218,7 @@ tests/basic/oo_super.py [4]: ..                       known to [FAIL]
 tests/basic/valueerror.py [4]: ...                    known to [FAIL]
 tests/basic/vars.py [4]: ...                          known to [FAIL]
 tests/basic/vars2.py [4]: ...                         known to [FAIL]
+tests/basic/yield.py [4]: ..                          known to [FAIL]
 tests/decorator/class.py [4]: ..                      known to [FAIL]
 tests/decorator/decorator.py [4]: .                   known to [FAIL]
 tests/functions/sort23.py [4]:                        known to [FAIL]
@@ -232,6 +233,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 233 tests in 107.773s
+Ran 234 tests in 113.509s
 
-OK (expected failures=28)
+OK (expected failures=29)

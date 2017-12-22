@@ -2227,6 +2227,26 @@ class RB(object):
         return self.visit(node.value)
         #return "[%s]" % (self.visit(node.value))
 
+    def visit_Yield(self, node):
+        """
+        <Python> def func():
+                     yield 1
+                 gen = func()
+                 gen.__next__()
+        <Ruby>   func = Fiber.new {
+                   Fiber.yield 1
+                 }
+                 func.resume
+        """
+        if node.value:
+            if self._mode == 1:
+                sys.stderr.write("Warning : yield is not supported : %s\n" % self.visit(node.value))
+            return "yield %s" % (self.visit(node.value))
+        else:
+            if self._mode == 1:
+                sys.stderr.write("Warning : yield is not supported : \n")
+            return "yield"
+
 def convert_py2rb(s, path='', base_path_count=0, modules=[], mod_paths={}, no_stop=False):
     """
     Takes Python code as a string 's' and converts this to Ruby.
