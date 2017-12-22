@@ -4,6 +4,7 @@ tests/test_builtins.rb [1]: .                                    [OK]
 tests/algorithms/sqrt.py [4]: ....                               [OK]
 tests/algorithms/triangulation.py [4]: ....                      [OK]
 tests/basic/assert.py [4]: ....                                  [OK]
+tests/basic/assign.py [4]: ....                                  [OK]
 tests/basic/assign_slice.py [4]: ....                            [OK]
 tests/basic/augassign.py [4]: ....                               [OK]
 tests/basic/augassign2.py [4]: ....                              [OK]
@@ -231,6 +232,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 232 tests in 127.633s
+Ran 233 tests in 107.773s
 
 OK (expected failures=28)

@@ -719,45 +719,27 @@ class RB(object):
         """
         Assign(expr* targets, expr value)
         """
-        if len(node.targets) != 1:
-            if not self._mode:
-                assert len(node.targets) == 1
-            else:
-                if self._mode == 1:
-                    for t in node.targets:
-                        sys.stderr.write("Warning : Assign (%s)\n" % self.visit(t))
-                return ''
-
-        target = node.targets[0]
-        #~ if self._class_name:
-            #~ target = self._class_name + '.' + target
-        # ast.Tuple, ast.List, ast.*
+        target_str = ''
         value = self.visit(node.value)
-        #if isinstance(node.value, (ast.Tuple, ast.List)):
-        #    value = "[%s]" % self.visit(node.value)
-        #else:
-        #    value = self.visit(node.value)
-        if isinstance(target, (ast.Tuple, ast.List)):
-            # multiassign.py
-            """ x, y, z = [1, 2, 3] """
-            x = [self.visit(t) for t in target.elts]
-            self.write("%s = %s" % (','.join(x), value))
-        elif isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Index):
-            # found index assignment # a[0] = xx
-            #self.write("%s%s = %s" % (self.visit(target.value), # a[0] = xx
-            name = self.visit(target.value)
-            for arg in self._function_args:
-                if arg == ("**%s" % name):
-                    self._is_string_symbol = True
-            self.write("%s[%s] = %s" % (name, self.visit(target.slice), value))
-            self._is_string_symbol = False
-        elif isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Slice):
-            # found slice assignmnet
-            self.write("%s[%s...%s] = %s" % (self.visit(target.value),
-                self.visit(target.slice.lower), self.visit(target.slice.upper),
-                value))
-        else:
-            if isinstance(target, ast.Name):
+        for target in node.targets:
+            if isinstance(target, (ast.Tuple, ast.List)):
+                # multiassign.py
+                """ x, y, z = [1, 2, 3] """
+                x = [self.visit(t) for t in target.elts]
+                target_str += "%s = " % ','.join(x)
+            elif isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Index):
+                # found index assignment # a[0] = xx
+                name = self.visit(target.value)
+                for arg in self._function_args:
+                    if arg == ("**%s" % name):
+                        self._is_string_symbol = True
+                target_str += "%s[%s] = " % (name, self.visit(target.slice))
+                self._is_string_symbol = False
+            elif isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Slice):
+                # found slice assignmnet
+                target_str += "%s[%s...%s] = " % (self.visit(target.value),
+                    self.visit(target.slice.lower), self.visit(target.slice.upper))
+            elif isinstance(target, ast.Name):
                 var = self.visit(target)
                 if not (var in self._scope):
                     self._scope.append(var)
@@ -768,7 +750,7 @@ class RB(object):
                 # set lambda functions
                 if isinstance(node.value, ast.Lambda):
                     self._lambda_functions.append(var)
-                self.write("%s = %s" % (var, value))
+                target_str += "%s = " % var
             elif isinstance(target, ast.Attribute):
                 var = self.visit(target)
                 """ [instance variable] : 
@@ -776,12 +758,13 @@ class RB(object):
                 <Ruby>   @foo     = hoge
                 """
                 if var == 'self':
-                    self.write("@%s = %s" % (str(target.attr), value))
+                    target_str += "@%s = " % str(target.attr)
                     self._class_self_variables.append(str(target.attr))
                 else:
-                    self.write("%s = %s" % (var, value))
+                    target_str += "%s = " % var
             else:
                 raise RubyError("Unsupported assignment type")
+        self.write("%s%s" % (target_str, value))
 
     def visit_AugAssign(self, node):
         """
