@@ -193,7 +193,7 @@ The above will result in ::
 Sample 3 (Convert all local dependent module files of specified Python file)::
 
     $ git clone git://github.com/chainer/chainer.git
-    $ py2rb -a chainer/chainer/__init__.py -r
+    $ py2rb chainer/chainer/__init__.py -m -r
     Try : chainer/chainer/__init__.py -> chainer/chainer/__init__.rb : [OK]
           :
           :

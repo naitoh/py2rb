@@ -2301,8 +2301,8 @@ def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=
     if output:
         if not force:
             if os.path.exists(output):
-                sys.stderr.write('Error : %s already exists.\n' % output)
-                return 1
+                sys.stderr.write('Skip : %s already exists.\n' % output)
+                return 3
         output = open(output, "w")
     else:
         output = sys.stdout
@@ -2352,7 +2352,7 @@ def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=
     return rtn
 
 def main():
-    parser = OptionParser(usage="%prog [options] filename.py [module filename [module filename [..]]] [-f] [-o output_filename.rb] [-(r|b)]\n       %prog [options] filename.py -a [-f] [-(r|b)]",
+    parser = OptionParser(usage="%prog [options] filename.py [module filename [module filename [..]]] [-f] [-o output_filename.rb] [-(r|b)]\n       %prog [options] filename.py -m [-f] [-(r|b)]",
                           description="Python to Ruby compiler.")
 
     parser.add_option("-o", "--output",
@@ -2397,11 +2397,11 @@ def main():
                       default=0,
                       help="set default module target path nest count")
 
-    parser.add_option("-a", "--all",
+    parser.add_option("-m", "--module",
                       action="store_true",
-                      dest="all",
+                      dest="mod",
                       default=False,
-                      help="convert all local dependent module files of specified Python file. *.py => *.rb")
+                      help="convert all local import module files of specified Python file. *.py => *.rb")
 
     options, args = parser.parse_args()
 
@@ -2435,18 +2435,18 @@ def main():
                     mod_paths.append(mod_path)
                     if options.verbose:
                         print(mod_paths)
-        commands = []
+        modules = []
         name_path, ext = os.path.splitext(py_path)
-        cmd = {
+        mod = {
             "py_path": py_path,
             "mod_paths":  mod_paths,
             "rb_path": name_path + '.rb',
         }
-        commands.append(cmd)
+        modules.append(mod)
         for mod_path in mod_paths:
-            commands.extend(get_mod_path(mod_path, name, base_path))
+            modules.extend(get_mod_path(mod_path, name, base_path))
 
-        return commands
+        return modules
 
     if len(args) == 0:
         parser.print_help()
@@ -2454,23 +2454,32 @@ def main():
 
     filename = args[0]
 
-    if options.all:
-        commands = []
+    if options.mod:
+        # Get all the local import module file names of the target python file
         name =  "/".join(os.path.dirname(filename).split('/')[:-1]) + '/'
-        commands.extend(get_mod_path(filename, name , os.path.dirname(filename) + '/'))
-        for cmd in commands:
-            subfilenames = cmd['mod_paths']
-            print('Try : ' + cmd['py_path'] + ' -> ' + cmd['rb_path'] + ' : ', end='')
-            rtn = convert_py2rb_write(cmd['py_path'], options.base_path_count, subfilenames,
+        modules = get_mod_path(filename, name , os.path.dirname(filename) + '/')
+        # Delete duplicate modules
+        modules_uniq = []
+        for mod in modules:
+            if mod not in modules_uniq:
+                modules_uniq.append(mod)
+        for mod in modules_uniq:
+            subfilenames = mod['mod_paths']
+            print('Try  : ' + mod['py_path'] + ' -> ' + mod['rb_path'] + ' : ', end='')
+            rtn = convert_py2rb_write(mod['py_path'], options.base_path_count, subfilenames,
                 base_path=options.base_path,
                 require=options.include_require, builtins=options.include_builtins,
-                output=cmd['rb_path'], force=options.force, no_stop=True)
+                output=mod['rb_path'], force=options.force, no_stop=True)
             if 0 == rtn:
                 print('[OK]')
             elif 1 == rtn:
                 print('[Warning]')
-            else:
+            elif 2 == rtn:
                 print('[Error]')
+            elif 3 == rtn:
+                print('[Skip]')
+            else:
+                print('[Not Defined]')
 
     else:
         subfilenames = args[1:]
