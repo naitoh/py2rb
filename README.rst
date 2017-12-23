@@ -26,7 +26,7 @@ Dependencies
 Usage
 --------
 
-Sample Code 1::
+Sample 1::
 
     $ cat tests/basic/oo_inherit_simple.py
     class bar(object):
@@ -147,7 +147,7 @@ The above will result in ::
     print("---")
     Foo.printregistered()
 
-Sample Code 2::
+Sample 2::
 
     $ cat tests/deep-learning-from-scratch/and_gate.py
     # coding: utf-8
@@ -189,6 +189,15 @@ The above will result in ::
         print((((xs).to_s)+(" -> "))+((y).to_s))
       end
     end
+
+Sample 3 (Convert all local dependent module files of specified Python file)::
+
+    $ git clone git://github.com/chainer/chainer.git
+    $ py2rb -a chainer/chainer/__init__.py -r
+    Try : chainer/chainer/__init__.py -> chainer/chainer/__init__.rb : [OK]
+          :
+          :
+    Try : chainer/chainer/utils/argument.py -> chainer/chainer/utils/argument.rb : [OK]
 
 Tests
 -----
