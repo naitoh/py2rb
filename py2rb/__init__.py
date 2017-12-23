@@ -195,8 +195,17 @@ class RB(object):
     def mode(self, mode):
         self._mode = mode
 
+    # Convert Staus
+    def set_result(self, result):
+        if self._result < result:
+            self._result = result
+
+    def get_result(self):
+        return self._result
+
     def __init__(self, path = '', base_path_count=0, mod_paths = {}):
         self._mode = 0 # Error Stop Mode : 0:stop(defalut), 1:warning(for all script mode), 2:no error(for module mode)
+        self._result = 0 # Convert Staus : 0:No Error, 1:Include Warning, 2:Include Error
         self._path = [x.capitalize() for x in path.split('/')]
         self._base_path_count = base_path_count
         self._module_functions = []
@@ -282,9 +291,11 @@ class RB(object):
             visitor = getattr(self, 'visit_' + self.name(node))
         except AttributeError:
             if not self._mode:
+                self.set_result(2)
                 raise RubyError("syntax not supported (%s)" % node)
             else:
                 if self._mode == 1:
+                    self.set_result(1)
                     sys.stderr.write("Warning : syntax not supported (%s)\n" % node)
                 return ''
 
@@ -366,6 +377,7 @@ class RB(object):
                     """
             if self._class_name and not is_static and not is_property and not is_setter:
                 if self._mode == 1:
+                    self.set_result(1)
                     sys.stderr.write("Warning : decorators are not supported : %s\n" % self.visit(node.decorator_list[0]))
 
         defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
@@ -383,6 +395,7 @@ class RB(object):
         for arg, default in zip(node.args.args, defaults):
             if six.PY2:
                 if not isinstance(arg, ast.Name):
+                    self.set_result(2)
                     raise RubyError("tuples in argument list are not supported")
                 arg_id = arg.id
             else:
@@ -443,6 +456,7 @@ class RB(object):
         for arg, default in zip(node.args.kwonlyargs, node.args.kw_defaults):
             if six.PY2:
                 if not isinstance(arg, ast.Name):
+                    self.set_result(2)
                     raise RubyError("tuples in argument list are not supported")
                 arg_id = arg.id
             else:
@@ -763,6 +777,7 @@ class RB(object):
                 else:
                     target_str += "%s = " % var
             else:
+                self.set_result(2)
                 raise RubyError("Unsupported assignment type")
         self.write("%s%s" % (target_str, value))
 
@@ -793,6 +808,7 @@ class RB(object):
         For(expr target, expr iter, stmt* body, stmt* orelse)
         """
         if not isinstance(node.target, (ast.Name,ast.Tuple, ast.List)):
+            self.set_result(2)
             raise RubyError("argument decomposition in 'for' loop is not supported")
         #if isinstance(node.target, ast.Tuple):
 
@@ -1591,6 +1607,7 @@ class RB(object):
                     elif type(method_map['val'][key]) == str:
                         m_args.append("%s: %s" % (key, value))
             if len(args_hash) == 0:
+                self.set_result(2)
                 raise RubyError("methods_map defalut argument Error : not found args")
 
             if 'main_data_key' in method_map:
@@ -1616,6 +1633,7 @@ class RB(object):
                     main_func = method_map['main_func_hash_nm']
             main_func = method_map['val'][func_key] % {'mod': mod, 'data': main_data, 'main_func': main_func}
         if main_func == '':
+            self.set_result(2)
             raise RubyError("methods_map main function Error : not found args")
 
         if rtn:
@@ -1885,6 +1903,7 @@ class RB(object):
                 elif isinstance(node.args[0], ast.Name):
                     return "%s.dup" % rb_args[0]
             else:
+                 self.set_result(2)
                  raise RubyError("dict in argument list Error")
             return "{%s}" % (", ".join(rb_args))
         elif isinstance(node.func, ast.Attribute) and (node.func.attr in self.call_attribute_map):
@@ -2139,15 +2158,16 @@ class RB(object):
         """
         els = [self.visit(e) for e in node.elts]
         if self._tuple_type == '()':
-             return "(%s)" % (", ".join(els))
+            return "(%s)" % (", ".join(els))
         elif self._tuple_type == '[]':
-             return "[%s]" % (", ".join(els))
+            return "[%s]" % (", ".join(els))
         elif self._tuple_type == '=>':
-             return "%s => %s" % (els[0], els[1])
+            return "%s => %s" % (els[0], els[1])
         elif self._tuple_type == '':
-             return "%s" % (", ".join(els))
+            return "%s" % (", ".join(els))
         else:
-             raise RubyError("tuples in argument list Error")
+            self.set_result(2)
+            raise RubyError("tuples in argument list Error")
 
     def visit_Dict(self, node):
         """
@@ -2240,10 +2260,12 @@ class RB(object):
         """
         if node.value:
             if self._mode == 1:
+                self.set_result(1)
                 sys.stderr.write("Warning : yield is not supported : %s\n" % self.visit(node.value))
             return "yield %s" % (self.visit(node.value))
         else:
             if self._mode == 1:
+                self.set_result(1)
                 sys.stderr.write("Warning : yield is not supported : \n")
             return "yield"
 
@@ -2273,7 +2295,7 @@ def convert_py2rb(s, path='', base_path_count=0, modules=[], mod_paths={}, no_st
     else:
         v.mode(0)
     v.visit(t)
-    return v.read()
+    return (v.get_result(), v.read())
 
 def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=None, require=None, builtins=None, output=None, force=None, no_stop=False):
     if output:
@@ -2324,9 +2346,10 @@ def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=
         name_path, ext = os.path.splitext(rel_path)
     with open(filename, 'r') as f:
         s = f.read() #unsafe for large files!
-        output.write(convert_py2rb(s, name_path, base_path_count, mods, mod_paths, no_stop=no_stop))
+        rtn, data = convert_py2rb(s, name_path, base_path_count, mods, mod_paths, no_stop=no_stop)
+        output.write(data)
     output.close
-    return 0
+    return rtn
 
 def main():
     parser = OptionParser(usage="%prog [options] filename.py [module filename [module filename [..]]] [-f] [-o output_filename.rb] [-(r|b)]\n       %prog [options] filename.py -a [-f] [-(r|b)]",
@@ -2444,6 +2467,8 @@ def main():
                 output=cmd['rb_path'], force=options.force, no_stop=True)
             if 0 == rtn:
                 print('[OK]')
+            elif 1 == rtn:
+                print('[Warning]')
             else:
                 print('[Error]')
 
