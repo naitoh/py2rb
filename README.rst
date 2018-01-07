@@ -193,11 +193,15 @@ The above will result in ::
 Sample 3 (Convert all local dependent module files of specified Python file)::
 
     $ git clone git://github.com/chainer/chainer.git
-    $ py2rb chainer/chainer/__init__.py -m -r
+    $ py2rb chainer/chainer/__init__.py -m -p chainer -r -w -f
     Try : chainer/chainer/__init__.py -> chainer/chainer/__init__.rb : [OK]
+    Warning : yield is not supported :
+    Warning : yield is not supported :
+    Try  : chainer/chainer/configuration.py -> chainer/chainer/configuration.rb : [Warning]
+    Try  : chainer/chainer/cuda.py -> chainer/chainer/cuda.rb : [OK]
           :
           :
-    Try : chainer/chainer/utils/argument.py -> chainer/chainer/utils/argument.rb : [OK]
+    Try  : chainer/chainer/utils/array.py -> chainer/chainer/utils/array.rb : [OK]
 
 Tests
 -----

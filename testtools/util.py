@@ -94,6 +94,7 @@ def compile_and_run_file_test(file_path, file_name=None):
         name_path, ext = os.path.splitext(file_path)
         templ = {
         "py_path": file_path, 
+        "py_dir_path": os.path.dirname(file_path),
         "py_unix_path": get_posix_path(file_path),
         "py_out_path": file_path + ".out",
         "rb_path": name_path + ".rb",
@@ -104,42 +105,10 @@ def compile_and_run_file_test(file_path, file_name=None):
         "rb_error": name_path + ".rb.err",
         "compiler_error": file_path + ".comp.err",
         "name": file_name,
+        "cmd_out": name_path + ".cmd.txt",
         }
         def reportProgres(self):
             """Should be overloaded by the test result class"""
-
-        def get_mod_path(self, py_path, name, base_path=''):
-            if base_path == '':
-                base_path = py_path
-            results = []
-            with open(py_path, 'r') as f:
-                text = f.read()
-                results_f = re.findall(r"^from +([.\w]+) +import +([*\w]+)", text, re.M)
-                if results_f:
-                    for res in results_f:
-                        results.append(res[0])
-                        if res[1] != '*':
-                            results.append('.'.join(res))
-                results.extend(re.findall(r"^import +([.\w]+)", text, re.M))
-            mod_paths = []
-            if results:
-                for result in results:
-                    mod_path = base_path.replace(name, '') + result.replace('.', '/') + '.py'
-                    if os.path.exists(mod_path):
-                        mod_paths.append(mod_path)
-            commands = []
-            name_path, ext = os.path.splitext(py_path)
-            rb_path = name_path + ".rb"
-            compiler_error =  py_path + ".comp.err"
-            compile_command = (
-                'python py2rb.py --base-path %s --base-path-count 1 --include-require "%s" %s -f -o "%s" 2> "%s"'
-                ) % (os.path.dirname(self.templ['py_path']), py_path, ' '.join(mod_paths), rb_path, compiler_error)
-            commands.append(compile_command)
-
-            for mod_path in mod_paths:
-                commands.extend(self.get_mod_path(mod_path, name, base_path))
-
-            return commands
 
         def runTest(self):
             """The actual test goes here."""
@@ -149,16 +118,21 @@ def compile_and_run_file_test(file_path, file_name=None):
                 '"%(py_error)s"'
                 ) % self.templ
             commands.append(python_command)
-            commands.extend(self.get_mod_path(self.templ['py_path'], self.templ['name']))
+            compile_command = (
+                'python py2rb.py -p "%(py_dir_path)s" -c 1 -r "%(py_path)s" -m -f -w -s 2> "%(compiler_error)s"'
+                ) % self.templ
+            commands.append(compile_command)
             ruby_command = (
                 'ruby -I py2rb/builtins "%(rb_path)s" > "%(rb_out_path)s" 2> '
                 '"%(rb_error)s"' 
                 ) % self.templ
             commands.append(ruby_command)
-            for cmd in commands:
-                #print(cmd) # debug
-                self.assertEqual(0, os.system(cmd))
-                self.reportProgres()
+            with open(self.templ['cmd_out'], mode = 'w') as fh:
+                for cmd in commands:
+                    fh.write(cmd + '\n')
+                    #print(cmd) # debug
+                    self.assertEqual(0, os.system(cmd))
+                    self.reportProgres()
             # Partial Match
             if os.path.exists(self.templ["rb_out_expected_in_path"]):
                 # Fixed statement partial match

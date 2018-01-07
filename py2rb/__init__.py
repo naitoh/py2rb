@@ -2342,6 +2342,8 @@ def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=
             mods.append(f.read()) #unsafe for large files!
     name_path = ''
     if base_path:
+        # filename  : tests/modules/classname.py
+        # base_path : tests/modules
         rel_path = os.path.relpath(filename, base_path)
         name_path, ext = os.path.splitext(rel_path)
     with open(filename, 'r') as f:
@@ -2352,13 +2354,14 @@ def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=
     return rtn
 
 def main():
-    parser = OptionParser(usage="%prog [options] filename.py [module filename [module filename [..]]] [-f] [-o output_filename.rb] [-(r|b)]\n       %prog [options] filename.py -m [-f] [-(r|b)]",
+    parser = OptionParser(usage="%prog [options] filename.py [module filename [module filename [..]]] [-f] [-o output_filename.rb] [-(r|b)]\n" \
+        + "       %prog [options] foo/bar/filename.py -p foo/bar/ -c 1 -m [-f] [-(r|b)]",
                           description="Python to Ruby compiler.")
 
-    parser.add_option("-o", "--output",
-                      action="store",
+    parser.add_option("-w", "--write",
+                      action="store_true",
                       dest="output",
-                      help="write output to OUTPUT")
+                      help="write output *.py => *.rb")
 
     parser.add_option("-f", "--force",
                       action="store_true",
@@ -2371,6 +2374,12 @@ def main():
                       dest="verbose",
                       default=False,
                       help="verbose option to get more information.")
+
+    parser.add_option("-s", "--silent",
+                      action="store_true",
+                      dest="silent",
+                      default=False,
+                      help="silent option that does not output detailed information.")
 
     parser.add_option("-r", "--include-require",
                       action="store_true",
@@ -2404,10 +2413,24 @@ def main():
                       help="convert all local import module files of specified Python file. *.py => *.rb")
 
     options, args = parser.parse_args()
+    if len(args) == 0:
+        parser.print_help()
+        exit(1)
 
-    def get_mod_path(py_path, name, base_path=''):
-        if base_path == '':
-            base_path = py_path
+    filename = args[0]
+
+    # base_dir_path : target python file dir path
+    # filename: tests/modules/classname.py
+    #  -> base_dir_path: tests/modules/
+    if options.base_path:
+        base_dir_path = options.base_path
+    else:
+        base_dir_path = os.path.dirname(filename)
+    if options.verbose:
+        print("base_dir_path: %s" % base_dir_path)
+
+    # py_path       : python file path
+    def get_mod_path(py_path):
         results = []
         with open(py_path, 'r') as f:
             text = f.read()
@@ -2415,78 +2438,94 @@ def main():
             if results_f:
                 for res in results_f:
                     if options.verbose:
-                        print(res)
-                    #results.append(res[0])
+                        print("res: %s" % ', '.join(res))
+                    # from modules.moda import ModA
+                    # => (tests/modules/) modules/moda.py  # => class ModA
+                    results.append(res[0])
                     if res[1] != '*':
+                        # (tests/modules/) modules/moda/ModA.py
                         results.append('.'.join(res))
             if options.verbose:
-                print(results_f)
+                print("results_f: %s" % results_f)
             results.extend(re.findall(r"^import +([.\w]+)", text, re.M))
-        mod_paths = []
-        if options.verbose:
-            print("base_path: %s" % base_path)
+        subfilenames = []
         if results:
             for result in results:
-                mod_path = base_path.replace(name, '', 1) + result.replace('.', '/') + '.py'
-                if options.verbose:
-                    print("name: %s" % name)
-                    print("mod_path: %s" % mod_path)
-                if os.path.exists(mod_path):
-                    mod_paths.append(mod_path)
+                sf = os.path.join(base_dir_path, result.replace('.', '/') + '.py')
+                if os.path.exists(sf):
+                    subfilenames.append(sf)
                     if options.verbose:
-                        print(mod_paths)
+                        print("[Found]     sub_filename: %s" % sf)
+                else:
+                    if options.verbose:
+                        print("[Not Found] sub_filename: %s" % sf)
+        if options.verbose:
+            print("subfilenames: %s" % subfilenames)
         modules = []
         name_path, ext = os.path.splitext(py_path)
         mod = {
             "py_path": py_path,
-            "mod_paths":  mod_paths,
+            "subfilenames":  subfilenames,
             "rb_path": name_path + '.rb',
         }
         modules.append(mod)
-        for mod_path in mod_paths:
-            modules.extend(get_mod_path(mod_path, name, base_path))
+        for sf in subfilenames:
+            modules.extend(get_mod_path(sf))
 
         return modules
 
-    if len(args) == 0:
-        parser.print_help()
-        exit(1)
-
-    filename = args[0]
-
+    # Get all the local import module file names of the target python file
+    modules_list = get_mod_path(filename)
+    modules = []
     if options.mod:
-        # Get all the local import module file names of the target python file
-        name =  "/".join(os.path.dirname(filename).split('/')[:-1]) + '/'
-        modules = get_mod_path(filename, name , os.path.dirname(filename) + '/')
         # Delete duplicate modules
-        modules_uniq = []
-        for mod in modules:
-            if mod not in modules_uniq:
-                modules_uniq.append(mod)
-        for mod in modules_uniq:
-            subfilenames = mod['mod_paths']
-            print('Try  : ' + mod['py_path'] + ' -> ' + mod['rb_path'] + ' : ', end='')
-            rtn = convert_py2rb_write(mod['py_path'], options.base_path_count, subfilenames,
-                base_path=options.base_path,
-                require=options.include_require, builtins=options.include_builtins,
-                output=mod['rb_path'], force=options.force, no_stop=True)
-            if 0 == rtn:
-                print('[OK]')
-            elif 1 == rtn:
-                print('[Warning]')
-            elif 2 == rtn:
-                print('[Error]')
-            elif 3 == rtn:
-                print('[Skip]')
-            else:
-                print('[Not Defined]')
-
+        for mod in modules_list:
+            if mod not in modules:
+                modules.append(mod)
     else:
-        subfilenames = args[1:]
-        convert_py2rb_write(filename, options.base_path_count, subfilenames,
+        for mod in modules_list:
+            if mod['py_path'] == filename:
+                modules.append(mod)
+
+    if options.verbose:
+        # Example:
+        # tests/modules/classname.py : from modules.moda import ModA     => require_relative 'modules/moda' (Convert using AST)
+        #                              => tests/modules/ + modules.moda
+        #                              => tests/modules/modules/moda.py
+        # -p tests/modules -c 1 -r "tests/modules/classname.py" tests/modules/modules/moda.py > "tests/modules/classname.rb"
+        # -p tests/modules -c 1 -r "tests/modules/modules/moda.py"                            > "tests/modules/modules/moda.rb"
+        for mod in modules:
+            subfilenames = mod['subfilenames']
+            print("filename : %s [%s]" %  (mod['py_path'], ', '.join(subfilenames)))
+
+    for mod in modules:
+        subfilenames = mod['subfilenames']
+        if options.output:
+            output=mod['rb_path']
+        else:
+            output=None
+
+        rtn = convert_py2rb_write(mod['py_path'], options.base_path_count, subfilenames,
             base_path=options.base_path,
             require=options.include_require, builtins=options.include_builtins,
-            output=options.output, force=options.force)
+            output=output, force=options.force, no_stop=True)
+        if not options.silent:
+            if options.mod or output:
+                if output:
+                    print('Try  : ' + mod['py_path'] + ' -> ' + mod['rb_path'] + ' : ', end='')
+                else:
+                    print('Try  : ' + mod['py_path'] + ' : ', end='')
+            if options.mod or output:
+                if 0 == rtn:
+                    print('[OK]')
+                elif 1 == rtn:
+                    print('[Warning]')
+                elif 2 == rtn:
+                    print('[Error]')
+                elif 3 == rtn:
+                    print('[Skip]')
+                else:
+                    print('[Not Defined]')
 
 if __name__ == '__main__':
     main()
