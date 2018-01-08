@@ -2203,21 +2203,28 @@ class RB(object):
         """
         Slice(expr? lower, expr? upper, expr? step)
         """
-        if node.lower and node.upper and node.step:
-            """ <Python> [8, 9, 10, 11, 12, 13, 14][1:6:2]
-                <Ruby>   [8, 9, 10, 11, 12, 13, 14][1...6].each_slice(2).map(&:first) """
-            return "%s...%s,each_slice(%s).map(&:first)" % (self.visit(node.lower),
-                    self.visit(node.upper), self.visit(node.step))
         if node.lower and node.upper:
-            return "%s...%s" % (self.visit(node.lower),
-                    self.visit(node.upper))
-        if node.upper and not node.step:
-            return "0...%s" % (self.visit(node.upper))
-        if node.lower and not node.step:
-            return "%s..-1" % (self.visit(node.lower))
-        if not node.lower and not node.upper and not node.step:
+            if node.step:
+                """ <Python> [8, 9, 10, 11, 12, 13, 14][1:6:2]
+                    <Ruby>   [8, 9, 10, 11, 12, 13, 14][1...6].each_slice(2).map(&:first) """
+                return "%s...%s,each_slice(%s).map(&:first)" % (self.visit(node.lower),
+                    self.visit(node.upper), self.visit(node.step))
+            else:
+                return "%s...%s" % (self.visit(node.lower), self.visit(node.upper))
+        if node.upper:
+            if node.step:
+                return "0...%s,each_slice(%s).map(&:first)" % (self.visit(node.upper), self.visit(node.step))
+            else:
+                return "0...%s" % (self.visit(node.upper))
+        if node.lower:
+            if node.step:
+                return "%s..-1,each_slice(%s).map(&:first)" % (self.visit(node.lower), self.visit(node.step))
+            else:
+                return "%s..-1" % (self.visit(node.lower))
+        if node.step:
+            return "0..-1,each_slice(%s).map(&:first)" % self.visit(node.step)
+        else:
             return "0..-1"
-        raise NotImplementedError("Slice")
 
     def visit_Subscript(self, node):
         self._is_string_symbol = False

@@ -34,7 +34,23 @@ def list7():
 
 def list8():
     a = [8, 9, 10, 11, 12, 13, 14]
+    return a[::]
+
+def list9():
+    a = [8, 9, 10, 11, 12, 13, 14]
     return a[4:]
+
+def list10():
+    a = [8, 9, 10, 11, 12, 13, 14]
+    return a[::2]
+
+def list11():
+    a = [8, 9, 10, 11, 12, 13, 14]
+    return a[1::2]
+
+def list12():
+    a = [8, 9, 10, 11, 12, 13, 14]
+    return a[:4:2]
 
 print(list1(4))
 print(list1(5))
@@ -45,3 +61,7 @@ print(list5())
 print(list6())
 print(list7())
 print(list8())
+print(list9())
+print(list10())
+print(list11())
+print(list12())
