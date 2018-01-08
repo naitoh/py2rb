@@ -11,6 +11,7 @@ import re
 import yaml
 import glob
 import copy
+from collections import OrderedDict
 
 def scope(func):
     func.scope = True
@@ -347,38 +348,42 @@ class RB(object):
         is_property = False
         is_setter = False
         if node.decorator_list:
-            if self._class_name and \
-                    len(node.decorator_list) == 1 and \
-                    isinstance(node.decorator_list[0], ast.Name):
-                if node.decorator_list[0].id == "staticmethod":
-                    is_static = True
-                elif  node.decorator_list[0].id == "property":
-                    is_property = True
-                    """
-                    <Python> @property
-                             def x(self):
-                                 return self._x
-                    <Ruby>   def x
-                                 @_x
-                             end
-                    """
-            if self._class_name and \
-                    len(node.decorator_list) == 1 and \
-                    isinstance(node.decorator_list[0], ast.Attribute):
-                if  self.visit(node.decorator_list[0]) == (node.name + ".setter"):
-                    is_setter = True
-                    """
-                    <Python> @x.setter
-                             def x(self, value):
-                                 self._x = value
-                    <Ruby>   def x=(val)
-                                 @_x=val
-                             end
-                    """
-            if self._class_name and not is_static and not is_property and not is_setter:
-                if self._mode == 1:
-                    self.set_result(1)
-                    sys.stderr.write("Warning : decorators are not supported : %s\n" % self.visit(node.decorator_list[0]))
+            if self._class_name:
+                for decorator in node.decorator_list:
+                    if isinstance(decorator, ast.Name):
+                        if decorator.id == "classmethod":
+                            is_static = True
+                        elif decorator.id == "staticmethod":
+                            is_static = True
+                        elif decorator.id == "property":
+                            is_property = True
+                            """
+                            <Python> @property
+                                     def x(self):
+                                         return self._x
+                            <Ruby>   def x
+                                         @_x
+                                     end
+                            """
+                        else:
+                            if self._mode == 1:
+                                self.set_result(1)
+                                sys.stderr.write("Warning : decorators are not supported : %s\n" % self.visit(decorator.id))
+                    if isinstance(decorator, ast.Attribute):
+                        if self.visit(node.decorator_list[0]) == (node.name + ".setter"):
+                            is_setter = True
+                            """
+                            <Python> @x.setter
+                                     def x(self, value):
+                                         self._x = value
+                            <Ruby>   def x=(val)
+                                         @_x=val
+                                     end
+                            """
+                if not is_static and not is_property and not is_setter:
+                    if self._mode == 1:
+                        self.set_result(1)
+                        sys.stderr.write("Warning : decorators are not supported : %s\n" % self.visit(node.decorator_list[0]))
 
         defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
         """ Class Method """
@@ -426,6 +431,8 @@ class RB(object):
         if self._class_name:
             if not is_static and not is_closure:
                 if not (rb_args[0] == "self"):
+                    #print(node.name)
+                    #print(rb_args[0])
                     raise NotImplementedError("The first argument must be 'self'.")
                 del rb_args[0]
                 del rb_args_default[0]
@@ -585,6 +592,7 @@ class RB(object):
         if not bases:
             bases = []
         class_name = node.name
+        #print("class_name :%s" % node.name)
 
         # self._classes remembers all classes defined
         self._classes[class_name] = node
@@ -741,18 +749,28 @@ class RB(object):
                 """ x, y, z = [1, 2, 3] """
                 x = [self.visit(t) for t in target.elts]
                 target_str += "%s = " % ','.join(x)
-            elif isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Index):
-                # found index assignment # a[0] = xx
+            elif isinstance(target, ast.Subscript):
                 name = self.visit(target.value)
-                for arg in self._function_args:
-                    if arg == ("**%s" % name):
-                        self._is_string_symbol = True
-                target_str += "%s[%s] = " % (name, self.visit(target.slice))
-                self._is_string_symbol = False
-            elif isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Slice):
-                # found slice assignmnet
-                target_str += "%s[%s...%s] = " % (self.visit(target.value),
-                    self.visit(target.slice.lower), self.visit(target.slice.upper))
+                if isinstance(target.slice, ast.Index):
+                    # found index assignment # a[0] = xx
+                    for arg in self._function_args:
+                        if arg == ("**%s" % name):
+                            self._is_string_symbol = True
+                    target_str += "%s[%s] = " % (name, self.visit(target.slice))
+                    self._is_string_symbol = False
+                elif isinstance(target.slice, ast.Slice):
+                    # found slice assignmnet
+                    target_str += "%s[%s...%s] = " % (name, self.visit(target.slice.lower), self.visit(target.slice.upper))
+                elif isinstance(target.slice, ast.ExtSlice):
+                    if self._mode == 1:
+                        self.set_result(1)
+                        sys.stderr.write("Warning : ExtSlice not supported (%s) in Assign(ast.Subscript)\n" % self.visit(target))
+                    target_str += "%s[%s] = " % (name, self.visit(target.slice))
+                else:
+                    if self._mode == 1:
+                        self.set_result(1)
+                        sys.stderr.write("Warning : Unsupported assignment type (%s) in Assign(ast.Subscript)\n" % self.visit(target))
+                    target_str += "%s[%s] = " % (name, self.visit(target.slice))
             elif isinstance(target, ast.Name):
                 var = self.visit(target)
                 if not (var in self._scope):
@@ -777,8 +795,10 @@ class RB(object):
                 else:
                     target_str += "%s = " % var
             else:
-                self.set_result(2)
-                raise RubyError("Unsupported assignment type")
+                if self._mode == 1:
+                    self.set_result(1)
+                    sys.stderr.write("Warning : Unsupported assignment type (%s) in Assign\n" % self.visit(target))
+                target_str += "%s[%s] = " % (name, self.visit(target))
         self.write("%s%s" % (target_str, value))
 
     def visit_AugAssign(self, node):
@@ -1234,6 +1254,8 @@ class RB(object):
                 self.write("include %s" % method_value)
             else: # method_key == 'methods_map', etc..
                 for key, value in six.iteritems(method_value): # method_value: {'array':, 'prod': .. }
+                    if type(RB.__dict__[method_key]) != dict:
+                        continue
                     if key not in RB.__dict__[method_key].keys():
                         RB.__dict__[method_key][key] = value
                     if isinstance(RB.__dict__[method_key][key], dict):
@@ -1786,6 +1808,7 @@ class RB(object):
             else:
                args = rb_args
             for i in range(len(args)):
+                #print("i[%s]:%s" % (i, args[i]))
                 if (func_arg[i] != None) and (func_arg[i] != []):
                     rb_args[i] = "%s: %s" % (func_arg[i], rb_args[i])
 
@@ -2340,8 +2363,9 @@ def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=
         using.close
 
     mods = []
-    mod_paths = {}
+    mod_paths = OrderedDict()
     for sf in subfilenames:
+        #print(sf)
         rel_path = os.path.relpath(sf, os.path.dirname(filename))
         name_path, ext = os.path.splitext(rel_path)
         mod_paths[sf] = name_path
@@ -2435,6 +2459,10 @@ def main():
         base_dir_path = os.path.dirname(filename)
     if options.verbose:
         print("base_dir_path: %s" % base_dir_path)
+    uniq_results = []
+    subfilenames = []
+    mod = {}
+    uniq_subfilenames = []
 
     # py_path       : python file path
     def get_mod_path(py_path):
@@ -2442,42 +2470,69 @@ def main():
         with open(py_path, 'r') as f:
             text = f.read()
             results_f = re.findall(r"^from +([.\w]+) +import +([*\w]+)", text, re.M)
-            if results_f:
-                for res in results_f:
-                    if options.verbose:
-                        print("res: %s" % ', '.join(res))
-                    # from modules.moda import ModA
-                    # => (tests/modules/) modules/moda.py  # => class ModA
+            for res in results_f:
+                if options.verbose:
+                    print("res: %s" % ', '.join(res))
+                # from modules.moda import ModA
+                # => (tests/modules/) modules/moda.py  # => class ModA
+                if res[1] != '*':
+                    # (tests/modules/) modules/moda/ModA.py
+                    results.append('.'.join(res))
+                if res[0] not in uniq_results:
                     results.append(res[0])
-                    if res[1] != '*':
-                        # (tests/modules/) modules/moda/ModA.py
-                        results.append('.'.join(res))
+                else:
+                    uniq_results.append(res[0])
+            results_f = re.findall(r"^import +([.\w]+)", text, re.M)
+            for res in results_f:
+                if res not in uniq_results:
+                    results.append(res)
+                else:
+                    uniq_results.append(res)
             if options.verbose:
-                print("results_f: %s" % results_f)
-            results.extend(re.findall(r"^import +([.\w]+)", text, re.M))
+                print("py_path: %s, results: %s" % (py_path, results))
         subfilenames = []
+        uniq_subfilenames = []
         if results:
             for result in results:
                 sf = os.path.join(base_dir_path, result.replace('.', '/') + '.py')
+                if sf in uniq_subfilenames:
+                    continue
+                uniq_subfilenames.append(sf)
                 if os.path.exists(sf):
                     subfilenames.append(sf)
                     if options.verbose:
                         print("[Found]     sub_filename: %s" % sf)
-                else:
+                    continue
+                sf = os.path.join(base_dir_path, result.replace('.', '/'), '__init__.py')
+                if sf in uniq_subfilenames:
+                    continue
+                uniq_subfilenames.append(sf)
+                if os.path.exists(sf):
+                    subfilenames.append(sf)
                     if options.verbose:
-                        print("[Not Found] sub_filename: %s" % sf)
+                        print("[Found]     sub_filename: %s" % sf)
+                    continue
+                if options.verbose:
+                    print("[Not Found] sub_filename: %s" % sf)
         if options.verbose:
-            print("subfilenames: %s" % subfilenames)
+            print("py_path: %s, subfilenames: %s" % (py_path, subfilenames))
         modules = []
-        name_path, ext = os.path.splitext(py_path)
         mod = {
             "py_path": py_path,
             "subfilenames":  subfilenames,
-            "rb_path": name_path + '.rb',
         }
         modules.append(mod)
+        #print(len(subfilenames))
+        #print(subfilenames)
+        #print(len(uniq_subfilenames))
+        #print(uniq_subfilenames)
         for sf in subfilenames:
+            #print(sf)
             modules.extend(get_mod_path(sf))
+            #if sf not in uniq_subfilenames:
+            #    #print(sf)
+            #    uniq_subfilenames.append(sf)
+            #    modules.extend(get_mod_path(sf))
 
         return modules
 
@@ -2493,6 +2548,8 @@ def main():
         for mod in modules_list:
             if mod['py_path'] == filename:
                 modules.append(mod)
+    #for mod in modules:
+    #    print("filename: %s, mod: %s" % (filename, mod))
 
     if options.verbose:
         # Example:
@@ -2508,10 +2565,13 @@ def main():
     for mod in modules:
         subfilenames = mod['subfilenames']
         if options.output:
-            output=mod['rb_path']
+            name_path, ext = os.path.splitext(mod['py_path'])
+            output=name_path + '.rb'
         else:
             output=None
 
+        if options.verbose:
+            print('Try  : ' + mod['py_path'] + ' : ')
         rtn = convert_py2rb_write(mod['py_path'], options.base_path_count, subfilenames,
             base_path=options.base_path,
             require=options.include_require, builtins=options.include_builtins,
@@ -2519,7 +2579,7 @@ def main():
         if not options.silent:
             if options.mod or output:
                 if output:
-                    print('Try  : ' + mod['py_path'] + ' -> ' + mod['rb_path'] + ' : ', end='')
+                    print('Try  : ' + mod['py_path'] + ' -> ' + output + ' : ', end='')
                 else:
                     print('Try  : ' + mod['py_path'] + ' : ', end='')
             if options.mod or output:
