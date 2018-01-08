@@ -12,5 +12,5 @@ script:
   - python --version
   - ruby --version
   - python run_tests.py -a
-  - cat tests/*/*.py.comp.err
-  - cat tests/*/*.py.err
+  - for f in `\find tests/* -maxdepth 1 -name '*.py.comp.err'`; do if [ -s $f ];then base=`echo $f | sed 's/\.py.comp.err$//'`; echo "[$base.cmd.txt]"; cat $base.cmd.txt; echo ""; echo "[$f]"; cat $f; echo ""; fi done
+  - for f in `\find tests/* -maxdepth 1 -name '*.py.err'`;      do if [ -s $f ];then echo ""; echo "[$f]"; cat $f; fi done
