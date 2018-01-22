@@ -119,7 +119,7 @@ def compile_and_run_file_test(file_path, file_name=None):
                 ) % self.templ
             commands.append(python_command)
             compile_command = (
-                'python py2rb.py -p "%(py_dir_path)s" -c 1 -r "%(py_path)s" -m -f -w -s 2> "%(compiler_error)s"'
+                'python py2rb.py -p "%(py_dir_path)s" -r "%(py_path)s" -m -f -w -s 2> "%(compiler_error)s"'
                 ) % self.templ
             commands.append(compile_command)
             ruby_command = (

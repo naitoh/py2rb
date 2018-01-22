@@ -204,14 +204,26 @@ class RB(object):
     def get_result(self):
         return self._result
 
-    def __init__(self, path = '', base_path_count=0, mod_paths = {}):
+    def __init__(self, path='', dir_path='', base_path_count=0, mod_paths = {}, verbose=False):
+        self._verbose = verbose
         self._mode = 0 # Error Stop Mode : 0:stop(defalut), 1:warning(for all script mode), 2:no error(for module mode)
         self._result = 0 # Convert Staus : 0:No Error, 1:Include Warning, 2:Include Error
-        self._path = [x.capitalize() for x in path.split('/')]
+        paths = [x.capitalize() for x in path.split('/')]
+        self._dir_path = dir_path
+        self._path = []
+        for p in paths:
+            if p != '__init__':
+                self._path.append(p)
         self._base_path_count = base_path_count
         self._module_functions = []
         self._is_module = False
         self.mod_paths = mod_paths
+        self._rel_path = []
+        for rel_path in self.mod_paths.values():
+            self._rel_path.append(rel_path.replace('/', '.'))
+        if self._verbose:
+            print("base_path_count[%s] dir_path: %s, path : %s : %s" % (self._base_path_count, dir_path, path, self._path))
+            print("mod_paths : %s" % self.mod_paths)
         self.__formater = formater.Formater()
         self.capitalize = self.__formater.capitalize
         self.write = self.__formater.write
@@ -317,9 +329,13 @@ class RB(object):
                        module Moduleb (base_path_count=1)
             """
             for i in range(len(self._path)):
+                if self._verbose:
+                    print("base_path_count : %s, i : %s" % (self._base_path_count, i))
                 if i < self._base_path_count:
                     continue
                 p = self._path[i]
+                if self._verbose:
+                    print("p : %s" % p)
                 self.write("module %s" % p)
                 self._is_module = True
                 self.indent()
@@ -431,8 +447,6 @@ class RB(object):
         if self._class_name:
             if not is_static and not is_closure:
                 if not (rb_args[0] == "self"):
-                    #print(node.name)
-                    #print(rb_args[0])
                     raise NotImplementedError("The first argument must be 'self'.")
                 del rb_args[0]
                 del rb_args_default[0]
@@ -592,7 +606,6 @@ class RB(object):
         if not bases:
             bases = []
         class_name = node.name
-        #print("class_name :%s" % node.name)
 
         # self._classes remembers all classes defined
         self._classes[class_name] = node
@@ -1073,16 +1086,24 @@ class RB(object):
         <python> import imported.submodules.submodulea
         <ruby>   require_relative 'imported/submodules/submodulea'
         Module(body=[Import(names=[alias(name='imported.module', asname='abc')])])
+
+        <python> import imported.submodules.submodulea (with foo.py, bar.py)
+        <ruby>   require_relative 'imported/submodules/submodulea/foo'
+                 require_relative 'imported/submodules/submodulea/bar'
         """
         mod_name = node.names[0].name
+        if self._verbose:
+            print("Import mod_name : %s mod_paths : %s" % (mod_name, self.mod_paths))
         if mod_name not in self.module_map:
-            self._import_files.append(node.names[0].name)
             mod_name = node.names[0].name.replace('.', '/')
             for path, rel_path in self.mod_paths.items():
-                if path.endswith(mod_name + '.py'):
+                if self._verbose:
+                    print("Import mod_name : %s rel_path : %s" % (mod_name, rel_path))
+                if (rel_path.startswith(mod_name + '/') or mod_name.endswith(rel_path)) and os.path.exists(path):
+                    self._import_files.append(os.path.join(self._dir_path, rel_path).replace('/', '.'))
+                    if self._verbose:
+                         print("Import self._import_files: %s" % self._import_files)
                     self.write("require_relative '%s'" % rel_path)
-                    return
-            self.write("require_relative '%s'" % mod_name)
             return
 
         if node.names[0].asname == None:
@@ -1187,15 +1208,30 @@ class RB(object):
                      module Alias_classes
                        class Spam
         """
+        if self._verbose:
+            print("mod_paths : %s" % self.mod_paths)
         if node.module != None and \
            node.module not in self.module_map:
             self._import_files.append(node.module)
             mod_name = node.module.replace('.', '/')
             mod_name_i = node.module.replace('.', '/') + '/' + node.names[0].name
+            #        from imported.submodules import submodulea
+            # => require_relative 'submodules/submodulea'
+            if self._verbose:
+                print("ImportFrom mod_name : %s mod_name_i: %s" % (mod_name , mod_name_i))
             for path, rel_path in self.mod_paths.items():
+                if self._verbose:
+                    print("ImportFrom mod_name : %s rel_path : %s" % (mod_name, rel_path))
                 if node.names[0].name != '*':
                     if path.endswith(mod_name_i + '.py'):
                         self.write("require_relative '%s'" % rel_path)
+                        dir_path = os.path.relpath(mod_name, self._dir_path)
+                        if dir_path != '.':
+                            self._import_files.append(os.path.relpath(rel_path, dir_path).replace('/', '.'))
+                        else:
+                            self._import_files.append(rel_path.replace('/', '.'))
+                        if self._verbose:
+                            print("ImportFrom self._import_files: %s" % self._import_files)
                         break
                 if path.endswith(mod_name + '.py'):
                     self.write("require_relative '%s'" % rel_path)
@@ -1695,51 +1731,57 @@ class RB(object):
                         rb_args[i] = 'method(:%s)' % rb_args[i]
 
         for f in self._import_files:
+            if self._verbose:
+                print("Call func: %s : f %s" % (func, f))
             if func.startswith(f):
-                func = func.replace(f + '.', '')
-                if self._path != ['']:
-                    """ <Python> imported.moduleb.moduleb_class
-                        <Ruby>   Imported::Moduleb::Moduleb_class (base_path_count=0)
-                                           Moduleb::Moduleb_class (base_path_count=1)
-                    """
-                    if func in self._class_names:
-                        func = self.capitalize(func) + '.new'
-                    """ <Python> * tests/modules/imported/modulec.py
-                                   import imported.submodules.submodulea
-                                   imported.submodules.submodulea.foo()
-                        <Ruby>   * tests/modules/imported/modulec.rb
-                                   require_relative 'submodules/submodulea'
-                                   Submodules::Submodulea::foo()
-                    """
-                    base = '::'.join([self.capitalize(x) for x in f.split('.')[self._base_path_count:]])
-                    if base != '':
-                        func = base + '::' + func
-                    break
+                if self._verbose:
+                    print("Call func: %s " % func)
+                func = func.replace(f + '.', '', 1)
+                """ <Python> imported.moduleb.moduleb_class
+                    <Ruby>   Imported::Moduleb::Moduleb_class (base_path_count=0)
+                                       Moduleb::Moduleb_class (base_path_count=1)
+                """
+                if func in self._class_names:
+                    func = self.capitalize(func) + '.new'
+                """ <Python> * tests/modules/imported/modulec.py
+                               import imported.submodules.submodulea
+                               imported.submodules.submodulea.foo()
+                    <Ruby>   * tests/modules/imported/modulec.rb
+                               require_relative 'submodules/submodulea'
+                               Submodules::Submodulea::foo()
+                """
+                base = '::'.join([self.capitalize(x) for x in f.split('.')[self._base_path_count:]])
+                if base != '':
+                    func = base + '::' + func
+                if self._verbose:
+                    print("Call func: %s" % func)
+                break
 
             f = '.'.join(f.split('.')[self._base_path_count:])
-            for path, rel_path in self.mod_paths.items():
-                rel_path = rel_path.replace('/', '.')
-                if rel_path.startswith(f + '.'):
-                    f = rel_path.replace(f + '.', '')
-                    break
+            x = [x for x in self._rel_path if x.startswith(f + '.')]
+            if len(x) != 0:
+                f = x[0].replace(f + '.', '')
 
             if func.startswith(f):
+                if self._verbose:
+                    print("Call mod_paths : func : %s " % func)
                 func = func.replace(f + '.', '')
-                if self._path != ['']:
-                    if func in self._class_names:
-                        func = self.capitalize(func) + '.new'
-                    """ <Python> * tests/modules/imported/modulee.py
-                                   from imported.submodules import submodulea
-                                   submodulea.foo()
-                        <Ruby>   * tests/modules/imported/modulee.rb
-                                   require_relative 'submodules/submodulea'
-                                   include Submodules
-                                   Submodulea::foo()
-                    """
-                    base = '::'.join([self.capitalize(x) for x in f.split('.')])
-                    if base != '':
-                        func = base + '::' + func
-                    break
+                if func in self._class_names:
+                    func = self.capitalize(func) + '.new'
+                """ <Python> * tests/modules/imported/modulee.py
+                               from imported.submodules import submodulea
+                               submodulea.foo()
+                    <Ruby>   * tests/modules/imported/modulee.rb
+                               require_relative 'submodules/submodulea'
+                               include Submodules
+                               Submodulea::foo()
+                """
+                base = '::'.join([self.capitalize(x) for x in f.split('.')])
+                if base != '':
+                    func = base + '::' + func
+                if self._verbose:
+                    print("Call func: %s" % func)
+                break
 
         """ [Class Instance Create] :
         <Python> foo()
@@ -1809,6 +1851,8 @@ class RB(object):
                args = rb_args
             for i in range(len(args)):
                 #print("i[%s]:%s" % (i, args[i]))
+                if len(func_arg) <= i:
+                    break
                 if (func_arg[i] != None) and (func_arg[i] != []):
                     rb_args[i] = "%s: %s" % (func_arg[i], rb_args[i])
 
@@ -2299,7 +2343,7 @@ class RB(object):
                 sys.stderr.write("Warning : yield is not supported : \n")
             return "yield"
 
-def convert_py2rb(s, path='', base_path_count=0, modules=[], mod_paths={}, no_stop=False):
+def convert_py2rb(s, dir_path, path='', base_path_count=0, modules=[], mod_paths={}, no_stop=False, verbose=False):
     """
     Takes Python code as a string 's' and converts this to Ruby.
 
@@ -2311,7 +2355,7 @@ def convert_py2rb(s, path='', base_path_count=0, modules=[], mod_paths={}, no_st
     """
 
     # get modules information
-    v = RB(path, base_path_count, mod_paths)
+    v = RB(path, dir_path, base_path_count, mod_paths, verbose=verbose)
     v.mode(2)
     for m in modules:
         t = ast.parse(m)
@@ -2327,7 +2371,7 @@ def convert_py2rb(s, path='', base_path_count=0, modules=[], mod_paths={}, no_st
     v.visit(t)
     return (v.get_result(), v.read())
 
-def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=None, require=None, builtins=None, output=None, force=None, no_stop=False):
+def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=None, require=None, builtins=None, output=None, force=None, no_stop=False, verbose=False):
     if output:
         if not force:
             if os.path.exists(output):
@@ -2375,18 +2419,22 @@ def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=
     if base_path:
         # filename  : tests/modules/classname.py
         # base_path : tests/modules
-        rel_path = os.path.relpath(filename, base_path)
-        name_path, ext = os.path.splitext(rel_path)
+        dir_path = os.path.relpath(os.path.dirname(filename), base_path)
+        if dir_path != '.':
+            rel_path = os.path.relpath(filename, base_path)
+            name_path, ext = os.path.splitext(rel_path)
+        else:
+            dir_path = ''
     with open(filename, 'r') as f:
         s = f.read() #unsafe for large files!
-        rtn, data = convert_py2rb(s, name_path, base_path_count, mods, mod_paths, no_stop=no_stop)
+        rtn, data = convert_py2rb(s, dir_path, name_path, base_path_count, mods, mod_paths, no_stop=no_stop, verbose=verbose)
         output.write(data)
     output.close
     return rtn
 
 def main():
-    parser = OptionParser(usage="%prog [options] filename.py [module filename [module filename [..]]] [-f] [-o output_filename.rb] [-(r|b)]\n" \
-        + "       %prog [options] foo/bar/filename.py -p foo/bar/ -c 1 -m [-f] [-(r|b)]",
+    parser = OptionParser(usage="%prog [options] filename.py [module filename [module filename [..]]] [-f] [-o output_filename.rb] [-(r|b)] [-v]\n" \
+        + "       %prog [options] foo/bar/filename.py -p foo/bar/ -m [-f] [-(r|b)] [-v]",
                           description="Python to Ruby compiler.")
 
     parser.add_option("-w", "--write",
@@ -2467,26 +2515,53 @@ def main():
     # py_path       : python file path
     def get_mod_path(py_path):
         results = []
+        dir_path = os.path.relpath(os.path.dirname(py_path), base_dir_path)
         with open(py_path, 'r') as f:
             text = f.read()
             results_f = re.findall(r"^from +([.\w]+) +import +([*\w]+)", text, re.M)
-            for res in results_f:
+            for res_f in results_f:
                 if options.verbose:
-                    print("res: %s" % ', '.join(res))
-                # from modules.moda import ModA
-                # => (tests/modules/) modules/moda.py  # => class ModA
-                if res[1] != '*':
-                    # (tests/modules/) modules/moda/ModA.py
-                    results.append('.'.join(res))
-                if res[0] not in uniq_results:
-                    results.append(res[0])
+                    print("py_path: %s res_f: %s" % (py_path, ', '.join(res_f)))
+                if res_f[0] == '.':
+                    # from . import hoge
+                    res = os.path.normpath(os.path.join(dir_path, res_f[0]))
+                elif res_f[0][0] == '.':
+                    # from .grandchildren import foo
+                    res = os.path.normpath(os.path.join(dir_path, res_f[0][1:]))
                 else:
-                    uniq_results.append(res[0])
-            results_f = re.findall(r"^import +([.\w]+)", text, re.M)
-            for res in results_f:
+                    # from modules.moda import ModA
+                    # => (tests/modules/) modules/moda.py  # => class ModA
+                    res = res_f[0]
                 if res not in uniq_results:
                     results.append(res)
+                    uniq_results.append(res)
+                if res_f[1] != '*':
+                    if res_f[0] == '.':
+                        # from . import hoge
+                        res = os.path.normpath(os.path.join(dir_path, res_f[0], res_f[1]))
+                    elif res_f[0][0] == '.':
+                        # from .grandchildren import foo
+                        res = os.path.normpath(os.path.join(dir_path, res_f[0][1:], res_f[1]))
+                    else:
+                        # (tests/modules/) modules/moda/ModA.py
+                        # (tests/modules/) modules/moda.py
+                        res = os.path.normpath(os.path.join(res_f[0], res_f[1]))
+                    if res not in uniq_results:
+                        results.append(res)
+                        uniq_results.append(res)
+            results_f = re.findall(r"^import +([.\w]+)", text, re.M)
+            for res_f in results_f:
+                # from modules.moda import ModA
+                # => (tests/modules/) modules/moda.py  # => class ModA
+                # from imported.submodules import submodulea
+                # => (tests/modules/) imported/submodules submodulea
+                # => require_relative 'submodules/submodulea'
+                if res_f == '.':
+                    res = dir_path
                 else:
+                    res = res_f
+                if res not in uniq_results:
+                    results.append(res)
                     uniq_results.append(res)
             if options.verbose:
                 print("py_path: %s, results: %s" % (py_path, results))
@@ -2494,7 +2569,9 @@ def main():
         uniq_subfilenames = []
         if results:
             for result in results:
-                sf = os.path.join(base_dir_path, result.replace('.', '/') + '.py')
+                sf = os.path.normpath(os.path.join(base_dir_path, result.replace('.', '/') + '.py'))
+                if options.verbose:
+                    print("sub_filename: %s" % sf)
                 if sf in uniq_subfilenames:
                     continue
                 uniq_subfilenames.append(sf)
@@ -2519,20 +2596,16 @@ def main():
         modules = []
         mod = {
             "py_path": py_path,
-            "subfilenames":  subfilenames,
+            "subfilenames": subfilenames
         }
         modules.append(mod)
-        #print(len(subfilenames))
-        #print(subfilenames)
-        #print(len(uniq_subfilenames))
-        #print(uniq_subfilenames)
         for sf in subfilenames:
-            #print(sf)
-            modules.extend(get_mod_path(sf))
-            #if sf not in uniq_subfilenames:
-            #    #print(sf)
-            #    uniq_subfilenames.append(sf)
-            #    modules.extend(get_mod_path(sf))
+            mod_list = get_mod_path(sf)
+            for mod in mod_list:
+                if options.verbose:
+                    print("mod['subfilenames'] : %s " % mod["subfilenames"])
+                modules[-1]["subfilenames"].extend(mod["subfilenames"])
+            modules.extend(mod_list)
 
         return modules
 
@@ -2548,8 +2621,6 @@ def main():
         for mod in modules_list:
             if mod['py_path'] == filename:
                 modules.append(mod)
-    #for mod in modules:
-    #    print("filename: %s, mod: %s" % (filename, mod))
 
     if options.verbose:
         # Example:
@@ -2575,7 +2646,7 @@ def main():
         rtn = convert_py2rb_write(mod['py_path'], options.base_path_count, subfilenames,
             base_path=options.base_path,
             require=options.include_require, builtins=options.include_builtins,
-            output=output, force=options.force, no_stop=True)
+            output=output, force=options.force, no_stop=True, verbose=options.verbose)
         if not options.silent:
             if options.mod or output:
                 if output:

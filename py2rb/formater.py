@@ -74,5 +74,7 @@ class Formater(object):
         """
         Returns a capitalize string.
         """
+        if text == '':
+            return ''
         return text[0].upper() + text[1:]
 
