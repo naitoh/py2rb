@@ -2416,6 +2416,7 @@ def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=
         with open(sf, 'r') as f:
             mods.append(f.read()) #unsafe for large files!
     name_path = ''
+    dir_path = ''
     if base_path:
         # filename  : tests/modules/classname.py
         # base_path : tests/modules
@@ -2433,8 +2434,9 @@ def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=
     return rtn
 
 def main():
-    parser = OptionParser(usage="%prog [options] filename.py [module filename [module filename [..]]] [-f] [-o output_filename.rb] [-(r|b)] [-v]\n" \
-        + "       %prog [options] foo/bar/filename.py -p foo/bar/ -m [-f] [-(r|b)] [-v]",
+    parser = OptionParser(usage="%prog [options] filename.py\n" \
+        + "    or %prog [-w [-f]] [-(r|b)] [-v] filename.py\n" \
+        + "    or %prog -p foo/bar/ -m [-w [-f]] [-(r|b)] [-v] foo/bar/filename.py",
                           description="Python to Ruby compiler.")
 
     parser.add_option("-w", "--write",
@@ -2464,13 +2466,13 @@ def main():
                       action="store_true",
                       dest="include_require",
                       default=False,
-                      help="require builtins/module.rb library in the output")
+                      help="require py2rb/builtins/module.rb library in the output")
 
     parser.add_option("-b","--include-builtins",
                       action="store_true",
                       dest="include_builtins",
                       default=False,
-                      help="include builtins/module.rb library in the output")
+                      help="include py2rb/builtins/module.rb library in the output")
 
     parser.add_option("-p", "--base-path",
                       action="store",
@@ -2644,7 +2646,7 @@ def main():
         if options.verbose:
             print('Try  : ' + mod['py_path'] + ' : ')
         rtn = convert_py2rb_write(mod['py_path'], options.base_path_count, subfilenames,
-            base_path=options.base_path,
+            base_path=base_dir_path,
             require=options.include_require, builtins=options.include_builtins,
             output=output, force=options.force, no_stop=True, verbose=options.verbose)
         if not options.silent:
