@@ -300,6 +300,11 @@ class RB(object):
         return self.comparison_op[node.__class__.__name__]
 
     def visit(self, node, scope=None):
+        if self._mode == 2:
+            node_name = self.name(node)
+            if node_name not in ['Module', 'ImportFrom', 'Import', 'ClassDef', 'FunctionDef', 'Name', 'Attribute']:
+                return ''
+
         try:
             visitor = getattr(self, 'visit_' + self.name(node))
         except AttributeError:
