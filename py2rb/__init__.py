@@ -2500,7 +2500,8 @@ def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=
 def main():
     parser = OptionParser(usage="%prog [options] filename.py\n" \
         + "    or %prog [-w [-f]] [-(r|b)] [-v] filename.py\n" \
-        + "    or %prog -p foo/bar/ -m [-w [-f]] [-(r|b)] [-v] foo/bar/filename.py",
+        + "    or %prog -p foo/bar/ -m [-w [-f]] [-(r|b)] [-v] foo/bar/filename.py\n" \
+        + "    or %prog -l lib_store_directory/ [-f]",
                           description="Python to Ruby compiler.")
 
     parser.add_option("-w", "--write",
@@ -2557,7 +2558,31 @@ def main():
                       default=False,
                       help="convert all local import module files of specified Python file. *.py => *.rb")
 
+    parser.add_option("-l", "--store-library-path",
+                      action="store",
+                      dest="store_library_path",
+                      default=False,
+                      help="store py2rb/builtins/module.rb library file in the specified directory")
+
     options, args = parser.parse_args()
+
+    if options.store_library_path:
+        if not os.path.isdir(options.store_library_path):
+            sys.stderr.write('Error : %s directory is not exists.\n' % options.store_library_path)
+            exit(1)
+        builtins_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'builtins')
+        output = os.path.join(options.store_library_path, "module.rb")
+        if not options.force:
+            if os.path.exists(output):
+                sys.stderr.write('Error : %s already exists.\n' % output)
+                exit(1)
+        with open(output, 'w') as f:
+            module_f = open(os.path.join(builtins_dir, "module.rb"))
+            f.write(module_f.read())
+            module_f.close
+        sys.stderr.write('OK :  %s file was stored.\n' % output)
+        exit(0)
+
     if len(args) == 0:
         parser.print_help()
         exit(1)
