@@ -144,8 +144,10 @@ tests/lists/xrange.py [4]: ....                                  [OK]
 tests/lists/zip.py [4]: ....                                     [OK]
 tests/modules/classname.py [4]: ....                             [OK]
 tests/modules/from_import.py [4]: ....                           [OK]
+tests/modules/from_import_as_module.py [4]: ....                 [OK]
 tests/modules/import.py [4]: ....                                [OK]
 tests/modules/import_alias.py [4]: ....                          [OK]
+tests/modules/import_as_module.py [4]: ....                      [OK]
 tests/modules/import_class.py [4]: ....                          [OK]
 tests/modules/import_global.py [4]: ....                         [OK]
 tests/modules/import_init.py [4]: ....                           [OK]
@@ -234,6 +236,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 235 tests in 110.872s
+Ran 237 tests in 137.247s
 
 OK (expected failures=29)

@@ -1085,9 +1085,6 @@ class RB(object):
         Import(alias* names)
 
         e.g.
-        import imported.module as abc
-          => require_relative 'abc'
-          => require 'foo'
         <python> import imported.submodules.submodulea
         <ruby>   require_relative 'imported/submodules/submodulea'
         Module(body=[Import(names=[alias(name='imported.module', asname='abc')])])
@@ -1095,6 +1092,26 @@ class RB(object):
         <python> import imported.submodules.submodulea (with foo.py, bar.py)
         <ruby>   require_relative 'imported/submodules/submodulea/foo'
                  require_relative 'imported/submodules/submodulea/bar'
+
+        * Case 1. import module
+        <python> * tests/modules/import.py
+                   import imported.moduleb
+                   foo.moduleb_fn()
+                   mb = foo.moduleb_class()
+        <ruby>   * tests/modules/import_as_module.rb
+                   require_relative 'imported/moduleb'
+                   Imported::Moduleb::moduleb_fn()
+                   mb = Imported::Moduleb::Moduleb_class.new()
+        * Case 2. import module with alias
+        <python> * tests/modules/import_as_module.py
+                   import imported.moduleb as foo
+                   foo.moduleb_fn()
+                   mb = foo.moduleb_class()
+        <ruby>   * tests/modules/import_as_module.rb
+                   require_relative 'imported/moduleb'
+                   Foo = Imported::Moduleb
+                   Foo::moduleb_fn()
+                   mb = Foo::Moduleb_class.new()
         """
         mod_name = node.names[0].name
         if self._verbose:
@@ -1109,6 +1126,19 @@ class RB(object):
                     if self._verbose:
                          print("Import self._import_files: %s" % self._import_files)
                     self.write("require_relative '%s'" % rel_path)
+
+            if node.names[0].asname != None:
+                if node.names[0].name in self._import_files:
+                    base = '::'.join([self.capitalize(x) for x in node.names[0].name.split('.')[self._base_path_count:]])
+                    self.write("%s = %s" % (self.capitalize(node.names[0].asname), base))
+                    self._import_files.append(node.names[0].asname)
+                # No Use
+                #elif node.names[0].name in self._class_names:
+                #    self.write("%s = %s" % (self.capitalize(node.names[0].asname), self.capitalize(node.names[0].name)))
+                #    self._class_names.add(node.names[0].asname)
+                #    self._classes_self_functions_args[node.names[0].asname] = self._classes_self_functions_args[node.names[0].name]
+                #else:
+                #    self.write("alias %s %s" % (node.names[0].asname, node.names[0].name))
             return
 
         if node.names[0].asname == None:
@@ -1159,46 +1189,70 @@ class RB(object):
                      def modulea_fn():
           <ruby>   * tests/modules/import.rb
                      require_relative 'imported/modulea'
-                     include Modulea
+                     include Imported::Modulea
                      modulea_fn()
                    * tests/modules/imported/modulea.rb
-                     module Modulea
-                       def modulea_fn()
-                     end
+                     module Imported
+                       module Modulea
+                         def modulea_fn()
           Module(body=[ImportFrom(module='modules.modulea', names=[ alias(name='modulea_fn', asname=None)], level=0)])
+
         * Case 2. import function with alias
-          <python> * tests/modules/import.py
-                     from imported.moduleb import moduleb_fn as modb_fn
-                     modb_fn()
-                   * tests/modules/imported/moduleb.py
-                     def moduleb_fn():
-          <ruby>   * tests/modules/import.rb
-                     require_relative 'imported/moduleb'
-                     include Moduleb
-                     alias modb_fn moduleb_fn
-                     modb_fn()
-                   * tests/modules/imported/moduleb.rb
-                     module Moduleb
-                       def moduleb_fn()
-                     end
-          Module(body=[ImportFrom(module='imported.moduleb', names=[ alias(name='moduleb_fn', asname='modb_fn')], level=0)])
+          <python> * tests/modules/import_alias.py
+                     from imported.alias_fns import foo as bar
+                     bar()
+                   * tests/modules/imported/alias_fns.py
+                     def foo():
+          <ruby>   * tests/modules/import_alias.rb
+                     require_relative 'imported/alias_fns'
+                     include Imported::Alias_fns
+                     alias bar foo
+                     bar()
+                   * tests/modules/imported/alias_fns.rb
+                     module Imported
+                       module Alias_fns
+                         def foo()
+                         end
+                         module_function :foo
+          Module(body=[ImportFrom(module='imported.alias_fns', names=[ alias(name='foo', asname='bar')], level=0)])
+
         * Case 3. import module
           <Python> * tests/modules/imported/modulee.py
                      from imported.submodules import submodulea
-                     submodulea.foo()
+                     def bar():
+                         submodulea.foo()
                    * tests/modules/imported/submodules/submodulea.py
                      def foo():
           <Ruby>   * tests/modules/imported/modulee.rb
-                     require_relative 'submodules/submodulea'
-                     include Submodules
-                     Submodulea::foo()
+                     module Imported
+                       module Modulee
+                         require_relative 'submodules/submodulea'
+                         include Imported::Submodules
+                         def bar()
+                           Submodulea::foo()
                    * tests/modules/imported/submodules/submodulea.rb
-                     module Submodules
-                       module Submodulea
-                         def foo()
-                       end
-                     end
-        * Case 4. import class with alias
+                     module Imported
+                       module Submodules
+                         module Submodulea
+                           def foo()
+
+        * Case 4. import module with alias
+          <Python> * tests/modules/from_import_as_module.py
+                     from imported import moduleb as foo
+                     foo.moduleb_fn()
+                   * tests/modules/imported/moduleb.py
+                     def moduleb_fn():
+          <Ruby>   * tests/modules/imported/modulee.rb
+                     require_relative 'imported/moduleb'
+                     include Imported
+                     Foo = Moduleb
+                     Foo::moduleb_fn()
+                   * tests/modules/imported/moduleb.rb
+                     module Imported
+                       module Moduleb
+                         def moduleb_fn()
+
+        * Case 5. import class with alias
           <python> * tests/modules/import_alias.py
                      from imported.alias_classes import spam as eggs
                      e = eggs()
@@ -1206,12 +1260,13 @@ class RB(object):
                      class spam:
           <ruby>   * tests/modules/import_alias.rb
                      require_relative 'imported/alias_classes'
-                     include Alias_classes
+                     include Imported::Alias_fns
                      Eggs = Spam
                      e = Eggs.new()
                    * tests/modules/imported/alias_classes.rb
-                     module Alias_classes
-                       class Spam
+                     module Imported
+                       module Alias_classes
+                         class Spam
         """
         if self._verbose:
             print("mod_paths : %s" % self.mod_paths)
@@ -1247,12 +1302,16 @@ class RB(object):
             self.write("include %s" % base)
 
             if node.names[0].asname != None:
-                 if node.names[0].name in self._class_names:
-                     self.write("%s = %s" % (self.capitalize(node.names[0].asname), self.capitalize(node.names[0].name)))
-                     self._class_names.add(node.names[0].asname)
-                     self._classes_self_functions_args[node.names[0].asname] = self._classes_self_functions_args[node.names[0].name]
-                 else:
-                     self.write("alias %s %s" % (node.names[0].asname, node.names[0].name))
+                if node.names[0].name in self._import_files:
+                    base = '::'.join([self.capitalize(x) for x in node.names[0].name.split('.')[self._base_path_count:]])
+                    self.write("%s = %s" % (self.capitalize(node.names[0].asname), base))
+                    self._import_files.append(node.names[0].asname)
+                elif node.names[0].name in self._class_names:
+                    self.write("%s = %s" % (self.capitalize(node.names[0].asname), self.capitalize(node.names[0].name)))
+                    self._class_names.add(node.names[0].asname)
+                    self._classes_self_functions_args[node.names[0].asname] = self._classes_self_functions_args[node.names[0].name]
+                else:
+                    self.write("alias %s %s" % (node.names[0].asname, node.names[0].name))
             return
 
         """
