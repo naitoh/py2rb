@@ -2573,14 +2573,12 @@ def main():
         base_dir_path = os.path.dirname(filename)
     if options.verbose:
         print("base_dir_path: %s" % base_dir_path)
-    uniq_results = []
-    subfilenames = []
-    mod = {}
-    uniq_subfilenames = []
+    mods = {}
+    mods_all = {}
 
     # py_path       : python file path
     def get_mod_path(py_path):
-        results = []
+        results = set()
         dir_path = os.path.relpath(os.path.dirname(py_path), base_dir_path)
         with open(py_path, 'r') as f:
             text = f.read()
@@ -2598,9 +2596,7 @@ def main():
                     # from modules.moda import ModA
                     # => (tests/modules/) modules/moda.py  # => class ModA
                     res = res_f[0]
-                if res not in uniq_results:
-                    results.append(res)
-                    uniq_results.append(res)
+                results.add(res)
                 if res_f[1] != '*':
                     if res_f[0] == '.':
                         # from . import hoge
@@ -2612,9 +2608,7 @@ def main():
                         # (tests/modules/) modules/moda/ModA.py
                         # (tests/modules/) modules/moda.py
                         res = os.path.normpath(os.path.join(res_f[0], res_f[1]))
-                    if res not in uniq_results:
-                        results.append(res)
-                        uniq_results.append(res)
+                    results.add(res)
             results_f = re.findall(r"^import +([.\w]+)", text, re.M)
             for res_f in results_f:
                 # from modules.moda import ModA
@@ -2626,32 +2620,27 @@ def main():
                     res = dir_path
                 else:
                     res = res_f
-                if res not in uniq_results:
-                    results.append(res)
-                    uniq_results.append(res)
+                results.add(res)
             if options.verbose:
                 print("py_path: %s, results: %s" % (py_path, results))
-        subfilenames = []
-        uniq_subfilenames = []
+        subfilenames = set()
         if results:
             for result in results:
                 sf = os.path.normpath(os.path.join(base_dir_path, result.replace('.', '/') + '.py'))
                 if options.verbose:
                     print("sub_filename: %s" % sf)
-                if sf in uniq_subfilenames:
+                if sf in subfilenames:
                     continue
-                uniq_subfilenames.append(sf)
                 if os.path.exists(sf):
-                    subfilenames.append(sf)
+                    subfilenames.add(sf)
                     if options.verbose:
                         print("[Found]     sub_filename: %s" % sf)
                     continue
                 sf = os.path.join(base_dir_path, result.replace('.', '/'), '__init__.py')
-                if sf in uniq_subfilenames:
+                if sf in subfilenames:
                     continue
-                uniq_subfilenames.append(sf)
                 if os.path.exists(sf):
-                    subfilenames.append(sf)
+                    subfilenames.add(sf)
                     if options.verbose:
                         print("[Found]     sub_filename: %s" % sf)
                     continue
@@ -2659,66 +2648,50 @@ def main():
                     print("[Not Found] sub_filename: %s" % sf)
         if options.verbose:
             print("py_path: %s, subfilenames: %s" % (py_path, subfilenames))
-        modules = []
-        mod = {
-            "py_path": py_path,
-            "subfilenames": subfilenames
-        }
-        modules.append(mod)
+        mods[py_path] = subfilenames
+        mods_all[py_path] = list(subfilenames)
         for sf in subfilenames:
-            mod_list = get_mod_path(sf)
-            for mod in mod_list:
-                if options.verbose:
-                    print("mod['subfilenames'] : %s " % mod["subfilenames"])
-                modules[-1]["subfilenames"].extend(mod["subfilenames"])
-            modules.extend(mod_list)
-
-        return modules
+            if not sf in mods.keys():
+                get_mod_path(sf)
+                mods_all[py_path].extend(mods[sf])
+        return
 
     # Get all the local import module file names of the target python file
-    modules_list = get_mod_path(filename)
-    modules = []
-    if options.mod:
-        # Delete duplicate modules
-        for mod in modules_list:
-            if mod not in modules:
-                modules.append(mod)
-    else:
-        for mod in modules_list:
-            if mod['py_path'] == filename:
-                modules.append(mod)
+    get_mod_path(filename)
 
+    # Example:
+    # tests/modules/classname.py : from modules.moda import ModA     => require_relative 'modules/moda' (Convert using AST)
+    #                              => tests/modules/ + modules.moda
+    #                              => tests/modules/modules/moda.py
+    # -p tests/modules "tests/modules/classname.py"    > "tests/modules/classname.rb"
+    # -p tests/modules "tests/modules/modules/moda.py" > "tests/modules/modules/moda.rb"
     if options.verbose:
-        # Example:
-        # tests/modules/classname.py : from modules.moda import ModA     => require_relative 'modules/moda' (Convert using AST)
-        #                              => tests/modules/ + modules.moda
-        #                              => tests/modules/modules/moda.py
-        # -p tests/modules -c 1 -r "tests/modules/classname.py" tests/modules/modules/moda.py > "tests/modules/classname.rb"
-        # -p tests/modules -c 1 -r "tests/modules/modules/moda.py"                            > "tests/modules/modules/moda.rb"
-        for mod in modules:
-            subfilenames = mod['subfilenames']
-            print("filename : %s [%s]" %  (mod['py_path'], ', '.join(subfilenames)))
+        for py_path, subfilenames in mods_all.items():
+            print("mods_all[%s] : %s" % (py_path, subfilenames))
 
-    for mod in modules:
-        subfilenames = mod['subfilenames']
+    for py_path, subfilenames in mods_all.items():
+        if not options.mod:
+            if py_path != filename:
+                continue
+        subfilenames = set(subfilenames)
         if options.output:
-            name_path, ext = os.path.splitext(mod['py_path'])
+            name_path, ext = os.path.splitext(py_path)
             output=name_path + '.rb'
         else:
             output=None
 
         if options.verbose:
-            print('Try  : ' + mod['py_path'] + ' : ')
-        rtn = convert_py2rb_write(mod['py_path'], options.base_path_count, subfilenames,
+            print('Try  : ' + py_path + ' : ')
+        rtn = convert_py2rb_write(py_path, options.base_path_count, subfilenames,
             base_path=base_dir_path,
             require=options.include_require, builtins=options.include_builtins,
             output=output, force=options.force, no_stop=True, verbose=options.verbose)
         if not options.silent:
             if options.mod or output:
                 if output:
-                    print('Try  : ' + mod['py_path'] + ' -> ' + output + ' : ', end='')
+                    print('Try  : ' + py_path + ' -> ' + output + ' : ', end='')
                 else:
-                    print('Try  : ' + mod['py_path'] + ' : ', end='')
+                    print('Try  : ' + py_path + ' : ', end='')
             if options.mod or output:
                 if 0 == rtn:
                     print('[OK]')
