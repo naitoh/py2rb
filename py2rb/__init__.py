@@ -2604,7 +2604,8 @@ def main():
     # py_path       : python file path
     def get_mod_path(py_path):
         results = set()
-        dir_path = os.path.relpath(os.path.dirname(py_path), base_dir_path)
+        dir_path = os.path.dirname(py_path) if os.path.dirname(py_path) else '.'
+        dir_path = os.path.relpath(dir_path, base_dir_path)
         with open(py_path, 'r') as f:
             text = f.read()
             results_f = re.findall(r"^from +([.\w]+) +import +([*\w]+)", text, re.M)
