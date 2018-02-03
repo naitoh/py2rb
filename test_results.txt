@@ -158,6 +158,7 @@ tests/numpy/arange.py [4]: ....                                  [OK]
 tests/numpy/array2string.py [4]: ....                            [OK]
 tests/numpy/asarray.py [4]: ....                                 [OK]
 tests/numpy/ellipsis.py [4]: ....                                [OK]
+tests/numpy/ext_slice.py [4]: ....                               [OK]
 tests/numpy/full.py [4]: ....                                    [OK]
 tests/numpy/insert.py [4]: ....                                  [OK]
 tests/numpy/like.py [4]: ....                                    [OK]
@@ -239,6 +240,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 240 tests in 134.829s
+Ran 241 tests in 121.978s
 
 OK (expected failures=30)

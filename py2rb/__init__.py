@@ -780,9 +780,7 @@ class RB(object):
                     # found slice assignmnet
                     target_str += "%s[%s...%s] = " % (name, self.visit(target.slice.lower), self.visit(target.slice.upper))
                 elif isinstance(target.slice, ast.ExtSlice):
-                    if self._mode == 1:
-                        self.set_result(1)
-                        sys.stderr.write("Warning : ExtSlice not supported (%s) in Assign(ast.Subscript)\n" % self.visit(target))
+                    # found ExtSlice assignmnet
                     target_str += "%s[%s] = " % (name, self.visit(target.slice))
                 else:
                     if self._mode == 1:
@@ -2330,6 +2328,18 @@ class RB(object):
         return "[%s]" % (", ".join(els))
         #return ", ".join(els)
 
+    def visit_ExtSlice(self, node):
+        """
+        ExtSlice(slice* dims)
+
+        <Python> np.asarray([[1,2,3],[4,5,6]])[0,:]
+        <Ruby>   Numo::SFloat[[1,2,3],[4,5,6]][0, 0..-1]
+        """
+        s = []
+        for e in node.dims:
+            s.append(self.visit(e))
+        return ", ".join(s)
+
     def visit_Slice(self, node):
         """
         Slice(expr? lower, expr? upper, expr? step)
@@ -2368,6 +2378,9 @@ class RB(object):
             self._is_string_symbol = False
             return "%s[%s]" % (name, index)
             #return "%s%s" % (name, index)
+        if isinstance(node.slice, (ast.ExtSlice)):
+            s = self.visit(node.slice)
+            return "%s[%s]" % (name, s)
         else:
             # ast.Slice
             index = self.visit(node.slice)
