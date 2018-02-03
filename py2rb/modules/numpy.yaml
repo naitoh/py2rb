@@ -356,14 +356,28 @@ numpy:
         axis: True                                # Use argument data
       main_data_key: a                            # Main data : %(data)s
       main_func: '(%(data)s).min_index'           # convert function : np.argmin(a, axis) => a.min_index(axis)
-    maximum:
+    maximum: # => maximum : class_method
       # (x1, x2, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
-      main_func: '%(mod)sNArray.maximum'
+      main_func_key: dtype                        # convert function key name
+      main_func_hash_nm: 'DFloat'                 # convert function name (not match(default) case)
+      main_func_hash: *func_hash                  # convert function name
       key:
         - [x1, x2, out, where, casting, same_kind, order, dtype, subok]
       val:
         x1: True
         x2: True
+        dtype: '%(mod)s%(main_func)s.maximum'     # np.maximum(x1, x2) => Numo::DFloat.maximum(x1, x2)
+    minimum: # => minimum : class_method
+      # (x1, x2, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func_key: dtype                        # convert function key name
+      main_func_hash_nm: 'DFloat'                 # convert function name (not match(default) case)
+      main_func_hash: *func_hash                  # convert function name
+      key:
+        - [x1, x2, out, where, casting, same_kind, order, dtype, subok]
+      val:
+        x1: True
+        x2: True
+        dtype: '%(mod)s%(main_func)s.minimum'     # np.minimum(x1, x2) => Numo::DFloat.minimum(x1, x2)
     linspace: # => linspace : class_method
       # (start, stop, num=50, endpoint=True, retstep=False, dtype=None)
       main_func_key: dtype                        # convert function key name

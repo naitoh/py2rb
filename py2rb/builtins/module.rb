@@ -257,48 +257,6 @@ class Class
   end
 end
 
-module Numo
-  class NArray
-    def self.maximum(a, b)
-       if a.is_a?(Numo::NArray) and b.is_a?(Numo::NArray)
-         return a * (b < a)
-       end
-
-       if a.is_a?(Numo::NArray)
-         x = a
-         y = b
-       elsif b.is_a?(Numo::NArray)
-         x = b
-         y = a
-       else
-         return [a, b].max
-       end
-
-       case x
-       when Numo::DFloat
-         yy = Numo::DFloat.new(x.size).fill(y)
-       when Numo::Int8
-         yy = Numo::Int8.new(x.size).fill(y)
-       when Numo::Int16
-         yy = Numo::Int16.new(x.size).fill(y)
-       when Numo::Int32
-         yy = Numo::Int32.new(x.size).fill(y)
-       when Numo::Int64
-         yy = Numo::Int64.new(x.size).fill(y)
-       when Numo::UInt8
-         yy = Numo::UInt8.new(x.size).fill(y)
-       when Numo::UInt16
-         yy = Numo::UInt16.new(x.size).fill(y)
-       when Numo::UInt32
-         yy = Numo::UInt32.new(x.size).fill(y)
-       when Numo::UInt64
-         yy = Numo::UInt64.new(x.size).fill(y)
-       end
-       return x * (yy < x)
-    end
-  end
-end
-
 require 'set'
 class Set
   def remove(x)
