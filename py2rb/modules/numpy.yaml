@@ -338,6 +338,24 @@ numpy:
         - [x, out, where, casting, order, dtype, subok]
       val:
         x: True
+    argmax: # => max_index : instance_method
+      # (a, axis=None, out=None)
+      key:
+        - [a, axis, out]
+      val:
+        a: False                                  # Not use argument data
+        axis: True                                # Use argument data
+      main_data_key: a                            # Main data : %(data)s
+      main_func: '(%(data)s).max_index'           # convert function : np.argmax(a, axis) => a.max_index(axis)
+    argmin: # => min_index : instance_method
+      # (a, axis=None, out=None)
+      key:
+        - [a, axis, out]
+      val:
+        a: False                                  # Not use argument data
+        axis: True                                # Use argument data
+      main_data_key: a                            # Main data : %(data)s
+      main_func: '(%(data)s).min_index'           # convert function : np.argmin(a, axis) => a.min_index(axis)
     maximum:
       # (x1, x2, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
       main_func: '%(mod)sNArray.maximum'

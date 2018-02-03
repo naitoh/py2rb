@@ -232,11 +232,12 @@ tests/lists/reduce.py [4]: ..                         known to [FAIL]
 tests/modules/import_diamond.py [4]: ..               known to [FAIL]
 tests/modules/module_name.py [4]: ..                  known to [FAIL]
 tests/modules/rng.py [4]:                             known to [FAIL]
+tests/numpy/arg_max_min.py [4]: ...                   known to [FAIL]
 tests/strings/other_strings.py [4]: ..                known to [FAIL]
 tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 238 tests in 112.610s
+Ran 239 tests in 104.178s
 
-OK (expected failures=29)
+OK (expected failures=30)
