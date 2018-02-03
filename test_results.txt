@@ -165,6 +165,7 @@ tests/numpy/linspace.py [4]: ....                                [OK]
 tests/numpy/ndarray.py [4]: ....                                 [OK]
 tests/numpy/ndarray2.py [4]: ....                                [OK]
 tests/numpy/ndarray3.py [4]: ....                                [OK]
+tests/numpy/not_like.py [4]: ....                                [OK]
 tests/numpy/product.py [4]: ....                                 [OK]
 tests/numpy/special_values.py [4]: ....                          [OK]
 tests/numpy/trigonometric_funcitons.py [4]: ....                 [OK]
@@ -236,6 +237,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 237 tests in 137.247s
+Ran 238 tests in 112.610s
 
 OK (expected failures=29)

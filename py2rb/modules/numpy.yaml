@@ -183,6 +183,15 @@ numpy:
         a: False                                  # Not use argument data
       main_data_key: a                            # Main data : %(data)s
       main_func: '(%(data)s).new_zeros'           # convert function : np.zeros_like(a) => a.new_zeros()
+    full_like: # => new_fill : instance_method
+      # (a, fill_value, dtype=None, order='K', subok=True)
+      key:
+        - [a, fill_value, dtype, order, subok]
+      val:
+        a: False                                  # Not use argument data
+        fill_value: True                          # Use argument data
+      main_data_key: a                            # Main data : %(data)s
+      main_func: '(%(data)s).new_fill'            # convert function : np.full_like(a) => a.new_fill(fill_value)
     empty_like: # => new_like : class_method
       # empty_like(a, dtype=None, order='K', subok=True)
       # => Numo::NArray.new_like(obj)
@@ -196,6 +205,39 @@ numpy:
         dtype: '%(mod)s%(main_func)s.new_like'    # np.empty_like(x) => Numo::NArray.new_like(x)
         order: False                              # Not use argument data
         subok: False                              # Not use argument data
+    ones: # => ones : class_method
+      # ones(shape, dtype=None, order='C')
+      # => Numo::DFloat.ones(*args)
+      key:
+        - [shape, dtype, order]
+      main_func_key: dtype                        # convert function key name
+      main_func_hash_nm: 'DFloat'                 # convert function name (not match(default) case)
+      main_func_hash: *func_hash                  # convert function name
+      val:
+        shape: True                               # Use argument data
+        dtype: '%(mod)s%(main_func)s.ones'        # np.ones(x) => Numo::DFloat.ones(x)
+        order: False                              # Not use argument data
+    zeros: # => zeros : class_method
+      # zeros(shape, dtype=None, order='C')
+      # => Numo::DFloat.zeros(*args)
+      key:
+        - [shape, dtype, order]
+      main_func_key: dtype                        # convert function key name
+      main_func_hash_nm: 'DFloat'                 # convert function name (not match(default) case)
+      main_func_hash: *func_hash                  # convert function name
+      val:
+        shape: True                               # Use argument data
+        dtype: '%(mod)s%(main_func)s.zeros'       # np.zeros(x) => Numo::DFloat.zeros(x)
+        order: False                              # Not use argument data
+    full: # => fill : instance_method
+      # (shape, fill_value, dtype=None, order='C')
+      key:
+        - [shape, fill_value, dtype, order]
+      val:
+        shape: False                              # Not use argument data
+        fill_value: True                          # Use argument data
+      main_data_key: shape                        # Main data : %(data)s
+      main_func: '(%(data)s).fill'                # convert function : np.full(fill_value) => shape.fill(fill_value)
     ndarray:
       bracket: False
       main_func: '%(mod)sNArray'                  # convert function : np.ndarray => Numo::NArray
