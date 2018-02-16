@@ -399,7 +399,7 @@ numpy:
       main_func_hash: *func_hash                  # convert function name
       key:
         - [stop]                                  # argument count 1 case
-        - [start, stop, step, dtype]              # argument count 2 or over (not 1) case
+        - [start, stop, step, dtype]              # argument count 2,3,4 or over (not 1) case
       val:
         start: True
         stop: True

@@ -29,10 +29,29 @@
 #       main_func_hash_nm: 'NArray' => convert function name (not match(default) case)
 #       main_func_hash: *func_hash  => convert function name (match case)
 #
+#       option: 'no_method'        => The method passed to the argument when converting to Ruby is processed as it is without objectization.
+#                                     <Python>
+#                                     def foo(x,y):
+#                                       return x*y
+#
+#                                     z = reduce(foo,y,10)
+#                                     <Ruby> no use 'no_method' option
+#                                     def foo(x, y)
+#                                       return (x)*(y)
+#                                     end
+#                                     z = reduce(method(:foo), y, 10)
+#                                     <Ruby> use 'no_method' option
+#                                     def foo(x, y)
+#                                       return (x)*(y)
+#                                     end
+#                                     z = reduce(foo(), y, 10)
+#
 #       val:                       => arguments dict
 #         object: False            => Not use argument data
 #         dtype:  '%(mod)s%(main_func)s.cast(%(data)s)'  # convert to Ruby method
 #         axis: axis               => Use keyword argument data
+#         '*args': True            => Use star argument data
+#         '**kwds': True           => Use star keyword argument data
 #       rtn:
 #         - "%(start)s"            => customize return string (main_func + rtn) : argument count 1 (rtn[0]) case
 #         - "%(start)s %(second)s" => customize return string (main_func + rtn) : argument count 2 (rtn[1]) or over (rtn[-1]) case
@@ -83,19 +102,24 @@ unittest:
     TestCase.assertRaises:
       # (exception, callable, *args, **kwds)
       main_func: 'assert_raise'
+      option: 'no_method'
       key:
         - [exception]
-        - [exception, callable]
+        - [exception, callable, '*args', '**kwds']
       val:
         exception: False
         callable: False
-      rtn:
-        # <Python> self.assertRaises(TypeError)
+        '*args': True    # Use star argument data
+        '**kwds': True   # Use star keyword argument data
+      rtn_star:
+        # <Python> self.assertRaises(TypeError, msg=None)
         # <Ruby> assert_raise(klass1, klass2, ..., message = "") { ... }
         - "(%(exception)s)"
-        # <Python> self.assertRaises(TypeError, foo)
-        # <Ruby> assert_raise(klass1, klass2, ..., message = "") { foo }
-        - "(%(exception)s){%(callable)s}"
+        # <Python> self.assertRaises(TypeError, foo, *args, **kwds)
+        # <Ruby> assert_raise(klass1, klass2, ..., message = "") { foo(*args, **kwds) }
+        - "(%(exception)s){%(callable)s()}"
+        - "(%(exception)s){%(callable)s(%(*args)s)}"
+        - "(%(exception)s){%(callable)s(%(*args)s, %(**kwds)s)}"
   ignore:
     main: ''
 

@@ -1651,6 +1651,72 @@ class RB(object):
             txt = '"' + txt + '"'
         return txt
 
+    def key_list_check(self, key_list, rb_args):
+        j = 0
+        star = 0
+        wstar = 0
+
+        star_i = False
+        wstar_i = False
+        for i in range(len(key_list)):
+            if '**' in key_list[i]:
+                star_i = i
+            elif '*' in key_list[i]:
+                wstar_i = i
+
+        key_l = []
+        for i in range(len(key_list)):
+            if self._verbose:
+                print("key_list_check j:%s i:%s rb_args: %s key_list %s" % (j, i, rb_args, key_list))
+
+            if len(rb_args) <= j:
+                break
+
+            if '**' in key_list[i]:
+                rb_args_j = rb_args[j:]
+                for rb_arg in rb_args_j:
+                    if ': ' in rb_arg:
+                        j += 1
+                        wstar=1
+            elif '*' in key_list[i]:
+                rb_args_j = rb_args[j:]
+                for rb_arg in rb_args_j:
+                    if ': ' in rb_arg:
+                        break
+                    else:
+                        j += 1
+                        star=1
+            else:
+                j += 1
+        if len(rb_args) != j:
+            return False
+
+        key_l = key_list[:]
+        if wstar_i != False:
+            if wstar != 1:
+                key_l = key_l[:-1]
+        if star_i != False:
+            if star != 1:
+                key_l = key_l[:-1]
+
+        return key_l
+
+    def get_key_list(self, rb_args, key_lists):
+        if rb_args == False:
+            return False
+        """ key: - ['stop']                           : len(rb_args) == 1
+                 - ['start', 'stop', 'step', 'dtype'] : len(rb_args) != 1
+        """
+        for key_list in key_lists:
+            l = self.key_list_check(key_list, rb_args)
+            if self._verbose:
+                 print("get_key_list len(key_list): %s l: %s" % (len(key_list), l))
+            if l != False:
+                 if self._verbose:
+                     print("get_key_list %s" % l)
+                 return l
+        return False
+
     # method_map : self.methods_map[func] # e.g. numpy[methods_map][prod]
     def get_methods_map(self, method_map, rb_args=False, ins=False):
         """ [Function convert to Method]
@@ -1665,25 +1731,20 @@ class RB(object):
         key_order_list = False
         if rb_args != False:
             if 'key' in method_map.keys():
-                """ key: - ['stop']                           : len(rb_args) == 1
-                         - ['start', 'stop', 'step', 'dtype'] : len(rb_args) != 1
-                """
-                for l in method_map['key']:
-                    if len(rb_args) == len(l):
-                        key_list = l
-                        break
-                else:
-                    key_list = l
+                key_list = self.get_key_list(rb_args, method_map['key'])
             if 'key_order' in method_map.keys():
-                for l in method_map['key_order']:
-                    if len(rb_args) == len(l):
-                        key_order_list = l
-                        break
-                else:
-                    key_order_list = l
+                key_order_list = self.get_key_list(rb_args, method_map['key_order'])
 
         rtn = False
-        if rb_args != False:
+        if key_list != False:
+            if 'rtn_star' in method_map.keys():
+                for i in range(len(method_map['rtn_star'])):
+                    if len(key_list) == i + 1:
+                        rtn = method_map['rtn_star'][i]
+                        break
+                else:
+                    rtn = method_map['rtn_star'][-1]
+        if (rtn == False) and (rb_args != False):
             if 'rtn' in method_map.keys():
                 for i in range(len(method_map['rtn'])):
                     if len(rb_args) == i + 1:
@@ -1704,15 +1765,39 @@ class RB(object):
         main_func = ''
         m_args = []
         args_hash = {}
+        if key_list:
+            for i in range(len(key_list)):
+                key = key_list[i]
+                if '**' in key:
+                    args_hash[key] = []
+                elif '*' in key:
+                    args_hash[key] = []
         func_key = method_map.get('main_func_key', '')  # dtype
-        if rb_args:
-            for i in range(len(rb_args)):
-                if ': ' in rb_args[i]:
-                    key, value = rb_args[i].split(': ', 1)
-                else:
+        if rb_args and (key_list != False):
+            i = 0
+            for j in range(len(rb_args)):
+                if '**' in key_list[i]:
+                    if ': ' in rb_args[j]:
+                        key = key_list[i]
+                        value = rb_args[j]
+                        args_hash[key].append(value)
+                elif '*' in key_list[i]:
                     key = key_list[i]
-                    value = rb_args[i]
-                args_hash[key] = value
+                    value = rb_args[j]
+                    args_hash[key].append(value)
+                    if (len(key_list) > i) and (len(rb_args) > j + 1):
+                        if ': ' in rb_args[j+1]:
+                            i += 1
+                else:
+                    if ': ' in rb_args[j]:
+                        key, value = rb_args[j].split(': ', 1)
+                    else:
+                        key = key_list[i]
+                        value = rb_args[j]
+                    args_hash[key] = value
+                    i += 1
+            if self._verbose:
+                print("get_methods_map func_key : %s : args_hash %s" % (func_key, args_hash))
             if key_order_list != False:
                 key_list = key_order_list
             for key in key_list:
@@ -1723,9 +1808,17 @@ class RB(object):
                 value = args_hash[key]
                 if key in method_map['val'].keys():
                     if method_map['val'][key] == True:
+                        if type(value) == list:
+                            value = ', '.join(value)
                         m_args.append(value)
+                        args_hash[key] = value
                     elif type(method_map['val'][key]) == str:
                         m_args.append("%s: %s" % (key, value))
+                        args_hash[key] = value
+                    elif method_map['val'][key] == False:
+                        continue
+                    elif self._verbose:
+                        print("get_methods_map key : %s not match method_map['val'][key] %s" % (key, method_map['val'][key]))
             if len(args_hash) == 0:
                 self.set_result(2)
                 raise RubyError("methods_map defalut argument Error : not found args")
@@ -1757,12 +1850,20 @@ class RB(object):
             raise RubyError("methods_map main function Error : not found args")
 
         if rtn:
+            if self._verbose:
+                print("get_methods_map main_func : %s : rtn %s" % (main_func, rtn))
             rtn = rtn % args_hash
+            if self._verbose:
+                print("get_methods_map main_func : %s : rtn %s" % (main_func, rtn))
             return "%s%s" % (main_func, rtn)
 
         if bracket:
+            if self._verbose:
+                print("get_methods_map with bracket main_func : %s : m_args %s" % (main_func, m_args))
             return "%s(%s)" % (main_func, ', '.join(m_args))
         else:
+            if self._verbose:
+                print("get_methods_map without bracket main_func : %s : m_args %s" % (main_func, m_args))
             return "%s%s" % (main_func, ', '.join(m_args))
 
     def visit_Call(self, node):
@@ -1785,7 +1886,18 @@ class RB(object):
         func = self.visit(node.func)
         if not isinstance(node.func, ast.Call):
             self._call = False
-        if not func in self.iter_map:
+
+        """ [Inherited Instance Method] """
+        opt = None
+        for base_class in self._base_classes:
+            base_func = "%s.%s" % (base_class, func)
+            if base_func in self.methods_map.keys():
+                if 'option' in self.methods_map[base_func].keys():
+                    opt = self.methods_map[base_func]['option']
+                    if self._verbose:
+                        print("Call option: %s : %s" % (func, opt))
+
+        if (not func in self.iter_map) and (opt != 'no_method'):
             for i in range(len(rb_args)):
                 if rb_args[i] in self._functions.keys():
                     if rb_args[i][-1] != ')' and \
@@ -2057,6 +2169,8 @@ class RB(object):
             for base_class in self._base_classes:
                 base_func = "%s.%s" % (base_class, func)
                 if base_func in self.methods_map.keys():
+                    if self._verbose:
+                        print("Call Inherited Instance Method : %s : base_func %s" % (base_func, rb_args))
                     return self.get_methods_map(self.methods_map[base_func], rb_args, ins)
                 if base_func in self.order_methods_with_bracket.keys():
                     """ [Inherited Instance Method] :
