@@ -91,6 +91,17 @@ unittest:
         first: True
         second: True
         msg: True
+    TestCase.assertIs:
+      # (first, second, msg=None)
+      main_func: 'assert_equal'
+      key:
+        - [first, second, msg]
+      key_order:
+        - [second, first, msg]
+      val:
+        first: True
+        second: True
+        msg: True
     TestCase.assertTrue:
       # (expr, msg=None)
       main_func: 'assert'

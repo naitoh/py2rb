@@ -168,6 +168,7 @@ tests/numpy/ndarray.py [4]: ....                                 [OK]
 tests/numpy/ndarray2.py [4]: ....                                [OK]
 tests/numpy/ndarray3.py [4]: ....                                [OK]
 tests/numpy/not_like.py [4]: ....                                [OK]
+tests/numpy/np_copy.py [4]: ....                                 [OK]
 tests/numpy/product.py [4]: ....                                 [OK]
 tests/numpy/special_values.py [4]: ....                          [OK]
 tests/numpy/trigonometric_funcitons.py [4]: ....                 [OK]
@@ -207,6 +208,7 @@ tests/strings/ulcase.py [4]: ....                                [OK]
 tests/strings/zipstring.py [4]: ....                             [OK]
 tests/unittest/assertEqual.py [4]: ....                          [OK]
 tests/unittest/assertIn.py [4]: ....                             [OK]
+tests/unittest/assertIs.py [4]: ....                             [OK]
 tests/unittest/assertRaises.py [4]: ....                         [OK]
 tests/unittest/assertTrue.py [4]: ....                           [OK]
 tests/unittest/class.py [4]: ....                                [OK]
@@ -240,6 +242,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 241 tests in 121.978s
+Ran 243 tests in 116.518s
 
 OK (expected failures=30)
