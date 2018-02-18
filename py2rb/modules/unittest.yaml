@@ -53,8 +53,14 @@
 #         '*args': True            => Use star argument data
 #         '**kwds': True           => Use star keyword argument data
 #       rtn:
-#         - "%(start)s"            => customize return string (main_func + rtn) : argument count 1 (rtn[0]) case
-#         - "%(start)s %(second)s" => customize return string (main_func + rtn) : argument count 2 (rtn[1]) or over (rtn[-1]) case
+#         - ""                     => rtn[0] : customize return string (main_func + rtn) : argument count 0 case
+#         - "%(start)s"            => rtn[1] : customize return string (main_func + rtn) : argument count 1 case
+#         - "%(start)s %(second)s" => rtn[2] : customize return string (main_func + rtn) : argument count 2 or over (rtn[-1]) case
+#       rtn_star:
+#         - ""                     => rtn_star[0] : customize return string (main_func + rtn_star) : key (argument) count 0 case
+#         - "%(one)s"              => rtn_star[1] : customize return string (main_func + rtn_star) : key (argument) count 1 case
+#         - "%(one)s,%(*args)s"    => rtn_star[2] : customize return string (main_func + rtn_star) : key (argument) count 2 case
+#         - "%(one)s,%(*args)s,%(**kwds)s" => rtn_star[3] : customize return string (main_func + rtn_star) : key (argument) count 3 or over (rtn[-1]) case
 #
 #   ignore:
 #     Python method name:          # ignore case
@@ -122,7 +128,8 @@ unittest:
         callable: False
         '*args': True    # Use star argument data
         '**kwds': True   # Use star keyword argument data
-      rtn_star:
+      rtn_star: # rtn_star[0]-rtn_star[4]
+        - ""
         # <Python> self.assertRaises(TypeError, msg=None)
         # <Ruby> assert_raise(klass1, klass2, ..., message = "") { ... }
         - "(%(exception)s)"

@@ -34,8 +34,14 @@
 #         dtype:  '%(mod)s%(main_func)s.cast(%(data)s)'  # convert to Ruby method
 #         axis: axis               => Use keyword argument data
 #       rtn:
-#         - "%(start)s"            => customize return string (main_func + rtn) : argument count 1 (rtn[0]) case
-#         - "%(start)s %(second)s" => customize return string (main_func + rtn) : argument count 2 (rtn[1]) or over (rtn[-1]) case
+#         - ""                     => rtn[0] : customize return string (main_func + rtn) : argument count 0 case
+#         - "%(start)s"            => rtn[1] : customize return string (main_func + rtn) : argument count 1 case
+#         - "%(start)s %(second)s" => rtn[2] : customize return string (main_func + rtn) : argument count 2 or over (rtn[-1]) case
+#       rtn_star:
+#         - ""                     => rtn_star[0] : customize return string (main_func + rtn_star) : key (argument) count 0 case
+#         - "%(one)s"              => rtn_star[1] : customize return string (main_func + rtn_star) : key (argument) count 1 case
+#         - "%(one)s,%(*args)s"    => rtn_star[2] : customize return string (main_func + rtn_star) : key (argument) count 2 case
+#         - "%(one)s,%(*args)s,%(**kwds)s" => rtn_star[3] : customize return string (main_func + rtn_star) : key (argument) count 3 or over (rtn[-1]) case
 #
 #   ignore:
 #     Python method name:          # ignore case
@@ -405,7 +411,8 @@ numpy:
         stop: True
         step: True
         dtype: '%(mod)s%(main_func)s%(data)s'
-      rtn:
+      rtn: # rtn[0]-rtn[3]
+        - ""
         # <Python> np.arange(6)
         # <Ruby>   Numo::DFloat.new(6).seq(0)
         #          => [0, 1, 2, 3, 4, 5]
@@ -459,3 +466,40 @@ numpy:
         order: False                          # Not use argument data
       main_data_key: a                        # Main data : %(data)s
       main_func: '(%(data)s).dup'             # convert function : np.copy(a) => a.dup()
+    random.random: # => rand : instance_method
+      # uniformly distributed random numbers
+      # (size=None)
+      key:
+        - [size]
+      main_func: '%(mod)sDFloat'
+      val:
+        size: True                          # Use argument data
+      rtn: # rtn[0]-rtn[1]
+        # <Python> np.random.random()
+        # <Ruby>   Numo::DFloat.new().rand()
+        #          =>-0.456662
+        - '.new().rand()'
+        # <Python> np.random.ranndom((2,2)) # size
+        # <Ruby>   Numo::DFloat.new([2,2]).rand()
+        #          =>[[-0.456662, -0.656371], [-0.0616844, -0.97576]]
+        - '.new(%(size)s).rand()'
+    random.uniform: # => rand : instance_method # Tentative Implementation. rand() is not uniform distribution.
+      # (low=0.0, high=1.0, size=None)
+      key:
+        - [low, high, size]
+      main_func: '%(mod)sDFloat'
+      val:
+        low: True                           # Use argument data
+        high: True                          # Use argument data
+        size: True                          # Use argument data
+      rtn: # rtn[0]-rtn[3]
+        - ''
+        - ''
+        # <Python> np.random.uniform(-1, 1) # low, high
+        # <Ruby>   Numo::DFloat.new().rand(1-(-1)) + (-1)
+        #          =>-0.456662
+        - '.new().rand(%(high)s-(%(low)s)) + %(low)s'
+        # <Python> np.random.uniform(-1, 1, (2,2)) # low, high, size
+        # <Ruby>   Numo::DFloat.new([2,2]).rand(1-(-1)) + (-1)
+        #          =>[[-0.456662, -0.656371], [-0.0616844, -0.97576]]
+        - '.new(%(size)s).rand(%(high)s-(%(low)s)) + (%(low)s)'

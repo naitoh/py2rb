@@ -1739,7 +1739,7 @@ class RB(object):
         if key_list != False:
             if 'rtn_star' in method_map.keys():
                 for i in range(len(method_map['rtn_star'])):
-                    if len(key_list) == i + 1:
+                    if len(key_list) == i:
                         rtn = method_map['rtn_star'][i]
                         break
                 else:
@@ -1747,7 +1747,7 @@ class RB(object):
         if (rtn == False) and (rb_args != False):
             if 'rtn' in method_map.keys():
                 for i in range(len(method_map['rtn'])):
-                    if len(rb_args) == i + 1:
+                    if len(rb_args) == i:
                         rtn = method_map['rtn'][i]
                         break
                 else:
