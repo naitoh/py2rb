@@ -763,10 +763,15 @@ class RB(object):
         value = self.visit(node.value)
         for target in node.targets:
             if isinstance(target, (ast.Tuple, ast.List)):
-                # multiassign.py
-                """ x, y, z = [1, 2, 3] """
                 x = [self.visit(t) for t in target.elts]
-                target_str += "%s = " % ','.join(x)
+                if len(x) == 1:
+                    # expand array
+                    """ x, = [1] """
+                    target_str += "%s, = " % x[0]
+                else:
+                    # multi assign
+                    """ x, y, z = [1, 2, 3] """
+                    target_str += "%s = " % ','.join(x)
             elif isinstance(target, ast.Subscript):
                 name = self.visit(target.value)
                 if isinstance(target.slice, ast.Index):
