@@ -2556,7 +2556,7 @@ def convert_py2rb(s, dir_path, path='', base_path_count=0, modules=[], mod_paths
     for m in modules:
         t = ast.parse(m)
         v.visit(t)
-    v.clear()
+        v.clear() # clear self.__buffer
 
     # convert target file
     t = ast.parse(s)
