@@ -5,6 +5,7 @@ tests/*/*.rb
 tests/*/*.out
 tests/*/*.diff
 tests/*/*.err
+tests/*/*.cmd.txt
 tests/*.err
 tests/*.out
 tests/*/*/*.rb
