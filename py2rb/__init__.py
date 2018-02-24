@@ -837,9 +837,9 @@ class RB(object):
         #    self.write("%s = (%s/%s)" % (target, target, value))
         elif isinstance(node.op, ast.Div):
             if re.search(r"Numo::", target) or re.search(r"Numo::", value):
-                self.write("%s = (%s)/(%s)" % (target, target, value))
+                self.write("%s = %s / %s" % (target, self.ope_filter(target), self.ope_filter(value)))
             else:
-                self.write("%s = (%s)/(%s).to_f" % (target, target, value))
+                self.write("%s = %s / %s.to_f" % (target, self.ope_filter(target), self.ope_filter(value)))
         else:
             self.write("%s %s= %s" % (target, self.get_binary_op(node), value))
 
@@ -866,24 +866,32 @@ class RB(object):
         # ast.Tuple, ast.List, ast.*
         for_iter = self.visit(node.iter)
 
-        iter_dummy = self.new_dummy()
-        orelse_dummy = self.new_dummy()
-        exc_dummy = self.new_dummy()
+        if node.orelse:
+            orelse_dummy = self.new_dummy()
+            self.write("%s = false" % orelse_dummy)
 
         self.write("for %s in %s" % (for_target, for_iter))
         self.indent()
         for stmt in node.body:
             self.visit(stmt)
+
+        if node.orelse:
+            self.write("if %s == %s[-1]" % (for_target, for_iter))
+            self.indent()
+            self.write("%s = true" % orelse_dummy)
+            self.dedent()
+            self.write("end")
+
         self.dedent()
         self.write("end")
 
         if node.orelse:
-            self.write("if (%s) {" % orelse_dummy)
+            self.write("if %s" % orelse_dummy)
             self.indent()
             for stmt in node.orelse:
                 self.visit(stmt)
             self.dedent()
-            self.write("}")
+            self.write("end")
 
     @scope
     def visit_While(self, node):
@@ -892,16 +900,16 @@ class RB(object):
         """
 
         if not node.orelse:
-            self.write("while (%s)" % self.visit(node.test))
+            self.write("while %s" % self.visit(node.test))
         else:
             orelse_dummy = self.new_dummy()
 
-            self.write("var %s = false;" % orelse_dummy)
-            self.write("while (1) {");
-            self.write("    if (!(%s)) {" % self.visit(node.test))
-            self.write("        %s = true;" % orelse_dummy)
-            self.write("        break;")
-            self.write("    }")
+            self.write("%s = false" % orelse_dummy)
+            self.write("while true");
+            self.write("    unless %s" % self.visit(node.test))
+            self.write("        %s = true" % orelse_dummy)
+            self.write("        break")
+            self.write("    end")
 
         self.indent()
         for stmt in node.body:
@@ -911,12 +919,12 @@ class RB(object):
         self.write("end")
 
         if node.orelse:
-            self.write("if (%s) {" % orelse_dummy)
+            self.write("if %s" % orelse_dummy)
             self.indent()
             for stmt in node.orelse:
                 self.visit(stmt)
             self.dedent()
-            self.write("}")
+            self.write("end")
 
     def visit_IfExp(self, node):
         """
@@ -1517,10 +1525,10 @@ class RB(object):
         return "lambda{|%s| %s}" % (self.visit(node.args), self.visit(node.body))
 
     def visit_BoolOp(self, node):
-        return self.get_bool_op(node).join([ "(%s)" % self.visit(val) for val in node.values ])
+        return (" %s " % self.get_bool_op(node)).join([ "%s" % self.ope_filter(self.visit(val)) for val in node.values ])
 
     def visit_UnaryOp(self, node):
-        return "%s(%s)" % (self.get_unary_op(node), self.visit(node.operand))
+        return "%s%s" % (self.get_unary_op(node), self.visit(node.operand))
 
     def visit_BinOp(self, node):
         if isinstance(node.op, ast.Mod) and isinstance(node.left, ast.Str):
@@ -1538,11 +1546,11 @@ class RB(object):
             return "%s ** %s" % (left, right)
         if isinstance(node.op, ast.Div):
             if re.search(r"Numo::", left) or re.search(r"Numo::", right):
-                return "(%s)/(%s)" % (left, right)
+                return "%s / %s" % (self.ope_filter(left), self.ope_filter(right))
             else:
-                return "(%s)/(%s).to_f" % (left, right)
+                return "%s / %s.to_f" % (self.ope_filter(left), self.ope_filter(right))
 
-        return "(%s)%s(%s)" % (left, self.get_binary_op(node), right)
+        return "%s %s %s" % (self.ope_filter(left), self.get_binary_op(node), self.ope_filter(right))
 
     @scope
     def visit_Compare(self, node):
@@ -2077,13 +2085,13 @@ class RB(object):
             <Ruby>   (foo).to_f
             """
             if not isinstance(self.reverse_methods[func],  dict):
-                return "(%s).%s" % (rb_args_s, self.reverse_methods[func])
+                return "%s.%s" % (self.ope_filter(rb_args_s), self.reverse_methods[func])
             if len(rb_args) == 1:
                 if 'arg_count_1' in self.reverse_methods[func].keys():
-                    return "(%s).%s" % (rb_args_s, self.reverse_methods[func]['arg_count_1'])
+                    return "%s.%s" % (self.ope_filter(rb_args_s), self.reverse_methods[func]['arg_count_1'])
             else:
                 if 'arg_count_2' in self.reverse_methods[func].keys():
-                    return "(%s).%s(%s)" % (rb_args[0], self.reverse_methods[func]['arg_count_2'], ", ".join(rb_args[1:]))
+                    return "%s.%s(%s)" % (self.ope_filter(rb_args[0]), self.reverse_methods[func]['arg_count_2'], ", ".join(rb_args[1:]))
         elif func in self.methods_map.keys():
             return self.get_methods_map(self.methods_map[func], rb_args_base, ins)
         elif func in self.order_methods_with_bracket.keys():
@@ -2109,15 +2117,15 @@ class RB(object):
             if len(node.args) == 1:
                 """ [0, 1, 2] <Python> range(3)
                               <Ruby>   [].fill(0...3) {|_| _} """
-                return "[].fill(0...(%s)){|_| _}" % (rb_args[0])
+                return "[].fill(0...%s){|_| _}" % (self.ope_filter(rb_args[0]))
             elif len(node.args) == 2:
                 """ [1, 2] <Python> range(1,3)  # s:start, e:stop
                            <Ruby>   [].fill(0...3-1) {|_| _+1} """
-                return "[].fill(0...(%(e)s)-(%(s)s)){|_| _ + %(s)s}" % {'s':rb_args[0], 'e':rb_args[1]}
+                return "[].fill(0...%(e)s-%(s)s){|_| _ + %(s)s}" % {'s':self.ope_filter(rb_args[0]), 'e':self.ope_filter(rb_args[1])}
             else:
                 """ [1, 4, 7] <Python> range(1,10,3) # s:start, e:stop, t:step
                               <Ruby>   [].fill(0...10/3-1/3) {|_| _*3+1} """
-                return "[].fill(0...(%(e)s)/(%(t)s)-(%(s)s)/(%(t)s)){|_| _*(%(t)s) + %(s)s}" % {'s':rb_args[0], 'e':rb_args[1], 't':rb_args[2]}
+                return "[].fill(0...%(e)s/%(t)s-%(s)s/%(t)s){|_| _ * %(t)s + %(s)s}" % {'s':self.ope_filter(rb_args[0]), 'e':self.ope_filter(rb_args[1]), 't':self.ope_filter(rb_args[2])}
         elif func in self.list_map:
             """ [list]
             <Python> list(range(3))
@@ -2395,10 +2403,26 @@ class RB(object):
                 <Ruby>   *.join(' ')
                 """
                 return "%s(%s)" % (attr, self.visit(node.value))
+        v = self.visit(node.value)
         if attr != '':
-            return "%s.%s" % (self.visit(node.value), attr)
+            return "%s.%s" % (self.ope_filter(v), attr)
         else:
-            return "%s" % self.visit(node.value)
+            return v
+
+    def ope_filter(self, node_value):
+        if '-' in node_value:
+            return '(' + node_value + ')'
+        elif '+' in node_value:
+            return '(' + node_value + ')'
+        elif '*' in node_value:
+            return '(' + node_value + ')'
+        elif '/' in node_value:
+            return '(' + node_value + ')'
+        elif '%' in node_value:
+            return '(' + node_value + ')'
+
+        # not include operator
+        return node_value
 
     def visit_Tuple(self, node):
         """

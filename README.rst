@@ -116,10 +116,10 @@ The above will result in ::
           if arg === nil
             next
           end
-          txt += (arg).to_s
+          txt += arg.to_s
           txt += ","
         end
-        return (((txt)+(@name))+(" says:"))+((@fval).to_s)
+        return ((txt + @name) + " says:") + @fval.to_s
       end
       def self.register(f)
         @@registered.push(f)
@@ -175,18 +175,19 @@ The above will result in ::
     def AND(x1, x2)
       x = Numo::NArray.cast([x1, x2])
       w = Numo::NArray.cast([0.5, 0.5])
-      b = -(0.7)
-      tmp = (((w)*(x)).sum())+(b)
+      b = -0.7
+      tmp = ((w * x).sum()) + b
       if tmp <= 0
         return 0
       else
         return 1
       end
     end
+
     if __FILE__ == $0
       for xs in [[0, 0], [1, 0], [0, 1], [1, 1]]
         y = AND(xs[0], xs[1])
-        print((((xs).to_s)+(" -> "))+((y).to_s))
+        print((xs.to_s + (" -> ")) + y.to_s)
       end
     end
 

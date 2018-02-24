@@ -5,10 +5,20 @@ for x in a:
     print(x)
 
 # iterating over a tuple
-print('-- tuple --')
+print('-- tuple else case --')
 a = ('cats','dogs','squirrels')
 for x in a:
     print(x)
+else:
+    print('ok')
+
+print('-- tuple else break case --')
+for x in a:
+    print(x)
+    if x == 'squirrels':
+        break
+else:
+    print('ok')
 
 # iterating over a dictionary
 # sort order in python is undefined, so need to sort the results

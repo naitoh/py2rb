@@ -173,6 +173,7 @@ tests/numpy/product.py [4]: ....                                 [OK]
 tests/numpy/random_random.py [4]: ....                           [OK]
 tests/numpy/random_uniform.py [4]: ....                          [OK]
 tests/numpy/special_values.py [4]: ....                          [OK]
+tests/numpy/sum.py [4]: ....                                     [OK]
 tests/numpy/trigonometric_funcitons.py [4]: ....                 [OK]
 tests/numpy/type.py [4]: ....                                    [OK]
 tests/os/path_basename.py [4]: ....                              [OK]
@@ -244,6 +245,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 245 tests in 118.581s
+Ran 246 tests in 124.857s
 
 OK (expected failures=30)
