@@ -2116,22 +2116,21 @@ class RB(object):
             """ [range] """
             if len(node.args) == 1:
                 """ [0, 1, 2] <Python> range(3)
-                              <Ruby>   [].fill(0...3) {|_| _} """
-                return "[].fill(0...%s){|_| _}" % (self.ope_filter(rb_args[0]))
+                              <Ruby>   3.times """
+                return "%s.times" % (self.ope_filter(rb_args[0]))
             elif len(node.args) == 2:
-                """ [1, 2] <Python> range(1,3)  # s:start, e:stop
-                           <Ruby>   [].fill(0...3-1) {|_| _+1} """
-                return "[].fill(0...%(e)s-%(s)s){|_| _ + %(s)s}" % {'s':self.ope_filter(rb_args[0]), 'e':self.ope_filter(rb_args[1])}
+                """ [2, 3, 4] <Python> range(2,5)  # s:start, e:stop
+                              <Ruby>   2.upto(5-1) """
+                return "%(s)s.upto(%(e)s-1)" % {'s':self.ope_filter(rb_args[0]), 'e':self.ope_filter(rb_args[1])}
             else:
                 """ [1, 4, 7] <Python> range(1,10,3) # s:start, e:stop, t:step
-                              <Ruby>   [].fill(0...10/3-1/3) {|_| _*3+1} """
-                return "[].fill(0...%(e)s/%(t)s-%(s)s/%(t)s){|_| _ * %(t)s + %(s)s}" % {'s':self.ope_filter(rb_args[0]), 'e':self.ope_filter(rb_args[1]), 't':self.ope_filter(rb_args[2])}
+                              <Ruby>   1.step(10, 3) """
+                return "%(s)s.step(%(e)s, %(t)s)" % {'s':self.ope_filter(rb_args[0]), 'e':self.ope_filter(rb_args[1]), 't':self.ope_filter(rb_args[2])}
         elif func in self.list_map:
             """ [list]
             <Python> list(range(3))
-            <Ruby>   [].fill(0...3) {|_| _}
+            <Ruby>   3.times.to_a
             """
-            #return "[].%s" % (rb_args_s)
             if len(node.args) == 0:
                 return "[]"
             elif (len(node.args) == 1) and isinstance(node.args[0], ast.Str):
