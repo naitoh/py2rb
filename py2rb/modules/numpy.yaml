@@ -398,6 +398,42 @@ numpy:
         endpoint : False
         retstep : False
         dtype: '%(mod)s%(main_func)s%(data)s.linspace' # np.linspace(2.0, 3.0, num=5) => Numo::DFloat.linspace(2.0, 3.0, 5)
+    absolute: &absolute # => abs : instance_method (reverse case)
+      # absolute(x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj]) = <ufunc 'absolute'>
+      key:
+        - [x, out]
+      val:
+        x: False                              # Not use argument data
+        out: False                            # Not use argument data
+      main_data_key: x                        # Main data : %(data)s
+      main_func: '%(mod)sNArray.cast(%(data)s).abs'             # convert function : np.abs(a) => a.abs()
+    abs: *absolute
+    amax: &amax # => max : instance_method (reverse case)
+      # amax(a, axis=None, out=None, keepdims=<class 'numpy._globals._NoValue'>)
+      # => max(axis: nil, keepdims: false, nan: false)
+      key:
+        - [a, axis, out, keepdims]
+      val:
+        a: False                              # Not use argument data
+        axis: axis                            # Use keyword argument data
+        out: False                            # Not use argument data
+        keepdims: keepdims                    # Use keyword argument data
+      main_data_key: a                        # Main data : %(data)s
+      main_func: '%(mod)sNArray.cast(%(data)s).max'             # convert function : np.max(a) => a.max()
+    max: *amax
+    amin: &amin # => min : instance_method (reverse case)
+      # amin(a, axis=None, out=None, keepdims=<class 'numpy._globals._NoValue'>)
+      # => min(axis: nil, keepdims: false, nan: false)
+      key:
+        - [a, axis, out, keepdims]
+      val:
+        a: False                              # Not use argument data
+        axis: axis                            # Use keyword argument data
+        out: False                            # Not use argument data
+        keepdims: keepdims                    # Use keyword argument data
+      main_data_key: a                        # Main data : %(data)s
+      main_func: '%(mod)sNArray.cast(%(data)s).min'             # convert function : np.min(a) => a.min()
+    min: *amin
     arange: # => seq : instance_method
       # ([start, ]stop, [step, ]dtype=None)
       main_func_key: dtype                        # convert function key name

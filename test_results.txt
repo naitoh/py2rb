@@ -152,6 +152,7 @@ tests/modules/import_class.py [4]: ....                          [OK]
 tests/modules/import_global.py [4]: ....                         [OK]
 tests/modules/import_init.py [4]: ....                           [OK]
 tests/modules/import_multi.py [4]: ....                          [OK]
+tests/numpy/abs.py [4]: ....                                     [OK]
 tests/numpy/all.py [4]: ....                                     [OK]
 tests/numpy/any.py [4]: ....                                     [OK]
 tests/numpy/arange.py [4]: ....                                  [OK]
@@ -163,6 +164,7 @@ tests/numpy/full.py [4]: ....                                    [OK]
 tests/numpy/insert.py [4]: ....                                  [OK]
 tests/numpy/like.py [4]: ....                                    [OK]
 tests/numpy/linspace.py [4]: ....                                [OK]
+tests/numpy/max_min.py [4]: ....                                 [OK]
 tests/numpy/maximum_minimum.py [4]: ....                         [OK]
 tests/numpy/ndarray.py [4]: ....                                 [OK]
 tests/numpy/ndarray2.py [4]: ....                                [OK]
@@ -245,6 +247,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 246 tests in 124.857s
+Ran 248 tests in 120.654s
 
 OK (expected failures=30)
