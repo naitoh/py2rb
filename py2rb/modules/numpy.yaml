@@ -211,6 +211,22 @@ numpy:
         dtype: '%(mod)s%(main_func)s.new_like'    # np.empty_like(x) => Numo::NArray.new_like(x)
         order: False                              # Not use argument data
         subok: False                              # Not use argument data
+    empty: # => Numo::NArray.new : instance_method
+      # empty(shape, dtype=float, order='C')
+      #  e.g.
+      #    np.empty(shape)                   => Numo::DFloat.new(shape)
+      #    np.empty(shape, dtype=np.float32) => Numo::SFloat.new(shape)
+      key:
+        - [shape, dtype, order]
+      main_data_key: shape                        # Main data
+      main_func_key: dtype                        # convert function key name
+      main_func_hash_nm: 'DFloat'                 # convert function name (not match(default) case)
+      main_func_hash: *func_hash                  # convert function name
+      bracket: False
+      val:
+        shape: False                              # Not use argument data
+        dtype: '%(mod)s%(main_func)s.new(%(data)s)' # convert function
+        order: False                              # Not use argument data
     ones: # => ones : class_method
       # ones(shape, dtype=None, order='C')
       # => Numo::DFloat.ones(*args)
