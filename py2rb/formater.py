@@ -39,6 +39,8 @@ class Formater(object):
         """
         Writes the string text to the buffer with indentation and a newline if not specified otherwise.
         """
+        if text == None:
+            raise RubyError("Convert Error.")
         if indent:
             self.__buffer.append(self.__indent_temp)
         self.__buffer.append(text)

@@ -236,6 +236,9 @@ class RB(object):
         self.classes = ['dict', 'list', 'tuple']
         # This is the name of the class that we are currently in:
         self._class_name = None
+        # This is the name of the ruby class that we are currently in:
+        self._rclass_name = None
+
         # This is use () case of the tuple that we are currently in:
         self._tuple_type = '[]' # '()' : "(a, b)" , '[]' : "[a, b]", '=>': "%s => %s" (Hash), '': 'a, b'
         self._func_args_len = 0
@@ -247,33 +250,44 @@ class RB(object):
         #All calls to names within _class_names will be preceded by 'new'
         # Python original class name
         self._class_names = set()
+
         # Ruby class name (first charcer Capitalize)
         self._rclass_names = set()
         self._classes = {}
+
+        # This lists all inherited class names:
+        self._classes_base_classes = {}
+
         # This lists all function names:
         self._function = []
+
         # This lists all arguments in a function:
         self._function_args = []
         self._functions = {}
         self._functions_rb_args_default = {}
+
         # This lists all instance functions in the class scope:
         self._self_functions = []
+        self._classes_self_functions = {}
         self._self_functions_args = {}
+        self._classes_self_functions_args = {}
+
         # This lists all static functions (Ruby's class method) in the class scope:
         self._class_functions = []
+        self._classes_functions = {}
         self._class_functions_args = {}
         self._classes_class_functions_args = {}
-        self._classes_self_functions_args = {}
-        self._classes_functions = {}
-        self._classes_self_functions = {}
+
         # This lists all static variables (Ruby's class variables) in the class scope:
         self._class_variables = []
+        self._classes_variables = {}
+
         # This lists all instance variables (Ruby's class variables) in the class scope:
         self._class_self_variables = []
-        self._classes_variables = {}
-        self._base_classes = []
+
         # This lists all lambda functions:
         self._lambda_functions = []
+
         self._import_files = []
         self._imports = []
         self._call = False
@@ -586,7 +600,6 @@ class RB(object):
         self._class_self_variables = []
         self._self_functions_args = {}
         self._class_functions_args = {}
-        self._base_classes = []
 
         # [Inherited Class Name convert]
         # <Python> class Test(unittest.TestCase): => <Ruby> class Test < Test::Unit::TestCase
@@ -596,35 +609,58 @@ class RB(object):
             bases.remove('Object')
         if 'object' in bases:
             bases.remove('object')
-        self._base_classes = bases
+        if self._verbose:
+            print("bases : %s" % bases)
 
+        # [Inherited Class Name]
         base_classes = []
+        base_rclasses = []
         for base in bases:
             if base in self.mod_class_name.keys():
-                base_classes.append(self.mod_class_name[base])
+                base_rclasses.append(self.mod_class_name[base])
             else:
-                base_classes.append(base)
+                base_rclasses.append(base)
+
+            if base in self._classes_base_classes:
+                inherited_bases = self._classes_base_classes[base]
+                inherited_bases.append(base)
+            else:
+                inherited_bases = [base]
+            for i_base in inherited_bases:
+                if i_base not in base_classes:
+                    base_classes.append(i_base)
+
+        if self._verbose:
+            print("ClassDef class_name[%s] base_classes: %s base_rclasses: %s" % (node.name, base_classes, base_rclasses))
+
+        self._class_name = node.name
+        self._classes_base_classes[node.name] = base_classes
 
         # [Inherited Class Name] <Python> class foo(bar) => <Ruby> class Foo < Bar
-        bases = [cls[0].upper() + cls[1:] for cls in base_classes]
+        bases = [cls[0].upper() + cls[1:] for cls in base_rclasses]
 
         if not bases:
             bases = []
-        class_name = node.name
 
         # self._classes remembers all classes defined
-        self._classes[class_name] = node
-        self._class_names.add(class_name)
+        self._classes[node.name] = node
+        self._class_names.add(node.name)
 
         # [Class Name]  <Python> class foo: => <Ruby> class Foo
-        class_name = class_name[0].upper() + class_name[1:]
+        class_name = node.name
+        rclass_name = class_name[0].upper() + class_name[1:]
+        if self._verbose:
+           print("ClassDef class_name[%s] bases: %s" % (node.name, bases))
         if len(bases) == 0:
-            self.write("class %s" % (class_name))
+            self.write("class %s" % (rclass_name))
+        elif len(bases) == 1:
+            self.write("class %s < %s" % (rclass_name, bases[-1]))
         else:
-            self.write("class %s < %s" % (class_name, ', '.join(bases)))
+            sys.stderr.write("Warning : Multiple inheritance is not supported : class_name[%s] < super class %s\n" % (node.name, bases))
+            self.write("class %s < %s # %s" % (rclass_name, bases[-1], bases[0:-1]))
         self.indent()
-        self._class_name = class_name
-        self._rclass_names.add(class_name)
+        self._rclass_name = rclass_name
+        self._rclass_names.add(rclass_name)
 
         from ast import dump
         #~ methods = []
@@ -645,6 +681,9 @@ class RB(object):
             self.write("end")
 
         self._classes_functions[node.name] = self._class_functions
+        if self._verbose:
+            print("self._self_functions : %s" % self._self_functions)
+            print("self._classes_self_functions : %s" % self._classes_self_functions)
         self._classes_self_functions[node.name] = self._self_functions
 
         for stmt in node.body:
@@ -680,6 +719,7 @@ class RB(object):
         self._classes_self_functions_args[node.name] = self._self_functions_args
         self._classes_variables[node.name] = self._class_variables
         self._class_name = None
+        self._rclass_name = None
 
         for v in (self._class_variables):
             self.write("def self.%s; @@%s; end" % (v,v))
@@ -699,7 +739,6 @@ class RB(object):
         self._class_functions_args = {}
         self._class_variables = []
         self._class_self_variables = []
-        self._base_classes = []
 
     def visit_Return(self, node):
         if node.value is not None:
@@ -1897,18 +1936,21 @@ class RB(object):
         if not isinstance(node.func, ast.Call):
             self._call = True
         func = self.visit(node.func)
+        if self._verbose:
+            print("Call func_name[%s]" % func)
         if not isinstance(node.func, ast.Call):
             self._call = False
 
         """ [Inherited Instance Method] """
         opt = None
-        for base_class in self._base_classes:
-            base_func = "%s.%s" % (base_class, func)
-            if base_func in self.methods_map.keys():
-                if 'option' in self.methods_map[base_func].keys():
-                    opt = self.methods_map[base_func]['option']
-                    if self._verbose:
-                        print("Call option: %s : %s" % (func, opt))
+        if self._class_name:
+            for base_class in self._classes_base_classes[self._class_name]:
+                base_func = "%s.%s" % (base_class, func)
+                if base_func in self.methods_map.keys():
+                    if 'option' in self.methods_map[base_func].keys():
+                        opt = self.methods_map[base_func]['option']
+                        if self._verbose:
+                            print("Call option: %s : %s" % (func, opt))
 
         if (not func in self.iter_map) and (opt != 'no_method'):
             for i in range(len(rb_args)):
@@ -2176,10 +2218,14 @@ class RB(object):
                      foo.call(4)
             """
             return "%s.call(%s)" % (func, rb_args_s)
-        else:
+        elif self._class_name:
             """ [Inherited Instance Method] """
-            for base_class in self._base_classes:
+            if self._verbose:
+                print("self._classes_base_classes : %s" % self._classes_base_classes[self._class_name])
+            for base_class in self._classes_base_classes[self._class_name]:
                 base_func = "%s.%s" % (base_class, func)
+                if self._verbose:
+                    print("base_func : %s" % base_func)
                 if base_func in self.methods_map.keys():
                     if self._verbose:
                         print("Call Inherited Instance Method : %s : base_func %s" % (base_func, rb_args))
@@ -2190,15 +2236,15 @@ class RB(object):
                     <Ruby>   assert_equal()
                     """
                     return "%s(%s)" % (self.order_methods_with_bracket[base_func], ','.join(rb_args))
-            else:
-                if (func in self._scope or func[0] == '@') and \
-                   func.find('.') == -1: # Proc call
-                    return "%s.(%s)" % (func, rb_args_s)
 
-                if func[-1] == ')':
-                    return "%s" % (func)
-                else:
-                    return "%s(%s)" % (func, rb_args_s)
+        if (func in self._scope or func[0] == '@') and \
+           func.find('.') == -1: # Proc call
+            return "%s.(%s)" % (func, rb_args_s)
+
+        if func[-1] == ')':
+            return "%s" % (func)
+        else:
+            return "%s(%s)" % (func, rb_args_s)
 
     def visit_Raise(self, node):
         """
@@ -2311,15 +2357,15 @@ class RB(object):
                     <Python> self.bar()
                     <Ruby>   Foo.bar()
                     """
-                    return "%s.%s" % (self._class_name, attr)
+                    return "%s.%s" % (self._rclass_name, attr)
                 elif (attr in self._self_functions):
                     """ [Instance Method] : 
                     <Python> self.bar()
                     <Ruby>   bar()
                     """
                     return "%s" % (attr)
-                else:
-                    for base_class in self._base_classes:
+                elif self._class_name:
+                    for base_class in self._classes_base_classes[self._class_name]:
                         func = "%s.%s" % (base_class, attr)
                         """ [Inherited Instance Method] : 
                         <Python> self.(assert)
@@ -2343,7 +2389,7 @@ class RB(object):
                             """
                         self._class_self_variables.append(attr)
                         return "@%s" % (attr)
-            elif node.value.id in self._base_classes:
+            elif self._class_name and (node.value.id in self._classes_base_classes[self._class_name]):
                 """ [Inherited Class method call]
                 <Python> class bar(object):
                              def __init__(self,name):
@@ -2370,7 +2416,7 @@ class RB(object):
                 else:
                     return attr
 
-            elif (node.value.id[0].upper() + node.value.id[1:]) == self._class_name:
+            elif node.value.id == self._class_name:
                 if (attr in self._class_variables):
                     """ [class variable] : 
                     <Python> foo.bar

@@ -37,6 +37,9 @@ def test2():
 
 class TestRunnable(unittest.TestCase):
 
+    def bar(self):
+        assert False
+
     def test_runnable(self):
         ''' NameError: name 'foo' is not defined '''
         with self.assertRaises(NameError):
@@ -55,5 +58,11 @@ class TestRunnable(unittest.TestCase):
         self.assertRaises(MyException2, test, 'a', 'b')
         self.assertRaises(MyException3, test, 'a', 'b', c=10, d=20)
         self.assertRaises(MyException, test2)
+        self.assertRaises(AssertionError, self.bar)
+
+class TestRunnable2(TestRunnable):
+
+    def test_runnable2(self):
+        self.assertRaises(AssertionError, self.bar)
 
 unittest.main()
