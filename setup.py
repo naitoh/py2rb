@@ -16,7 +16,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='py2rb',
-    version='0.1.1',
+    version='0.1.2',
     description='A code translator using AST from Python to Ruby',
     long_description=long_description,
     url='https://github.com/naitoh/py2rb',
