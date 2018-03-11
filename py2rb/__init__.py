@@ -28,6 +28,34 @@ class RB(object):
         with open(filename, 'r') as f:
             module_map.update(yaml.load(f))
 
+    using_map = {
+        'EnumerableEx'        : False,
+        'PythonZipEx'         : False,
+        'PythonPrintEx'       : True,
+        'PythonIsBoolEx'      : False,
+        'PythonIndexEx'       : False,
+        'PythonFindEx'        : False,
+        'PythonSplitEx'       : False,
+        'PythonStripEx'       : False,
+        'PythonStringCountEx' : True,
+        'PythonRemoveEx'      : False,
+        'PythonMethodEx'      : False,
+    }
+
+    using_key_map = {
+        'all'        : 'EnumerableEx',
+        'any'        : 'EnumerableEx',
+        'zip'        : 'PythonZipEx',
+        'find'       : 'PythonIndexEx',
+        'rfind'      : 'PythonIndexEx',
+        'split'      : 'PythonSplitEx',
+        'strip'      : 'PythonStripEx',
+        'lstrip'     : 'PythonStripEx',
+        'rstrip'     : 'PythonStripEx',
+        'remove'     : 'PythonRemoveEx',
+        'getattr'    : 'PythonMethodEx',
+    }
+
     # python 3
     name_constant_map = {
         True  : 'true',
@@ -203,6 +231,12 @@ class RB(object):
 
     def get_result(self):
         return self._result
+
+    def set_using(self):
+        for key, value in self.using_map.items():
+            if value:
+                 self.write("using %s" % key)
+        self.write('')
 
     def __init__(self, path='', dir_path='', base_path_count=0, mod_paths = {}, verbose=False):
         self._verbose = verbose
@@ -974,6 +1008,7 @@ class RB(object):
         if isinstance(node.test, (ast.NameConstant, ast.Compare)):
             return "(%s) ? %s : %s" % (self.visit(node.test), body, or_else)
         else:
+            self.using_map['PythonIsBoolEx'] = True
             return "is_bool(%s) ? %s : %s" % (self.visit(node.test), body, or_else)
 
     @scope
@@ -984,6 +1019,7 @@ class RB(object):
         if isinstance(node.test, (ast.NameConstant, ast.Compare)):
             self.write("if %s" % self.visit(node.test))
         else:
+            self.using_map['PythonIsBoolEx'] = True
             self.write("if is_bool(%s)" % self.visit(node.test))
 
         self.indent()
@@ -1655,6 +1691,8 @@ class RB(object):
         id = node.id
         try:
             if self._call:
+                if id in self.using_key_map:
+                    self.using_map[self.using_key_map[id]] = True
                 id = self.func_name_map[id]
             else:
                 if id in self.methods_map.keys():
@@ -2053,6 +2091,8 @@ class RB(object):
                 """
                 return "%s.%s :@%s" % (rb_args[0], self.methods_map_middle[func], rb_args[1][1:-1])
             elif func == 'getattr':
+                self.using_map[self.using_key_map[func]] = True
+
                 if len(rb_args) == 2:
                     return "%s.%s(%s)" % (rb_args[0], self.methods_map_middle[func], rb_args[1])
                 else:
@@ -2126,6 +2166,9 @@ class RB(object):
             <Python> float(foo)
             <Ruby>   (foo).to_f
             """
+            if func in self.using_key_map:
+                self.using_map[self.using_key_map[func]] = True
+
             if not isinstance(self.reverse_methods[func],  dict):
                 return "%s.%s" % (self.ope_filter(rb_args_s), self.reverse_methods[func])
             if len(rb_args) == 1:
@@ -2286,6 +2329,8 @@ class RB(object):
         Attribute(expr value, identifier attr, expr_context ctx)
         """
         attr = node.attr
+        if self._verbose:
+            print("Attribute attr_name[%s]" % attr)
         if (attr != '') and isinstance(node.value, ast.Name) and (node.value.id != 'self'):
             mod_attr = "%s.%s" % (self.visit(node.value), attr)
         else:
@@ -2295,6 +2340,9 @@ class RB(object):
                 """ [Attribute method converter]
                 <Python> fuga.append(bar)
                 <Ruby>   fuga.push(bar)   """
+                if attr in self.using_key_map:
+                    self.using_map[self.using_key_map[attr]] = True
+
                 attr = self.attribute_map[attr]
             if mod_attr in self.attribute_map.keys():
                 """ [Attribute method converter]
@@ -2320,6 +2368,8 @@ class RB(object):
                 <Python> fuga.split(foo,bar)
                 <Ruby>   fuga.split_p(foo,bar)   """
                 if attr in self.attribute_with_arg.keys():
+                    if attr in self.using_key_map:
+                        self.using_map[self.using_key_map[attr]] = True
                     attr = self.attribute_with_arg[attr]
 
         if isinstance(node.value, ast.Call):
@@ -2450,6 +2500,8 @@ class RB(object):
                 return "%s(%s)" % (attr, self.visit(node.value))
         v = self.visit(node.value)
         if attr != '':
+            if attr in self.using_key_map:
+                 self.using_map[self.using_key_map[attr]] = True
             return "%s.%s" % (self.ope_filter(v), attr)
         else:
             return v
@@ -2634,7 +2686,14 @@ def convert_py2rb(s, dir_path, path='', base_path_count=0, modules=[], mod_paths
     else:
         v.mode(0)
     v.visit(t)
-    return (v.get_result(), v.read())
+
+    data = v.read()
+    v.clear() # clear self.__buffer
+
+    v.set_using()
+    header = v.read()
+
+    return (v.get_result(), header, data)
 
 def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=None, require=None, builtins=None, output=None, force=None, no_stop=False, verbose=False):
     if output:
@@ -2650,26 +2709,18 @@ def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=
     if require:
         if builtins_dir:
             require = open(os.path.join(builtins_dir, "require.rb"))
-            using = open(os.path.join(builtins_dir, "using.rb"))
         else:
             require = open("require.rb")
-            using = open("using.rb")
         output.write(require.read())
-        output.write(using.read())
         require.close
-        using.close
 
     if builtins:
         if builtins_dir:
             builtins = open(os.path.join(builtins_dir, "module.rb"))
-            using = open(os.path.join(builtins_dir, "using.rb"))
         else:
             builtins = open("module.rb")
-            using = open("using.rb")
         output.write(builtins.read())
-        output.write(using.read())
         builtins.close
-        using.close
 
     mods = []
     mod_paths = OrderedDict()
@@ -2693,7 +2744,9 @@ def convert_py2rb_write(filename, base_path_count=0, subfilenames=[], base_path=
             dir_path = ''
     with open(filename, 'r') as f:
         s = f.read() #unsafe for large files!
-        rtn, data = convert_py2rb(s, dir_path, name_path, base_path_count, mods, mod_paths, no_stop=no_stop, verbose=verbose)
+        rtn, header, data = convert_py2rb(s, dir_path, name_path, base_path_count, mods, mod_paths, no_stop=no_stop, verbose=verbose)
+        if require or builtins:
+            output.write(header)
         output.write(data)
     output.close
     return rtn

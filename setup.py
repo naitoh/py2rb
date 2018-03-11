@@ -39,7 +39,6 @@ setup(
                   'modules/numpy.yaml',
                   'modules/unittest.yaml',
                   'builtins/require.rb',
-                  'builtins/using.rb',
                   'builtins/module.rb', ]
     },
     install_requires=[

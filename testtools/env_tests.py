@@ -32,15 +32,12 @@ class EnviromentTest(unittest.TestCase):
         if not os.path.exists("py2rb/builtins/module.rb"):
             self.stop()
             raise RuntimeError("""Can't find the "py2rb/builtins/module.rb" command.""")
-        if not os.path.exists("py2rb/builtins/using.rb"):
-            self.stop()
-            raise RuntimeError("""Can't find the "py2rb/builtins/using.rb" command.""")
         if not os.path.exists("py2rb/builtins/require.rb"):
             self.stop()
             raise RuntimeError("""Can't find the "py2rb/builtins/require.rb" command.""")
         self.reportProgres()
 
     def __str__(self):
-        return 'Looking for "ruby", "py2rb/builtins/module.rb", "py2rb/builtins/using.rb", "py2rb/builtins/require.rb" [4]: '
+        return 'Looking for "ruby", "py2rb/builtins/module.rb", "py2rb/builtins/require.rb" [3]:'
 
 
