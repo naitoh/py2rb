@@ -173,6 +173,7 @@ tests/numpy/ndarray3.py [4]: ....                                [OK]
 tests/numpy/not_like.py [4]: ....                                [OK]
 tests/numpy/np_copy.py [4]: ....                                 [OK]
 tests/numpy/product.py [4]: ....                                 [OK]
+tests/numpy/random_randint.py [4]: ....                          [OK]
 tests/numpy/random_random.py [4]: ....                           [OK]
 tests/numpy/random_uniform.py [4]: ....                          [OK]
 tests/numpy/special_values.py [4]: ....                          [OK]
@@ -248,6 +249,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 249 tests in 118.464s
+Ran 250 tests in 121.248s
 
 OK (expected failures=30)

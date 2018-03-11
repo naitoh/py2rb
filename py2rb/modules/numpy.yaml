@@ -555,3 +555,29 @@ numpy:
         # <Ruby>   Numo::DFloat.new([2,2]).rand(1-(-1)) + (-1)
         #          =>[[-0.456662, -0.656371], [-0.0616844, -0.97576]]
         - '.new(%(size)s).rand(%(high)s-(%(low)s)) + (%(low)s)'
+    random.randint: # => rand : instance_method
+      # (low, high=None, size=None, dtype='l')
+      key:
+        - [low, high, size, dtype]
+      main_func_hash_nm: 'Int32'            # convert function name (not match(default) case)
+      main_func_hash: *func_hash            # convert function name
+      main_func_key: dtype                  # convert function key name
+      val:
+        low: True                           # Use argument data
+        high: True                          # Use argument data
+        size: True                          # Use argument data
+        dtype: '%(mod)s%(main_func)s'       # convert function
+      rtn: # rtn[0]-rtn[3]
+        - ''
+        # <Python> np.random.randint(3) # high
+        # <Ruby>   Numo::Int32.new([]).rand(3)
+        #          => 3
+        - '.new([]).rand(%(low)s)'
+        # <Python> np.random.randint(1,3) # low, high
+        # <Ruby>   Numo::Int32.new([]).rand(3 - 1) + 1
+        #          => 2
+        - '.new([]).rand(%(high)s-(%(low)s)) + %(low)s'
+        # <Python> np.random.randint(1,3,5) # low, high, size
+        # <Ruby>   Numo::Int32.new([2,2]).rand(3 - 1) + 1
+        #          => [[2, 2], [1, 1]]
+        - '.new(%(size)s).rand(%(high)s-(%(low)s)) + (%(low)s)'
