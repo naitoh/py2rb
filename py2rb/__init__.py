@@ -2857,7 +2857,7 @@ def main():
 
     # py_path       : python file path
     def get_mod_path(py_path):
-        results = set()
+        results = []
         dir_path = os.path.dirname(py_path) if os.path.dirname(py_path) else '.'
         dir_path = os.path.relpath(dir_path, base_dir_path)
         with open(py_path, 'r') as f:
@@ -2876,7 +2876,8 @@ def main():
                     # from modules.moda import ModA
                     # => (tests/modules/) modules/moda.py  # => class ModA
                     res = res_f[0]
-                results.add(res)
+                if res not in results:
+                    results.append(res)
                 if res_f[1] != '*':
                     if res_f[0] == '.':
                         # from . import hoge
@@ -2888,7 +2889,8 @@ def main():
                         # (tests/modules/) modules/moda/ModA.py
                         # (tests/modules/) modules/moda.py
                         res = os.path.normpath(os.path.join(res_f[0], res_f[1]))
-                    results.add(res)
+                    if res not in results:
+                        results.append(res)
             results_f = re.findall(r"^import +([.\w]+)", text, re.M)
             for res_f in results_f:
                 # from modules.moda import ModA
@@ -2900,10 +2902,11 @@ def main():
                     res = dir_path
                 else:
                     res = res_f
-                results.add(res)
+                if res not in results:
+                    results.append(res)
             if options.verbose:
                 print("py_path: %s, results: %s" % (py_path, results))
-        subfilenames = set()
+        subfilenames = []
         if results:
             for result in results:
                 sf = os.path.normpath(os.path.join(base_dir_path, result.replace('.', '/') + '.py'))
@@ -2912,7 +2915,8 @@ def main():
                 if sf in subfilenames:
                     continue
                 if os.path.exists(sf):
-                    subfilenames.add(sf)
+                    if sf not in subfilenames:
+                        subfilenames.append(sf)
                     if options.verbose:
                         print("[Found]     sub_filename: %s" % sf)
                     continue
@@ -2920,7 +2924,8 @@ def main():
                 if sf in subfilenames:
                     continue
                 if os.path.exists(sf):
-                    subfilenames.add(sf)
+                    if sf not in subfilenames:
+                        subfilenames.append(sf)
                     if options.verbose:
                         print("[Found]     sub_filename: %s" % sf)
                     continue
