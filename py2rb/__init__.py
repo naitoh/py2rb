@@ -2616,11 +2616,10 @@ class RB(object):
                     self._is_string_symbol = True
             index = self.visit(node.slice)
             self._is_string_symbol = False
-            return "%s[%s]" % (name, index)
-            #return "%s%s" % (name, index)
+            return "%s[%s]" % (self.ope_filter(name), index)
         if isinstance(node.slice, (ast.ExtSlice)):
             s = self.visit(node.slice)
-            return "%s[%s]" % (name, s)
+            return "%s[%s]" % (self.ope_filter(name), s)
         else:
             # ast.Slice
             index = self.visit(node.slice)
@@ -2630,9 +2629,9 @@ class RB(object):
                 <Ruby>   [8, 9, 10, 11, 12, 13, 14][1...6].each_slice(2).map(&:first)
                 """
                 indexs = index.split(',')
-                return "%s[%s].%s" % (name, indexs[0], indexs[1])
+                return "%s[%s].%s" % (self.ope_filter(name), indexs[0], indexs[1])
             else:
-                return "%s[%s]" % (name, index)
+                return "%s[%s]" % (self.ope_filter(name), index)
 
     def visit_Index(self, node):
         return self.visit(node.value)
