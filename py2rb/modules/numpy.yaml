@@ -269,6 +269,13 @@ numpy:
     inf:
       bracket: False
       main_func: 'Float::INFINITY'
+    sqrt: # => sqrt : class_method
+      # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
+      main_func: '%(mod)sNMath.sqrt'              # np.sqrt(x) => Numo::NMath.sqrt(x)
+      key:
+        - [x, out, where, casting, order, dtype, subok]
+      val:
+        x: True
     exp: # => exp : class_method
       # (x, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj])
       main_func: '%(mod)sNMath.exp'               # np.exp(-x) => Numo::NMath.exp(-x)
