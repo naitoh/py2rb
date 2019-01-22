@@ -542,6 +542,23 @@ numpy:
         # <Ruby>   Numo::DFloat.new([2,2]).rand()
         #          =>[[-0.456662, -0.656371], [-0.0616844, -0.97576]]
         - '.new(%(size)s).rand()'
+    random.rand: # => rand : instance_method
+      # uniformly distributed random numbers
+      # (size=None)
+      key:
+        - ['*args']
+      val:
+        '*args': True    # Use star argument data
+      main_func: '%(mod)sDFloat'
+      rtn: # rtn[0]-rtn[1]
+        # <Python> np.random.rand()
+        # <Ruby>   Numo::DFloat.new().rand()
+        #          =>-0.456662
+        #- '.new().rand()'
+        # <Python> np.random.rand(2,2) # size
+        # <Ruby>   Numo::DFloat.new([2,2]).rand()
+        #          =>[[-0.456662, -0.656371], [-0.0616844, -0.97576]]
+        - ".new(%(*args)s).rand()"
     random.uniform: # => rand : instance_method # Tentative Implementation. rand() is not uniform distribution.
       # (low=0.0, high=1.0, size=None)
       key:
