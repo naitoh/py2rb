@@ -33,6 +33,9 @@
 #         object: False            => Not use argument data
 #         dtype:  '%(mod)s%(main_func)s.cast(%(data)s)'  # convert to Ruby method
 #         axis: axis               => Use keyword argument data
+#         places: '1e-%(places)s'  => String conversion processing. (Same key only)
+#         '*args': True            => Use star argument data
+#         '**kwds': True           => Use star keyword argument data
 #       rtn:
 #         - ""                     => rtn[0] : customize return string (main_func + rtn) : argument count 0 case
 #         - "%(start)s"            => rtn[1] : customize return string (main_func + rtn) : argument count 1 case

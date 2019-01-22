@@ -1903,8 +1903,12 @@ class RB(object):
                         m_args.append(value)
                         args_hash[key] = value
                     elif type(method_map['val'][key]) == str:
-                        m_args.append("%s: %s" % (key, value))
-                        args_hash[key] = value
+                        if "%" in method_map['val'][key]:
+                            m_args.append(method_map['val'][key] % {key: value})
+                            args_hash[key] = method_map['val'][key] % {key: value}
+                        else:
+                            m_args.append("%s: %s" % (key, value))
+                            args_hash[key] = value
                     elif method_map['val'][key] == False:
                         continue
                     elif self._verbose:

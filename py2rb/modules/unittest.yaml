@@ -50,6 +50,7 @@
 #         object: False            => Not use argument data
 #         dtype:  '%(mod)s%(main_func)s.cast(%(data)s)'  # convert to Ruby method
 #         axis: axis               => Use keyword argument data
+#         places: '1e-%(places)s'  => String conversion processing. (Same key only)
 #         '*args': True            => Use star argument data
 #         '**kwds': True           => Use star keyword argument data
 #       rtn:
@@ -97,6 +98,25 @@ unittest:
         first: True
         second: True
         msg: True
+    TestCase.assertAlmostEqual:
+      # (first, second, places=7, msg=None, delta=None)
+      main_func: 'assert_in_delta'
+      key:
+        - [first, second, places, msg, delta]
+      key_order:
+        # - places case
+        #   <Python> self.assertAlmostEqual(1.0, 1.00000001, 7, '''comment test''')
+        #   <Ruby>   assert_in_delta(1.00000001, 1.0, 1e-1*1e-7, "comment test")
+        # - delta case
+        #   <Python> self.assertAlmostEqual(1.0, 1.00000001, msg='''comment test''', delta=1e-8)
+        #   <Ruby>   assert_in_delta(1.00000001, 1.0, 1e-08, "comment test")
+        - [second, first, places, delta, msg]
+      val:
+        first: True
+        second: True
+        places: '1e-1*1e-%(places)s'
+        msg: True
+        delta: True
     TestCase.assertIsInstance:
       # (obj, cls, msg=None)
       key:

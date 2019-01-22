@@ -215,6 +215,7 @@ tests/strings/strip.py [4]: ....                                 [OK]
 tests/strings/strip1.py [4]: ....                                [OK]
 tests/strings/ulcase.py [4]: ....                                [OK]
 tests/strings/zipstring.py [4]: ....                             [OK]
+tests/unittest/assertAlmostEqual.py [4]: ....                    [OK]
 tests/unittest/assertEqual.py [4]: ....                          [OK]
 tests/unittest/assertIn.py [4]: ....                             [OK]
 tests/unittest/assertIs.py [4]: ....                             [OK]
@@ -252,6 +253,6 @@ tests/strings/replace2.py [4]: ..                     known to [FAIL]
 tests/strings/string_format_efg.py [4]: ..            known to [FAIL]
 tests/strings/string_format_o.py [4]: ...             known to [FAIL]
 tests/strings/string_format_x.py [4]: ...             known to [FAIL]
-Ran 253 tests in 159.995s
+Ran 254 tests in 157.455s
 
 OK (expected failures=30)
