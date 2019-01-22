@@ -97,6 +97,25 @@ unittest:
         first: True
         second: True
         msg: True
+    TestCase.assertIsInstance:
+      # (obj, cls, msg=None)
+      key:
+        - [obj, cls]
+        - [obj, cls, msg]
+      val:
+        obj: True                              # Use argument data
+        cls: True                              # Use argument data
+        msg: True                              # Use argument data
+      main_func: 'assert_true'
+      rtn: # rtn[0]-rtn[3]
+        - ''
+        - ''
+        # <Python> assertIsInstance(obj, cls)
+        # <Ruby>   assert_true obj.is_a?(cls)
+        - ' (%(obj)s).is_a?(%(cls)s)'
+        # <Python> assertIsInstance(obj, cls, msg)
+        # <Ruby>   assert_true obj.is_a?(cls), msg
+        - ' (%(obj)s).is_a?(%(cls)s), %(msg)s'
     TestCase.assertIs:
       # (first, second, msg=None)
       main_func: 'assert_equal'
