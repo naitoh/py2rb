@@ -26,7 +26,7 @@ class RB(object):
     yaml_files = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'modules/*.yaml')
     for filename in glob.glob(yaml_files):
         with open(filename, 'r') as f:
-            module_map.update(yaml.load(f))
+            module_map.update(yaml.safe_load(f))
 
     using_map = {
         'EnumerableEx'        : False,
@@ -358,11 +358,12 @@ class RB(object):
         except AttributeError:
             if not self._mode:
                 self.set_result(2)
-                raise RubyError("syntax not supported (%s)" % node)
+                raise RubyError("syntax not supported (%s %s)" % node)
             else:
                 if self._mode == 1:
                     self.set_result(1)
-                    sys.stderr.write("Warning : syntax not supported (%s)\n" % node)
+                    #sys.stderr.write("Warning : syntax not supported (%s)\n" % node)
+                    sys.stderr.write(f"Warning : syntax not supported ({node} line:{node.lineno} col:{node.col_offset}\n")
                 return ''
 
         if hasattr(visitor, 'statement'):
@@ -1740,7 +1741,14 @@ class RB(object):
         else:
             txt = '"' + txt + '"'
         return txt
+    
+    def visit_JoinedStr(self, node):
+        subs = [self.visit(v) for v in node.values]
+        return ' + '.join(subs)
 
+    def visit_FormattedValue(self, node):
+        return '"#{' + self.visit(node.value) + '}"'
+    
     def key_list_check(self, key_list, rb_args):
         j = 0
         star = 0
@@ -1915,10 +1923,12 @@ class RB(object):
                         print("get_methods_map key : %s not match method_map['val'][key] %s" % (key, method_map['val'][key]))
             if len(args_hash) == 0:
                 self.set_result(2)
-                raise RubyError("methods_map defalut argument Error : not found args")
+                raise RubyError("methods_map default argument Error : not found args")
 
             if 'main_data_key' in method_map:
                 data_key = method_map['main_data_key']
+                if not data_key in args_hash:
+                    raise Exception("Error: Missing key '%s' from args_hash" % data_key)
                 main_data = args_hash[data_key]
 
         if 'main_func' in method_map.keys():
