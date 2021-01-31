@@ -438,7 +438,7 @@ class RB(object):
                         else:
                             if self._mode == 1:
                                 self.set_result(1)
-                                sys.stderr.write("Warning : decorators are not supported : %s\n" % self.visit(decorator.id))
+                                #sys.stderr.write("Warning : decorators are not supported : %s\n" % self.visit(decorator.id))
                     if isinstance(decorator, ast.Attribute):
                         if self.visit(node.decorator_list[0]) == (node.name + ".setter"):
                             is_setter = True
@@ -453,7 +453,7 @@ class RB(object):
                 if not is_static and not is_property and not is_setter:
                     if self._mode == 1:
                         self.set_result(1)
-                        sys.stderr.write("Warning : decorators are not supported : %s\n" % self.visit(node.decorator_list[0]))
+                        #sys.stderr.write("Warning : decorators are not supported : %s\n" % self.visit(node.decorator_list[0]))
 
         defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
         """ Class Method """
@@ -500,8 +500,8 @@ class RB(object):
             is_closure = True
         if self._class_name:
             if not is_static and not is_closure:
-                if not (rb_args[0] == "self"):
-                    raise NotImplementedError("The first argument must be 'self'.")
+                #if not (rb_args[0] == "self"):
+                #    raise NotImplementedError("The first argument must be 'self'.")
                 del rb_args[0]
                 del rb_args_default[0]
 
@@ -1581,6 +1581,29 @@ class RB(object):
                     (i, t, self.visit(node.generators[0].ifs[0]), t, \
                      self.visit(node.key), self.visit(node.value))
 
+    def visit_SetComp(self, node):
+        """
+        SetComp(expr elt, comprehension* generators)
+        """
+        i = self.visit(node.generators[0].iter) # ast.Tuple, ast.List, ast.*
+        if isinstance(node.generators[0].target, ast.Name):
+            t = self.visit(node.generators[0].target)
+        else:
+            # ast.Tuple
+            self._tuple_type = ''
+            t = self.visit(node.generators[0].target)
+            self._tuple_type = '[]'
+        if len(node.generators[0].ifs) == 0:
+            """ <Python> [x**2 for x in {1,2}]
+                <Ruby>   [1, 2].map{|x| x**2}.to_set  """
+            return "%s.map{|%s| %s}.to_set" % (i, t, self.visit(node.elt))
+        else:
+            """ <Python> [x**2 for x in {1,2} if x > 1]
+                <Ruby>   {1, 2}.select {|x| x > 1 }.map{|x| x**2}.to_set  """
+            return "%s.select{|%s| %s}.map{|%s| %s}.to_set" % \
+                    (i, t, self.visit(node.generators[0].ifs[0]), t, \
+                     self.visit(node.elt))
+
     def visit_Lambda(self, node):
         """
         Lambda(arguments args, expr body)
@@ -1729,6 +1752,18 @@ class RB(object):
         """
         return 'false'
 
+    def visit_JoinedStr(self, node):
+        txt = ""
+        for val in node.values:
+            if self.name(val) == "FormattedValue":
+                txt = txt + "#{" + self.visit(val) + "}"
+            else:
+                txt = txt + self.visit(val)[1:-1]
+        return '"' + txt + '"'
+
+    def visit_FormattedValue(self, node):
+        return self.visit(node.value)
+
     def visit_Str(self, node):
         """
         Str(string s)
@@ -1736,6 +1771,7 @@ class RB(object):
         # Uses the Python builtin repr() of a string and the strip string type from it.
         txt = re.sub(r'"', '\\"', repr(node.s)[1:-1])
         txt = re.sub(r'\\n', '\n', txt)
+        txt = re.sub(r'#([$@{])', r'\#\1', txt)
         if self._is_string_symbol:
             txt = ':' + txt
         else:
@@ -2163,6 +2199,8 @@ class RB(object):
             rb_args_s = ''
         elif len(rb_args) == 1:
             rb_args_s = rb_args[0]
+        elif hasattr(rb_args[0], "decode"):
+            rb_args_s = b", ".join(rb_args)
         else:
             rb_args_s = ", ".join(rb_args)
 
@@ -2582,6 +2620,10 @@ class RB(object):
         return "[%s]" % (", ".join(els))
         #return ", ".join(els)
 
+    def visit_Set(self, node):
+        els = [self.visit(e) for e in node.elts]
+        return "Set.new([%s])" % (", ".join(els))
+
     def visit_ExtSlice(self, node):
         """
         ExtSlice(slice* dims)
@@ -2665,12 +2707,12 @@ class RB(object):
         if node.value:
             if self._mode == 1:
                 self.set_result(1)
-                sys.stderr.write("Warning : yield is not supported : %s\n" % self.visit(node.value))
-            return "yield %s" % (self.visit(node.value))
+                #sys.stderr.write("Warning : yield is not supported : %s\n" % self.visit(node.value))
+            return "yield(%s)" % (self.visit(node.value))
         else:
             if self._mode == 1:
                 self.set_result(1)
-                sys.stderr.write("Warning : yield is not supported : \n")
+                #sys.stderr.write("Warning : yield is not supported : \n")
             return "yield"
 
 def convert_py2rb(s, dir_path, path='', base_path_count=0, modules=[], mod_paths={}, no_stop=False, verbose=False):
