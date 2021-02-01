@@ -363,7 +363,7 @@ class RB(object):
                 if self._mode == 1:
                     self.set_result(1)
                     #sys.stderr.write("Warning : syntax not supported (%s)\n" % node)
-                    sys.stderr.write(f"Warning : syntax not supported ({node} line:{node.lineno} col:{node.col_offset}\n")
+                    sys.stderr.write("Warning : syntax not supported (%s line:%d col:%d\n" % (node, node.lineno, node.col_offset))
                 return ''
 
         if hasattr(visitor, 'statement'):
@@ -1762,8 +1762,21 @@ class RB(object):
         return '"' + txt + '"'
 
     def visit_FormattedValue(self, node):
+        print(dir(node))
         return self.visit(node.value)
 
+    # Python 3.8+ uses ast.Constant instead of ast.NamedConstant
+    def visit_Constant(self, node):
+        value = node.value
+        if value is True or value is False or value is None:
+            return self.name_constant_map[value]
+        elif isinstance(value, str):
+            return self.visit_Str(node)
+        elif node.value == Ellipsis:
+            return self.visit_Ellipsis(node)
+        else:
+            return repr(node.s)
+        
     def visit_Str(self, node):
         """
         Str(string s)

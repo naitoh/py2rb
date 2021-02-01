@@ -1,4 +1,45 @@
 # frozen_string_literal: true
+
+class Method
+  # Monkeypath Method#to_s to provide a consistent output for multiple
+  # versions of ruby. This is dirty, but easiest way to proceed without
+  # ripping up the test suite to provide several different expected
+  # outputs for all the changes from 2.4 .. 3.0
+  # This will probably come back to bite me....
+  def to_s
+    loc = self.source_location
+    return "#<#{self.class}: #{self.owner}\##{self.original_name}>"
+  end
+end
+
+# For some reason monkeypatching Set after the Enumerable refinement
+# doesnt work for ruby 2.7.0 .. 2.7.2, so moving it up here.
+# this seems like a ruby bug, and apparently is fixed in 3.0.0
+#
+
+
+#
+# Foo.call() or Foo.() is nothing => Foo.new() call.
+#
+class Class
+  def method_missing(method, *args)
+    if method == :call
+      self.new(*args)
+    else
+      super
+    end
+  end
+end
+
+require 'set'
+class Set
+  def remove(x)
+    self.delete(x)
+    return
+  end
+end
+
+
 module PythonZipEx
   refine Object do
     # python : zip(l1, l2, [l3, ..])
@@ -244,23 +285,3 @@ module PyLib
   end
 end
 
-#
-# Foo.call() or Foo.() is nothing => Foo.new() call.
-#
-class Class
-  def method_missing(method, *args)
-    if method == :call
-      self.new(*args)
-    else
-      super
-    end
-  end
-end
-
-require 'set'
-class Set
-  def remove(x)
-    self.delete(x)
-    return
-  end
-end

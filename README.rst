@@ -2,7 +2,7 @@ py2rb.py
 ========
 
 A code translator using AST from Python to Ruby.
-This is basically a NodeVisitor with ruby output.
+This is basically a NodeVisitor with Ruby output.
 See ast documentation (https://docs.python.org/3/library/ast.html) for more information.
 
 Installation
@@ -16,12 +16,31 @@ Execute the following::
 
     git clone git://github.com/naitoh/py2rb.git
 
+Versions
+--------
+
+- Python 3.5 .. 3.8.7
+- Ruby 2.4 .. 3.0.0
+
 Dependencies
 ------------
 
-- Python 3.5, 3.6
-- Ruby 2.4 or later
+Python side::
+  pip install six
+  pip install pyyaml
+  pip install numpy
 
+Ruby side::
+  gem install numo-narray
+
+Methodology
+-----------
+
+In addition to walking and writing the AST tree and writing a Ruby syntax output, this
+tool either:
+A) Monkey-patches (or refines) some common Ruby Modules and Classes in order to emulate
+the Python equivalent.
+B) Calls equivalent Ruby methods to the python equivalent
 
 Usage
 --------
