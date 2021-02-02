@@ -1752,18 +1752,6 @@ class RB(object):
         """
         return 'false'
 
-    def visit_JoinedStr(self, node):
-        txt = ""
-        for val in node.values:
-            if self.name(val) == "FormattedValue":
-                txt = txt + "#{" + self.visit(val) + "}"
-            else:
-                txt = txt + self.visit(val)[1:-1]
-        return '"' + txt + '"'
-
-    def visit_FormattedValue(self, node):
-        print(dir(node))
-        return self.visit(node.value)
 
     # Python 3.8+ uses ast.Constant instead of ast.NamedConstant
     def visit_Constant(self, node):
@@ -1792,11 +1780,27 @@ class RB(object):
         return txt
     
     def visit_JoinedStr(self, node):
-        subs = [self.visit(v) for v in node.values]
-        return ' + '.join(subs)
+        txt = ""
+        for val in node.values:
+            if self.name(val) == "FormattedValue":
+                txt = txt + "#{" + self.visit(val) + "}"
+            else:
+                txt = txt + self.visit(val)[1:-1]
+        return '"' + txt + '"'
 
     def visit_FormattedValue(self, node):
-        return '"#{' + self.visit(node.value) + '}"'
+        conversion = node.conversion
+        if conversion == 97:
+            # ascii
+            raise NotImplementedError("Cannot handle {!a} f-string conversions yet")
+        elif conversion == 114:
+            # repr
+            return self.visit(node.value) + ".inspect"
+        elif conversion == 115:
+            # string
+            return self.visit(node.value) + ".to_s"
+        else:
+            return self.visit(node.value)
     
     def key_list_check(self, key_list, rb_args):
         j = 0

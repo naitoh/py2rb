@@ -98,6 +98,17 @@ unittest:
         first: True
         second: True
         msg: True
+    TestCase.assertNotEqual:
+      # (first, second, msg=None)
+      main_func: 'assert_not_equal'
+      key:
+        - [first, second, msg]
+      key_order:
+        - [second, first, msg]
+      val:
+        first: True
+        second: True
+        msg: True
     TestCase.assertAlmostEqual:
       # (first, second, places=7, msg=None, delta=None)
       main_func: 'assert_in_delta'
@@ -150,6 +161,14 @@ unittest:
     TestCase.assertTrue:
       # (expr, msg=None)
       main_func: 'assert'
+      key:
+        - [expr, msg]
+      val:
+        expr: True
+        msg: True
+    TestCase.assertFalse:
+      # (expr, msg=None)
+      main_func: 'assert_false'
       key:
         - [expr, msg]
       val:
