@@ -1,0 +1,13 @@
+001 dog
+dog	dogcat🐱
+002 dog
+dog	dogcat🐱
+003 dog
+dog	dogcat🐱
+004 repr   "dog\ndog\tdog" "cat" "🐱"
+005 string dog
+dog	dog cat 🐱
+float: 1.234e-06 int: -177
+tuple: [1, 3, 5] list: ["b", "c", "d", 7]
+tuple: [1, 3, 5] list: ["b", "c", "d", 7]
+tuple: [1, 3, 5] list: ["b", "c", "d", 7]
