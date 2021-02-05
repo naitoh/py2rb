@@ -358,11 +358,10 @@ class RB(object):
         except AttributeError:
             if not self._mode:
                 self.set_result(2)
-                raise RubyError("syntax not supported (%s %s)" % node)
+                raise RubyError("syntax not supported (%s)" % node)
             else:
                 if self._mode == 1:
                     self.set_result(1)
-                    #sys.stderr.write("Warning : syntax not supported (%s)\n" % node)
                     sys.stderr.write("Warning : syntax not supported (%s line:%d col:%d\n" % (node, node.lineno, node.col_offset))
                 return ''
 
@@ -438,7 +437,7 @@ class RB(object):
                         else:
                             if self._mode == 1:
                                 self.set_result(1)
-                                #sys.stderr.write("Warning : decorators are not supported : %s\n" % self.visit(decorator.id))
+                                sys.stderr.write("Warning : decorators are not supported : %s\n" % self.visit(decorator.id))
                     if isinstance(decorator, ast.Attribute):
                         if self.visit(node.decorator_list[0]) == (node.name + ".setter"):
                             is_setter = True
@@ -453,7 +452,7 @@ class RB(object):
                 if not is_static and not is_property and not is_setter:
                     if self._mode == 1:
                         self.set_result(1)
-                        #sys.stderr.write("Warning : decorators are not supported : %s\n" % self.visit(node.decorator_list[0]))
+                        sys.stderr.write("Warning : decorators are not supported : %s\n" % self.visit(node.decorator_list[0]))
 
         defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
         """ Class Method """
@@ -500,8 +499,8 @@ class RB(object):
             is_closure = True
         if self._class_name:
             if not is_static and not is_closure:
-                #if not (rb_args[0] == "self"):
-                #    raise NotImplementedError("The first argument must be 'self'.")
+                if not (rb_args[0] == "self"):
+                    raise NotImplementedError("The first argument must be 'self'.")
                 del rb_args[0]
                 del rb_args_default[0]
 
@@ -2724,12 +2723,12 @@ class RB(object):
         if node.value:
             if self._mode == 1:
                 self.set_result(1)
-                #sys.stderr.write("Warning : yield is not supported : %s\n" % self.visit(node.value))
+                sys.stderr.write("Warning : yield is not supported : %s\n" % self.visit(node.value))
             return "yield(%s)" % (self.visit(node.value))
         else:
             if self._mode == 1:
                 self.set_result(1)
-                #sys.stderr.write("Warning : yield is not supported : \n")
+                sys.stderr.write("Warning : yield is not supported : \n")
             return "yield"
 
 def convert_py2rb(s, dir_path, path='', base_path_count=0, modules=[], mod_paths={}, no_stop=False, verbose=False):
