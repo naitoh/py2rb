@@ -5,6 +5,18 @@ import testtools.runner
 import testtools.util
 import testtools.tests
 
+try:
+    import yaml
+except:
+    raise "Cannot find pyyaml, install and re-try"
+
+try:
+    import numpy
+except:
+    raise "Cannot find numpy, install and re-try"
+
+
+
 def main():
     option_parser = optparse.OptionParser(
         usage="%prog [options] [filenames]",

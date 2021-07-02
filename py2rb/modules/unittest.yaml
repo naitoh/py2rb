@@ -7,7 +7,7 @@
 #   mod_name: Ruby module namespace : %(mod)s
 #     e.g. mod_name: Numo  # from numpy import array => require 'numo/narray'; include Numo # mod: mod_name + '::'
 #   mod_class_name:
-#     Pyth n class name: Ruby class name    # For class inheritance
+#     Python class name: Ruby class name    # For class inheritance
 #     e.g. TestCase: 'Test::Unit::TestCase'
 #
 #   methods_map:
@@ -87,6 +87,19 @@ unittest:
         first: True
         second: True
         msg: True
+    TestCase.assertNotIn:
+      # (first, second, msg=None)
+      main_func: 'assert_not_include'
+      key:
+        - [first, second, msg]
+      key_order:
+        # <Python> self.assertIn('foo', ['foo', 'bar'], 'message test')
+        # <Ruby>   assert_include(['foo', 'bar'],'foo','message test')
+        - [second, first, msg]
+      val:
+        first: True
+        second: True
+        msg: True
     TestCase.assertEqual:
       # (first, second, msg=None)
       main_func: 'assert_equal'
@@ -98,9 +111,39 @@ unittest:
         first: True
         second: True
         msg: True
+    TestCase.assertNotEqual:
+      # (first, second, msg=None)
+      main_func: 'assert_not_equal'
+      key:
+        - [first, second, msg]
+      key_order:
+        - [second, first, msg]
+      val:
+        first: True
+        second: True
+        msg: True
     TestCase.assertAlmostEqual:
       # (first, second, places=7, msg=None, delta=None)
       main_func: 'assert_in_delta'
+      key:
+        - [first, second, places, msg, delta]
+      key_order:
+        # - places case
+        #   <Python> self.assertAlmostEqual(1.0, 1.00000001, 7, '''comment test''')
+        #   <Ruby>   assert_in_delta(1.00000001, 1.0, 1e-1*1e-7, "comment test")
+        # - delta case
+        #   <Python> self.assertAlmostEqual(1.0, 1.00000001, msg='''comment test''', delta=1e-8)
+        #   <Ruby>   assert_in_delta(1.00000001, 1.0, 1e-08, "comment test")
+        - [second, first, places, delta, msg]
+      val:
+        first: True
+        second: True
+        places: '1e-1*1e-%(places)s'
+        msg: True
+        delta: True
+    TestCase.assertNotAlmostEqual:
+      # (first, second, places=7, msg=None, delta=None)
+      main_func: 'assert_not_in_delta'
       key:
         - [first, second, places, msg, delta]
       key_order:
@@ -136,6 +179,25 @@ unittest:
         # <Python> assertIsInstance(obj, cls, msg)
         # <Ruby>   assert_true obj.is_a?(cls), msg
         - ' (%(obj)s).is_a?(%(cls)s), %(msg)s'
+    TestCase.assertIsNotInstance:
+      # (obj, cls, msg=None)
+      key:
+        - [obj, cls]
+        - [obj, cls, msg]
+      val:
+        obj: True                              # Use argument data
+        cls: True                              # Use argument data
+        msg: True                              # Use argument data
+      main_func: 'assert_false'
+      rtn: # rtn[0]-rtn[3]
+        - ''
+        - ''
+        # <Python> assertIsInstance(obj, cls)
+        # <Ruby>   assert_true obj.is_a?(cls)
+        - ' (%(obj)s).is_a?(%(cls)s)'
+        # <Python> assertIsInstance(obj, cls, msg)
+        # <Ruby>   assert_true obj.is_a?(cls), msg
+        - ' (%(obj)s).is_a?(%(cls)s), %(msg)s'
     TestCase.assertIs:
       # (first, second, msg=None)
       main_func: 'assert_equal'
@@ -147,9 +209,40 @@ unittest:
         first: True
         second: True
         msg: True
+    TestCase.assertIsNot:
+      # (first, second, msg=None)
+      main_func: 'assert_not_equal'
+      key:
+        - [first, second, msg]
+      key_order:
+        - [second, first, msg]
+      val:
+        first: True
+        second: True
+        msg: True
+        
+    TestCase.assertIsNone:
+      # (first, msg=None)
+      main_func: 'assert_nil'
+      key:
+        - [first, msg]
+      key_order:
+        - [first, msg]
+      val:
+        first: True
+        msg: True
+        
     TestCase.assertTrue:
       # (expr, msg=None)
       main_func: 'assert'
+      key:
+        - [expr, msg]
+      val:
+        expr: True
+        msg: True
+    TestCase.assertFalse:
+      # (expr, msg=None)
+      main_func: 'assert_false'
       key:
         - [expr, msg]
       val:
@@ -177,6 +270,110 @@ unittest:
         - "(%(exception)s){%(callable)s()}"
         - "(%(exception)s){%(callable)s(%(*args)s)}"
         - "(%(exception)s){%(callable)s(%(*args)s, %(**kwds)s)}"
+    TestCase.assertGreater:
+      # (first, second, msg=None)
+      key:
+        - [first, second]
+        - [first, second, msg]
+      val:
+        first: True                            # Use argument data
+        second: True                           # Use argument data
+        msg: True                              # Use argument data
+      main_func: 'assert_compare'
+      rtn: # rtn[0]-rtn[3]
+        - ''
+        - ''
+        # <Python> assertGreater(first, second)
+        # <Ruby>   assert_compare(expected, '>', actual)
+        - "((%(first)s), '>', (%(second)s))"
+        # <Python> assertGreater(first, second, msg)
+        # <Ruby>   assert_compare(expected, '>', actual)
+        - "((%(first)s), '>', (%(second)s), %(msg)s)"
+    TestCase.assertGreaterEqual:
+      # (first, second, msg=None)
+      key:
+        - [first, second]
+        - [first, second, msg]
+      val:
+        first: True                            # Use argument data
+        second: True                           # Use argument data
+        msg: True                              # Use argument data
+      main_func: 'assert_compare'
+      rtn: # rtn[0]-rtn[3]
+        - ''
+        - ''
+        # <Python> assertGreaterEqual(first, second)
+        # <Ruby>   assert_compare(expected, '>=', actual)
+        - "((%(first)s), '>=', (%(second)s))"
+        # <Python> assertGreaterEqual(first, second, msg)
+        # <Ruby>   assert_compare(expected, '>=', actual)
+        - "((%(first)s), '>=', (%(second)s), %(msg)s)"
+    TestCase.assertLess:
+      # (first, second, msg=None)
+      key:
+        - [first, second]
+        - [first, second, msg]
+      val:
+        first: True                            # Use argument data
+        second: True                           # Use argument data
+        msg: True                              # Use argument data
+      main_func: 'assert_compare'
+      rtn: # rtn[0]-rtn[3]
+        - ''
+        - ''
+        # <Python> assertLess(first, second)
+        # <Ruby>   assert_compare(expected, '<', actual)
+        - "((%(first)s), '<', (%(second)s))"
+        # <Python> assertLess(first, second, msg)
+        # <Ruby>   assert_compare(expected, '<', actual)
+        - "((%(first)s), '<', (%(second)s), %(msg)s)"
+    TestCase.assertLessEqual:
+      # (first, second, msg=None)
+      key:
+        - [first, second]
+        - [first, second, msg]
+      val:
+        first: True                            # Use argument data
+        second: True                           # Use argument data
+        msg: True                              # Use argument data
+      main_func: 'assert_compare'
+      rtn: # rtn[0]-rtn[3]
+        - ''
+        - ''
+        # <Python> assertLessEqual(first, second)
+        # <Ruby>   assert_compare(expected, '<=', actual)
+        - "((%(first)s), '<=', (%(second)s))"
+        # <Python> assertLessEqual(first, second, msg)
+        # <Ruby>   assert_compare(expected, '<=', actual)
+        - "((%(first)s), '<=', (%(second)s), %(msg)s)"
   ignore:
     main: ''
 
+# Asserts from pydoc that are supported here:
+#
+# [x] assertEqual(a, b) ==>  a == b
+# [x] assertNotEqual(a, b) ==>  a != b
+# [x] assertTrue(x) ==> bool(x) is True
+# [x] assertFalse(x) ==> bool(x) is False
+# [x] assertIs(a, b) ==> a is b
+# [x] assertIsNot(a, b) ==> a is not b
+# assertIsNone(x) ==> x is None
+# assertIsNotNone(x) ==> x is not None
+# [x] assertIn(a, b) ==> a in b
+# [x] assertNotIn(a, b) ==> a not in b
+# [x] assertIsInstance(a, b) ==> isinstance(a, b)
+# [x] assertNotIsInstance(a, b) ==> not isinstance(a, b)
+# [x] assertRaises(exc, fun, *args, **kwds) ==> fun(*args, **kwds) raises exc
+# assertRaisesRegex(exc, r, fun, *args, **kwds) ==> fun(*args, **kwds) raises exc and the message matches regex r
+# assertWarns(warn, fun, *args, **kwds) ==> fun(*args, **kwds) raises warn
+# assertWarnsRegex(warn, r, fun, *args, **kwds) ==> fun(*args, **kwds) raises warn and the message matches regex r
+# assertLogs(logger, level) ==> The with block logs on logger with minimum level
+# [x] assertAlmostEqual(a, b) ==> round(a-b, 7) == 0
+# [x] assertNotAlmostEqual(a, b) ==> round(a-b, 7) != 0
+# [x] assertGreater(a, b) ==> a > b
+# [x] assertGreaterEqual(a, b) ==> a >= b
+# [x] assertLess(a, b) ==> a < b
+# [x] assertLessEqual(a, b) ==> a <= b
+# assertRegex(s, r) ==> r.search(s)
+# assertNotRegex(s, r) ==> not r.search(s)
+# assertCountEqual(a, b) ==> a and b have the same elements in the same number, regardless of their order.

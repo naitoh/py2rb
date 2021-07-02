@@ -26,7 +26,7 @@ class RB(object):
     yaml_files = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'modules/*.yaml')
     for filename in glob.glob(yaml_files):
         with open(filename, 'r') as f:
-            module_map.update(yaml.load(f))
+            module_map.update(yaml.safe_load(f))
 
     using_map = {
         'EnumerableEx'        : False,
@@ -362,7 +362,7 @@ class RB(object):
             else:
                 if self._mode == 1:
                     self.set_result(1)
-                    sys.stderr.write("Warning : syntax not supported (%s)\n" % node)
+                    sys.stderr.write("Warning : syntax not supported (%s line:%d col:%d\n" % (node, node.lineno, node.col_offset))
                 return ''
 
         if hasattr(visitor, 'statement'):
@@ -1580,6 +1580,29 @@ class RB(object):
                     (i, t, self.visit(node.generators[0].ifs[0]), t, \
                      self.visit(node.key), self.visit(node.value))
 
+    def visit_SetComp(self, node):
+        """
+        SetComp(expr elt, comprehension* generators)
+        """
+        i = self.visit(node.generators[0].iter) # ast.Tuple, ast.List, ast.*
+        if isinstance(node.generators[0].target, ast.Name):
+            t = self.visit(node.generators[0].target)
+        else:
+            # ast.Tuple
+            self._tuple_type = ''
+            t = self.visit(node.generators[0].target)
+            self._tuple_type = '[]'
+        if len(node.generators[0].ifs) == 0:
+            """ <Python> [x**2 for x in {1,2}]
+                <Ruby>   [1, 2].map{|x| x**2}.to_set  """
+            return "%s.map{|%s| %s}.to_set" % (i, t, self.visit(node.elt))
+        else:
+            """ <Python> [x**2 for x in {1,2} if x > 1]
+                <Ruby>   {1, 2}.select {|x| x > 1 }.map{|x| x**2}.to_set  """
+            return "%s.select{|%s| %s}.map{|%s| %s}.to_set" % \
+                    (i, t, self.visit(node.generators[0].ifs[0]), t, \
+                     self.visit(node.elt))
+
     def visit_Lambda(self, node):
         """
         Lambda(arguments args, expr body)
@@ -1728,6 +1751,19 @@ class RB(object):
         """
         return 'false'
 
+
+    # Python 3.8+ uses ast.Constant instead of ast.NamedConstant
+    def visit_Constant(self, node):
+        value = node.value
+        if value is True or value is False or value is None:
+            return self.name_constant_map[value]
+        elif isinstance(value, str):
+            return self.visit_Str(node)
+        elif node.value == Ellipsis:
+            return self.visit_Ellipsis(node)
+        else:
+            return repr(node.s)
+        
     def visit_Str(self, node):
         """
         Str(string s)
@@ -1735,12 +1771,36 @@ class RB(object):
         # Uses the Python builtin repr() of a string and the strip string type from it.
         txt = re.sub(r'"', '\\"', repr(node.s)[1:-1])
         txt = re.sub(r'\\n', '\n', txt)
+        txt = re.sub(r'#([$@{])', r'\#\1', txt)
         if self._is_string_symbol:
             txt = ':' + txt
         else:
             txt = '"' + txt + '"'
         return txt
+    
+    def visit_JoinedStr(self, node):
+        txt = ""
+        for val in node.values:
+            if self.name(val) == "FormattedValue":
+                txt = txt + "#{" + self.visit(val) + "}"
+            else:
+                txt = txt + self.visit(val)[1:-1]
+        return '"' + txt + '"'
 
+    def visit_FormattedValue(self, node):
+        conversion = node.conversion
+        if conversion == 97:
+            # ascii
+            raise NotImplementedError("Cannot handle {!a} f-string conversions yet")
+        elif conversion == 114:
+            # repr
+            return self.visit(node.value) + ".inspect"
+        elif conversion == 115:
+            # string
+            return self.visit(node.value) + ".to_s"
+        else:
+            return self.visit(node.value)
+    
     def key_list_check(self, key_list, rb_args):
         j = 0
         star = 0
@@ -1915,10 +1975,12 @@ class RB(object):
                         print("get_methods_map key : %s not match method_map['val'][key] %s" % (key, method_map['val'][key]))
             if len(args_hash) == 0:
                 self.set_result(2)
-                raise RubyError("methods_map defalut argument Error : not found args")
+                raise RubyError("methods_map default argument Error : not found args")
 
             if 'main_data_key' in method_map:
                 data_key = method_map['main_data_key']
+                if not data_key in args_hash:
+                    raise Exception("Error: Missing key '%s' from args_hash" % data_key)
                 main_data = args_hash[data_key]
 
         if 'main_func' in method_map.keys():
@@ -2153,6 +2215,8 @@ class RB(object):
             rb_args_s = ''
         elif len(rb_args) == 1:
             rb_args_s = rb_args[0]
+        elif hasattr(rb_args[0], "decode"):
+            rb_args_s = b", ".join(rb_args)
         else:
             rb_args_s = ", ".join(rb_args)
 
@@ -2572,6 +2636,10 @@ class RB(object):
         return "[%s]" % (", ".join(els))
         #return ", ".join(els)
 
+    def visit_Set(self, node):
+        els = [self.visit(e) for e in node.elts]
+        return "Set.new([%s])" % (", ".join(els))
+
     def visit_ExtSlice(self, node):
         """
         ExtSlice(slice* dims)
@@ -2656,7 +2724,7 @@ class RB(object):
             if self._mode == 1:
                 self.set_result(1)
                 sys.stderr.write("Warning : yield is not supported : %s\n" % self.visit(node.value))
-            return "yield %s" % (self.visit(node.value))
+            return "yield(%s)" % (self.visit(node.value))
         else:
             if self._mode == 1:
                 self.set_result(1)
